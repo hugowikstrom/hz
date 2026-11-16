@@ -277,7 +277,7 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | **nvz normal** | 8,27 | 6,69× | −27,8 % | 41 s | 1 s | ja |
 | **nvz liten** | **7,28** | 7,60× | −36,5 % | 70 s | 68 s | ja |
 
-### Bilder (PNG) — 431 0 MiB i 4 617 filer
+### Bilder (PNG) — 431 1 MiB i 4 618 filer
 
 | packare | storlek MiB | kvot | mot dagens | packtid | uppacktid | exakt |
 |:--|--:|--:|--:|--:|--:|:-:|
@@ -289,10 +289,10 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | tar.zst -19 --long | 252,73 | 1,71× | −30,3 % | 40 s | 1 s | ja |
 | tar.zst -22 --ultra | 245,22 | 1,76× | −32,4 % | 156 s | 1 s | ja |
 | tar.xz -9e | 266,41 | 1,62× | −26,6 % | 128 s | 5 s | ja |
-| **nvz snabb** | 279,28 | 1,54× | −23,0 % | 3 s | 1 s | ja |
-| **nvz utan knep** | 256,42 | 1,68× | −29,3 % | 45 s | 2 s | ja |
-| **nvz normal** | 208,88 | 2,06× | −42,4 % | 254 s | 9 s | ja |
-| **nvz liten** | **208,88** | 2,06× | −42,4 % | 251 s | 9 s | ja |
+| **nvz snabb** | 279,32 | 1,54× | −23,0 % | 2 s | 1 s | ja |
+| **nvz utan knep** | 256,49 | 1,68× | −29,3 % | 42 s | 1 s | ja |
+| **nvz normal** | 208,81 | 2,06× | −42,5 % | 268 s | 10 s | ja |
+| **nvz liten** | **208,81** | 2,06× | −42,5 % | 265 s | 9 s | ja |
 
 ### Foton (JPEG) — 408 5 MiB i 1 143 filer
 
@@ -340,10 +340,10 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | tar.zst -19 --long | **532,02** | 1,01× | −0,3 % | 57 s | 0 s | ja |
 | tar.zst -22 --ultra | 532,03 | 1,01× | −0,3 % | 266 s | 1 s | ja |
 | tar.xz -9e | 532,86 | 1,01× | −0,2 % | 154 s | 5 s | ja |
-| **nvz snabb** | 536,75 | 1,00× | +0,5 % | 2 s | 1 s | ja |
-| **nvz utan knep** | 532,25 | 1,01× | −0,3 % | 45 s | 1 s | ja |
-| **nvz normal** | 532,25 | 1,01× | −0,3 % | 43 s | 1 s | ja |
-| **nvz liten** | 532,25 | 1,01× | −0,3 % | 43 s | 1 s | ja |
+| **nvz snabb** | 536,75 | 1,00× | +0,5 % | 3 s | 1 s | ja |
+| **nvz utan knep** | 532,25 | 1,01× | −0,3 % | 42 s | 1 s | ja |
+| **nvz normal** | 532,25 | 1,01× | −0,3 % | 41 s | 1 s | ja |
+| **nvz liten** | 532,25 | 1,01× | −0,3 % | 41 s | 1 s | ja |
 
 ### Arkiv (zip/tar.gz) — 391 8 MiB i 133 filer
 
@@ -375,9 +375,9 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | tar.zst -22 --ultra | 12,92 | 18,45× | −42,3 % | 986 s | 0 s | ja |
 | tar.xz -9e | 11,84 | 20,12× | −47,1 % | 897 s | 1 s | ja |
 | **nvz snabb** | 22,41 | 10,63× | +0,1 % | 2 s | 1 s | ja |
-| **nvz utan knep** | 11,97 | 19,91× | −46,5 % | 940 s | 2 s | ja |
-| **nvz normal** | 11,97 | 19,91× | −46,5 % | 938 s | 2 s | ja |
-| **nvz liten** | **10,03** | 23,77× | −55,2 % | 247 s | 221 s | ja |
+| **nvz utan knep** | 11,97 | 19,91× | −46,5 % | 854 s | 2 s | ja |
+| **nvz normal** | 11,97 | 19,91× | −46,5 % | 864 s | 2 s | ja |
+| **nvz liten** | **10,03** | 23,77× | −55,2 % | 197 s | 203 s | ja |
 
 ### Blandat projektträd (symbios-3d) — 1 814 4 MiB i 15 139 filer
 
@@ -407,10 +407,10 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | tar.zst -19 --long | 50,17 | 4,03× | −20,6 % | 63 s | 0 s | ja |
 | tar.zst -22 --ultra | 49,82 | 4,06× | −21,1 % | 179 s | 0 s | ja |
 | tar.xz -9e | 46,17 | 4,38× | −26,9 % | 158 s | 3 s | ja |
-| **nvz snabb** | 63,16 | 3,20× | +0,0 % | 1 s | 0 s | ja |
+| **nvz snabb** | 63,16 | 3,20× | +0,0 % | 1 s | 1 s | ja |
 | **nvz utan knep** | 46,16 | 4,38× | −26,9 % | 94 s | 2 s | ja |
 | **nvz normal** | 46,16 | 4,38× | −26,9 % | 94 s | 2 s | ja |
-| **nvz liten** | **43,54** | 4,64× | −31,0 % | 102 s | 100 s | ja |
+| **nvz liten** | **43,54** | 4,64× | −31,0 % | 102 s | 101 s | ja |
 
 ### enwik8 (standardkorpus) — 95 4 MiB i 1 filer
 
@@ -424,10 +424,10 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | tar.zst -19 --long | 25,18 | 3,79× | −25,5 % | 61 s | 0 s | ja |
 | tar.zst -22 --ultra | 24,11 | 3,96× | −28,7 % | 118 s | 0 s | ja |
 | tar.xz -9e | 23,68 | 4,03× | −29,9 % | 121 s | 1 s | ja |
-| **nvz snabb** | 33,80 | 2,82× | +0,0 % | 1 s | 0 s | ja |
-| **nvz utan knep** | 23,68 | 4,03× | −29,9 % | 124 s | 2 s | ja |
-| **nvz normal** | 23,68 | 4,03× | −29,9 % | 126 s | 2 s | ja |
-| **nvz liten** | **20,43** | 4,67× | −39,6 % | 133 s | 135 s | ja |
+| **nvz snabb** | 33,80 | 2,82× | +0,0 % | 2 s | 1 s | ja |
+| **nvz utan knep** | 23,68 | 4,03× | −29,9 % | 125 s | 2 s | ja |
+| **nvz normal** | 23,68 | 4,03× | −29,9 % | 125 s | 2 s | ja |
+| **nvz liten** | **20,43** | 4,67× | −39,6 % | 131 s | 135 s | ja |
 
 <!-- SLUT TABELLER -->
 

@@ -1,7 +1,7 @@
 {
  "korpus": "png",
- "rabyte": 451973198,
- "filer": 4617,
+ "rabyte": 452014330,
+ "filer": 4618,
  "matningar": {
   "tar (okomprimerad)": {
    "packare": "tar (okomprimerad)",
@@ -54,30 +54,30 @@
   },
   "nvz snabb": {
    "packare": "nvz snabb",
-   "byte": 292850998,
-   "packsek": 2.82,
-   "uppacksek": 0.85,
+   "byte": 292893447,
+   "packsek": 1.91,
+   "uppacksek": 0.56,
    "identisk": true
   },
   "nvz utan knep": {
    "packare": "nvz utan knep",
-   "byte": 268873805,
-   "packsek": 44.57,
-   "uppacksek": 1.67,
+   "byte": 268949926,
+   "packsek": 42.25,
+   "uppacksek": 0.7,
    "identisk": true
   },
   "nvz normal": {
    "packare": "nvz normal",
-   "byte": 219028263,
-   "packsek": 253.97,
-   "uppacksek": 9.46,
+   "byte": 218956236,
+   "packsek": 268.21,
+   "uppacksek": 9.62,
    "identisk": true
   },
   "nvz liten": {
    "packare": "nvz liten",
-   "byte": 219027621,
-   "packsek": 250.75,
-   "uppacksek": 9.29,
+   "byte": 218955645,
+   "packsek": 264.55,
+   "uppacksek": 9.38,
    "identisk": true
   },
   "tar.bz2 -9": {
