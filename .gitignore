@@ -3,7 +3,9 @@ __pycache__/
 src/nvjpg
 src/nvcm
 src/nvgpu
+src/nvz
 src/*.spv
+src/cpp/*.o
 
 # Korpusarna är hårdlänkar in i hemkatalogen — tusentals privata foton,
 # loggar och filmer. De byggs om med korpus/bygg-korpus.py och ska aldrig

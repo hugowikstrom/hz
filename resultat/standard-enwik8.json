@@ -69,8 +69,8 @@
     "uppackmibs": 69.4,
     "exakt": true
    },
-   "nvz": {
-    "kodek": "nvz",
+   "nvcm": {
+    "kodek": "nvcm",
     "byte": 21417184,
     "packsek": 120.01,
     "uppacksek": 134.28,
@@ -131,7 +131,7 @@
    "bpb": 1.9865,
    "exakt": true
   },
-  "nvz": {
+  "nvcm": {
    "byte": 21417184,
    "packsek": 120.01,
    "uppacksek": 134.28,

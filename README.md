@@ -83,12 +83,19 @@ men standardläget är `liten`, alltså det minsta nvz kan. Vill man ha det
 snabbt säger man `-1`.
 
 ```bash
-make                      # bygger C-delarna (nvcm, nvjpg, och gpu om den går)
+make                      # bygger nvz (C++), nvcm, nvjpg — och gpu om den går
 make installera           # nvz, nvcm, nvjpg + man-sidor under /usr/local
-make enfil                # dist/nvz: hela arkivpackaren som EN körbar fil
 man nvz                   # eller: man -l man/nvz.1 direkt ur trädet
 bash prov/prova-allt.sh   # hela provsviten
 ```
+
+**nvz är sedan 2026-11-16 EN C++-binär** (287 kB, `src/cpp/`): nvcm och
+nvjpg är inlänkade, zstd/xz/zlib anropas som bibliotek i process, och
+standardläget är `liten` — det minsta nvz kan. Pythonversionen som byggde
+alla första mätningar ligger kvar som referens i `src/nvz.py` men anropas
+inte av någonting. Den läser inte C++-binärens arkiv (binärt register);
+C++-binären läser däremot pythonversionens (JSON-register), så gamla arkiv
+packas upp med nya nvz.
 
 ---
 
@@ -253,174 +260,174 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 
 <!-- TABELLER -->
 
-### Programkod — 55.3 MiB i 5 962 filer
+### Programkod — 55 3 MiB i 5 974 filer
 
 | packare | storlek MiB | kvot | mot dagens | packtid | uppacktid | exakt |
 |:--|--:|--:|--:|--:|--:|:-:|
-| tar (okomprimerad) | 60.83 | 0.91× | +430.8 % | 0 s | 0 s | ja |
-| tar.gz -6 | 12.32 | 4.49× | +7.5 % | 2 s | 0 s | ja |
-| tar.gz -9 (pigz) | 12.18 | 4.54× | +6.3 % | 0 s | 0 s | ja |
-| tar.bz2 -9 | 9.51 | 5.81× | -17.0 % | 7 s | 2 s | ja |
-| tar.zst -3 (dagens) | 11.46 | 4.82× | +0.0 % | 0 s | 0 s | ja |
-| tar.zst -19 --long | 8.53 | 6.48× | -25.6 % | 35 s | 0 s | ja |
-| tar.zst -22 --ultra | 8.45 | 6.54× | -26.2 % | 56 s | 0 s | ja |
-| tar.xz -9e | 8.23 | 6.72× | -28.2 % | 47 s | 1 s | ja |
-| **nvz snabb** | 11.32 | 4.88× | -1.2 % | 3 s | 1 s | ja |
-| **nvz utan knep** | 8.19 | 6.75× | -28.5 % | 43 s | 1 s | ja |
-| **nvz normal** | 8.19 | 6.75× | -28.6 % | 43 s | 1 s | ja |
-| **nvz liten** | 7.19 | 7.69× | -37.2 % | 71 s | 68 s | ja |
+| tar (okomprimerad) | 60,83 | 0,91× | +430,8 % | **0 s** | 0 s | ja |
+| tar.gz -6 | 12,32 | 4,49× | +7,5 % | 2 s | 0 s | ja |
+| tar.gz -9 (pigz) | 12,18 | 4,54× | +6,3 % | 0 s | 0 s | ja |
+| tar.bz2 -9 | 9,51 | 5,82× | −17,0 % | 7 s | 2 s | ja |
+| tar.zst -3 (dagens) | 11,46 | 4,83× | +0,0 % | 0 s | 0 s | ja |
+| tar.zst -19 --long | 8,53 | 6,49× | −25,6 % | 35 s | 0 s | ja |
+| tar.zst -22 --ultra | 8,45 | 6,55× | −26,2 % | 56 s | 0 s | ja |
+| tar.xz -9e | 8,23 | 6,72× | −28,2 % | 47 s | 1 s | ja |
+| **nvz snabb** | 11,42 | 4,85× | −0,4 % | 1 s | 0 s | ja |
+| **nvz utan knep** | 8,27 | 6,69× | −27,8 % | 41 s | 1 s | ja |
+| **nvz normal** | 8,27 | 6,69× | −27,8 % | 41 s | 1 s | ja |
+| **nvz liten** | **7,28** | 7,60× | −36,5 % | 70 s | 68 s | ja |
 
-### Bilder (PNG) — 431.0 MiB i 4 617 filer
-
-| packare | storlek MiB | kvot | mot dagens | packtid | uppacktid | exakt |
-|:--|--:|--:|--:|--:|--:|:-:|
-| tar (okomprimerad) | 438.41 | 0.98× | +20.8 % | 3 s | 0 s | ja |
-| tar.gz -6 | 401.67 | 1.07× | +10.7 % | 20 s | 3 s | ja |
-| tar.gz -9 (pigz) | 401.89 | 1.07× | +10.8 % | 2 s | 3 s | ja |
-| tar.bz2 -9 | 385.38 | 1.12× | +6.2 % | 74 s | 44 s | ja |
-| tar.zst -3 (dagens) | 362.85 | 1.19× | +0.0 % | 1 s | 0 s | ja |
-| tar.zst -19 --long | 252.73 | 1.71× | -30.3 % | 40 s | 1 s | ja |
-| tar.zst -22 --ultra | 245.22 | 1.76× | -32.4 % | 156 s | 1 s | ja |
-| tar.xz -9e | 266.41 | 1.62× | -26.6 % | 128 s | 5 s | ja |
-| **nvz snabb** | 279.28 | 1.54× | -23.0 % | 3 s | 1 s | ja |
-| **nvz utan knep** | 256.42 | 1.68× | -29.3 % | 45 s | 2 s | ja |
-| **nvz normal** | 208.88 | 2.06× | -42.4 % | 254 s | 9 s | ja |
-| **nvz liten** | 208.88 | 2.06× | -42.4 % | 251 s | 9 s | ja |
-
-### Foton (JPEG) — 408.5 MiB i 1 143 filer
+### Bilder (PNG) — 431 0 MiB i 4 617 filer
 
 | packare | storlek MiB | kvot | mot dagens | packtid | uppacktid | exakt |
 |:--|--:|--:|--:|--:|--:|:-:|
-| tar (okomprimerad) | 409.37 | 1.00× | +0.8 % | 2 s | 0 s | ja |
-| tar.gz -6 | 405.81 | 1.01× | -0.1 % | 19 s | 2 s | ja |
-| tar.gz -9 (pigz) | 406.04 | 1.01× | -0.1 % | 1 s | 2 s | ja |
-| tar.bz2 -9 | 404.94 | 1.01× | -0.3 % | 57 s | 41 s | ja |
-| tar.zst -3 (dagens) | 406.30 | 1.01× | +0.0 % | 0 s | 0 s | ja |
-| tar.zst -19 --long | 405.09 | 1.01× | -0.3 % | 53 s | 0 s | ja |
-| tar.zst -22 --ultra | 405.09 | 1.01× | -0.3 % | 225 s | 0 s | ja |
-| tar.xz -9e | 405.43 | 1.01× | -0.2 % | 157 s | 4 s | ja |
-| **nvz snabb** | 408.50 | 1.00× | +0.5 % | 1 s | 0 s | ja |
-| **nvz utan knep** | 406.35 | 1.01× | +0.0 % | 13 s | 1 s | ja |
-| **nvz normal** | 345.07 | 1.18× | -15.1 % | 22 s | 8 s | ja |
-| **nvz liten** | 345.07 | 1.18× | -15.1 % | 28 s | 8 s | ja |
+| tar (okomprimerad) | 438,41 | 0,98× | +20,8 % | 3 s | 0 s | ja |
+| tar.gz -6 | 401,67 | 1,07× | +10,7 % | 20 s | 3 s | ja |
+| tar.gz -9 (pigz) | 401,89 | 1,07× | +10,8 % | 2 s | 3 s | ja |
+| tar.bz2 -9 | 385,38 | 1,12× | +6,2 % | 74 s | 44 s | ja |
+| tar.zst -3 (dagens) | 362,85 | 1,19× | +0,0 % | **1 s** | 0 s | ja |
+| tar.zst -19 --long | 252,73 | 1,71× | −30,3 % | 40 s | 1 s | ja |
+| tar.zst -22 --ultra | 245,22 | 1,76× | −32,4 % | 156 s | 1 s | ja |
+| tar.xz -9e | 266,41 | 1,62× | −26,6 % | 128 s | 5 s | ja |
+| **nvz snabb** | 279,28 | 1,54× | −23,0 % | 3 s | 1 s | ja |
+| **nvz utan knep** | 256,42 | 1,68× | −29,3 % | 45 s | 2 s | ja |
+| **nvz normal** | 208,88 | 2,06× | −42,4 % | 254 s | 9 s | ja |
+| **nvz liten** | **208,88** | 2,06× | −42,4 % | 251 s | 9 s | ja |
 
-### Bilder (GIF) — 27.4 MiB i 105 filer
-
-| packare | storlek MiB | kvot | mot dagens | packtid | uppacktid | exakt |
-|:--|--:|--:|--:|--:|--:|:-:|
-| tar (okomprimerad) | 27.62 | 0.99× | +2.1 % | 0 s | 0 s | ja |
-| tar.gz -6 | 27.18 | 1.01× | +0.5 % | 1 s | 0 s | ja |
-| tar.gz -9 (pigz) | 27.19 | 1.01× | +0.6 % | 0 s | 0 s | ja |
-| tar.bz2 -9 | 27.28 | 1.00× | +0.9 % | 4 s | 3 s | ja |
-| tar.zst -3 (dagens) | 27.04 | 1.01× | +0.0 % | 0 s | 0 s | ja |
-| tar.zst -19 --long | 14.18 | 1.93× | -47.6 % | 4 s | 0 s | ja |
-| tar.zst -22 --ultra | 14.18 | 1.93× | -47.6 % | 5 s | 0 s | ja |
-| tar.xz -9e | 14.19 | 1.93× | -47.5 % | 8 s | 0 s | ja |
-| **nvz snabb** | 14.44 | 1.90× | -46.6 % | 1 s | 0 s | ja |
-| **nvz utan knep** | 14.18 | 1.93× | -47.6 % | 7 s | 0 s | ja |
-| **nvz normal** | 14.18 | 1.93× | -47.6 % | 8 s | 0 s | ja |
-| **nvz liten** | 14.18 | 1.93× | -47.6 % | 8 s | 0 s | ja |
-
-### Film (h264/VP9) — 536.7 MiB i 67 filer
+### Foton (JPEG) — 408 5 MiB i 1 143 filer
 
 | packare | storlek MiB | kvot | mot dagens | packtid | uppacktid | exakt |
 |:--|--:|--:|--:|--:|--:|:-:|
-| tar (okomprimerad) | 536.82 | 1.00× | +0.6 % | 1 s | 0 s | ja |
-| tar.gz -6 | 532.39 | 1.01× | -0.3 % | 24 s | 2 s | ja |
-| tar.gz -9 (pigz) | 532.54 | 1.01× | -0.2 % | 2 s | 2 s | ja |
-| tar.bz2 -9 | 535.53 | 1.00× | +0.3 % | 78 s | 54 s | ja |
-| tar.zst -3 (dagens) | 533.86 | 1.01× | +0.0 % | 0 s | 0 s | ja |
-| tar.zst -19 --long | 532.02 | 1.01× | -0.3 % | 57 s | 0 s | ja |
-| tar.zst -22 --ultra | 532.03 | 1.01× | -0.3 % | 266 s | 1 s | ja |
-| tar.xz -9e | 532.86 | 1.01× | -0.2 % | 154 s | 5 s | ja |
-| **nvz snabb** | 536.75 | 1.00× | +0.5 % | 2 s | 1 s | ja |
-| **nvz utan knep** | 532.25 | 1.01× | -0.3 % | 45 s | 1 s | ja |
-| **nvz normal** | 532.25 | 1.01× | -0.3 % | 43 s | 1 s | ja |
-| **nvz liten** | 532.25 | 1.01× | -0.3 % | 43 s | 1 s | ja |
+| tar (okomprimerad) | 409,37 | 1,00× | +0,8 % | 2 s | 0 s | ja |
+| tar.gz -6 | 405,81 | 1,01× | −0,1 % | 19 s | 2 s | ja |
+| tar.gz -9 (pigz) | 406,04 | 1,01× | −0,1 % | 1 s | 2 s | ja |
+| tar.bz2 -9 | 404,94 | 1,01× | −0,3 % | 57 s | 41 s | ja |
+| tar.zst -3 (dagens) | 406,30 | 1,01× | +0,0 % | **0 s** | 0 s | ja |
+| tar.zst -19 --long | 405,09 | 1,01× | −0,3 % | 53 s | 0 s | ja |
+| tar.zst -22 --ultra | 405,09 | 1,01× | −0,3 % | 225 s | 0 s | ja |
+| tar.xz -9e | 405,43 | 1,01× | −0,2 % | 157 s | 4 s | ja |
+| **nvz snabb** | 408,51 | 1,00× | +0,5 % | 1 s | 1 s | ja |
+| **nvz utan knep** | 406,37 | 1,01× | +0,0 % | 12 s | 1 s | ja |
+| **nvz normal** | **345,09** | 1,18× | −15,1 % | 49 s | 17 s | ja |
+| **nvz liten** | **345,09** | 1,18× | −15,1 % | 55 s | 17 s | ja |
 
-### Arkiv (zip/tar.gz) — 391.8 MiB i 133 filer
-
-| packare | storlek MiB | kvot | mot dagens | packtid | uppacktid | exakt |
-|:--|--:|--:|--:|--:|--:|:-:|
-| tar (okomprimerad) | 391.93 | 1.00× | +2.7 % | 1 s | 0 s | ja |
-| tar.gz -6 | 380.05 | 1.03× | -0.5 % | 18 s | 2 s | ja |
-| tar.gz -9 (pigz) | 380.14 | 1.03× | -0.4 % | 1 s | 2 s | ja |
-| tar.bz2 -9 | 384.49 | 1.02× | +0.7 % | 56 s | 39 s | ja |
-| tar.zst -3 (dagens) | 381.78 | 1.03× | +0.0 % | 0 s | 1 s | ja |
-| tar.zst -19 --long | 261.37 | 1.50× | -31.5 % | 47 s | 0 s | ja |
-| tar.zst -22 --ultra | 242.77 | 1.61× | -36.4 % | 154 s | 1 s | ja |
-| tar.xz -9e | 251.75 | 1.56× | -34.1 % | 144 s | 7 s | ja |
-| **nvz snabb** | 329.03 | 1.19× | -13.8 % | 1 s | 1 s | ja |
-| **nvz utan knep** | 350.70 | 1.12× | -8.1 % | 46 s | 1 s | ja |
-| **nvz normal** | 291.25 | 1.35× | -23.7 % | 46 s | 1 s | ja |
-| **nvz liten** | 291.25 | 1.35× | -23.7 % | 46 s | 1 s | ja |
-
-### Loggfiler — 238.3 MiB i 76 filer
+### Bilder (GIF) — 27 4 MiB i 105 filer
 
 | packare | storlek MiB | kvot | mot dagens | packtid | uppacktid | exakt |
 |:--|--:|--:|--:|--:|--:|:-:|
-| tar (okomprimerad) | 238.39 | 1.00× | +965.0 % | 0 s | 0 s | ja |
-| tar.gz -6 | 30.46 | 7.82× | +36.1 % | 4 s | 1 s | ja |
-| tar.gz -9 (pigz) | 29.03 | 8.21× | +29.7 % | 1 s | 1 s | ja |
-| tar.bz2 -9 | 18.92 | 12.60× | -15.5 % | 32 s | 6 s | ja |
-| tar.zst -3 (dagens) | 22.38 | 10.65× | +0.0 % | 0 s | 0 s | ja |
-| tar.zst -19 --long | 13.09 | 18.21× | -41.5 % | 113 s | 0 s | ja |
-| tar.zst -22 --ultra | 12.92 | 18.45× | -42.3 % | 986 s | 0 s | ja |
-| tar.xz -9e | 11.84 | 20.12× | -47.1 % | 897 s | 1 s | ja |
-| **nvz snabb** | 22.41 | 10.63× | +0.1 % | 2 s | 1 s | ja |
-| **nvz utan knep** | 11.97 | 19.91× | -46.5 % | 940 s | 2 s | ja |
-| **nvz normal** | 11.97 | 19.91× | -46.5 % | 938 s | 2 s | ja |
-| **nvz liten** | 10.03 | 23.77× | -55.2 % | 247 s | 221 s | ja |
+| tar (okomprimerad) | 27,62 | 0,99× | +2,1 % | 0 s | 0 s | ja |
+| tar.gz -6 | 27,18 | 1,01× | +0,5 % | 1 s | 0 s | ja |
+| tar.gz -9 (pigz) | 27,19 | 1,01× | +0,6 % | 0 s | 0 s | ja |
+| tar.bz2 -9 | 27,28 | 1,00× | +0,9 % | 4 s | 3 s | ja |
+| tar.zst -3 (dagens) | 27,04 | 1,01× | +0,0 % | **0 s** | 0 s | ja |
+| tar.zst -19 --long | 14,18 | 1,93× | −47,6 % | 4 s | 0 s | ja |
+| tar.zst -22 --ultra | 14,18 | 1,93× | −47,6 % | 5 s | 0 s | ja |
+| tar.xz -9e | 14,19 | 1,93× | −47,5 % | 8 s | 0 s | ja |
+| **nvz snabb** | 14,44 | 1,90× | −46,6 % | 0 s | 0 s | ja |
+| **nvz utan knep** | 14,18 | 1,93× | −47,6 % | 6 s | 0 s | ja |
+| **nvz normal** | **14,18** | 1,93× | −47,6 % | 7 s | 0 s | ja |
+| **nvz liten** | **14,18** | 1,93× | −47,6 % | 7 s | 0 s | ja |
 
-### Blandat projektträd (symbios-3d) — 1 814.4 MiB i 15 139 filer
-
-| packare | storlek MiB | kvot | mot dagens | packtid | uppacktid | exakt |
-|:--|--:|--:|--:|--:|--:|:-:|
-| tar (okomprimerad) | 1 804.14 | 1.01× | +298.4 % | 7 s | 2 s | ja |
-| tar.gz -6 | 494.04 | 3.67× | +9.1 % | 99 s | 10 s | ja |
-| tar.gz -9 (pigz) | 489.62 | 3.71× | +8.1 % | 19 s | 9 s | ja |
-| tar.bz2 -9 | 442.88 | 4.10× | -2.2 % | 208 s | 82 s | ja |
-| tar.zst -3 (dagens) | 452.83 | 4.01× | +0.0 % | 2 s | 3 s | ja |
-| tar.zst -19 --long | 319.30 | 5.68× | -29.5 % | 149 s | 4 s | ja |
-| tar.zst -22 --ultra | 301.21 | 6.02× | -33.5 % | 623 s | 4 s | ja |
-| tar.xz -9e | 297.54 | 6.10× | -34.3 % | 289 s | 5 s | ja |
-| **nvz snabb** | 407.37 | 4.45× | -10.0 % | 14 s | 4 s | ja |
-| **nvz normal** | 282.25 | 6.43× | -37.7 % | 315 s | 8 s | ja |
-| **nvz liten** | 279.10 | 6.50× | -38.4 % | 325 s | 207 s | ja |
-
-### Silesia (standardkorpus) — 202.1 MiB i 12 filer
+### Film (h264/VP9) — 536 7 MiB i 67 filer
 
 | packare | storlek MiB | kvot | mot dagens | packtid | uppacktid | exakt |
 |:--|--:|--:|--:|--:|--:|:-:|
-| tar (okomprimerad) | 202.14 | 1.00× | +220.1 % | 0 s | 0 s | ja |
-| tar.gz -6 | 65.06 | 3.11× | +3.0 % | 12 s | 1 s | ja |
-| tar.gz -9 (pigz) | 64.52 | 3.13× | +2.2 % | 2 s | 1 s | ja |
-| tar.bz2 -9 | 52.04 | 3.88× | -17.6 % | 24 s | 10 s | ja |
-| tar.zst -3 (dagens) | 63.15 | 3.20× | +0.0 % | 0 s | 0 s | ja |
-| tar.zst -19 --long | 50.17 | 4.03× | -20.6 % | 63 s | 0 s | ja |
-| tar.zst -22 --ultra | 49.82 | 4.06× | -21.1 % | 179 s | 0 s | ja |
-| tar.xz -9e | 46.17 | 4.38× | -26.9 % | 158 s | 3 s | ja |
-| **nvz snabb** | 63.16 | 3.20× | +0.0 % | 1 s | 0 s | ja |
-| **nvz utan knep** | 46.16 | 4.38× | -26.9 % | 94 s | 2 s | ja |
-| **nvz normal** | 46.16 | 4.38× | -26.9 % | 94 s | 2 s | ja |
-| **nvz liten** | 43.54 | 4.64× | -31.0 % | 102 s | 100 s | ja |
+| tar (okomprimerad) | 536,82 | 1,00× | +0,6 % | 1 s | 0 s | ja |
+| tar.gz -6 | 532,39 | 1,01× | −0,3 % | 24 s | 2 s | ja |
+| tar.gz -9 (pigz) | 532,54 | 1,01× | −0,2 % | 2 s | 2 s | ja |
+| tar.bz2 -9 | 535,53 | 1,00× | +0,3 % | 78 s | 54 s | ja |
+| tar.zst -3 (dagens) | 533,86 | 1,01× | +0,0 % | **0 s** | 0 s | ja |
+| tar.zst -19 --long | **532,02** | 1,01× | −0,3 % | 57 s | 0 s | ja |
+| tar.zst -22 --ultra | 532,03 | 1,01× | −0,3 % | 266 s | 1 s | ja |
+| tar.xz -9e | 532,86 | 1,01× | −0,2 % | 154 s | 5 s | ja |
+| **nvz snabb** | 536,75 | 1,00× | +0,5 % | 2 s | 1 s | ja |
+| **nvz utan knep** | 532,25 | 1,01× | −0,3 % | 45 s | 1 s | ja |
+| **nvz normal** | 532,25 | 1,01× | −0,3 % | 43 s | 1 s | ja |
+| **nvz liten** | 532,25 | 1,01× | −0,3 % | 43 s | 1 s | ja |
 
-### enwik8 (standardkorpus) — 95.4 MiB i 1 filer
+### Arkiv (zip/tar.gz) — 391 8 MiB i 133 filer
 
 | packare | storlek MiB | kvot | mot dagens | packtid | uppacktid | exakt |
 |:--|--:|--:|--:|--:|--:|:-:|
-| tar (okomprimerad) | 95.37 | 1.00× | +182.1 % | 0 s | 0 s | ja |
-| tar.gz -6 | 34.83 | 2.74× | +3.0 % | 7 s | 1 s | ja |
-| tar.gz -9 (pigz) | 34.80 | 2.74× | +2.9 % | 1 s | 1 s | ja |
-| tar.bz2 -9 | 27.66 | 3.45× | -18.2 % | 11 s | 6 s | ja |
-| tar.zst -3 (dagens) | 33.80 | 2.82× | +0.0 % | 0 s | 0 s | ja |
-| tar.zst -19 --long | 25.18 | 3.79× | -25.5 % | 61 s | 0 s | ja |
-| tar.zst -22 --ultra | 24.11 | 3.96× | -28.7 % | 118 s | 0 s | ja |
-| tar.xz -9e | 23.68 | 4.03× | -29.9 % | 121 s | 1 s | ja |
-| **nvz snabb** | 33.80 | 2.82× | +0.0 % | 1 s | 0 s | ja |
-| **nvz utan knep** | 23.68 | 4.03× | -29.9 % | 124 s | 2 s | ja |
-| **nvz normal** | 23.68 | 4.03× | -29.9 % | 126 s | 2 s | ja |
-| **nvz liten** | 20.43 | 4.67× | -39.6 % | 133 s | 135 s | ja |
+| tar (okomprimerad) | 391,93 | 1,00× | +2,7 % | 1 s | 0 s | ja |
+| tar.gz -6 | 380,05 | 1,03× | −0,5 % | 18 s | 2 s | ja |
+| tar.gz -9 (pigz) | 380,14 | 1,03× | −0,4 % | 1 s | 2 s | ja |
+| tar.bz2 -9 | 384,49 | 1,02× | +0,7 % | 56 s | 39 s | ja |
+| tar.zst -3 (dagens) | 381,78 | 1,03× | +0,0 % | **0 s** | 1 s | ja |
+| tar.zst -19 --long | 261,37 | 1,50× | −31,5 % | 47 s | 0 s | ja |
+| tar.zst -22 --ultra | **242,77** | 1,61× | −36,4 % | 154 s | 1 s | ja |
+| tar.xz -9e | 251,75 | 1,56× | −34,1 % | 144 s | 7 s | ja |
+| **nvz snabb** | 329,03 | 1,19× | −13,8 % | 2 s | 1 s | ja |
+| **nvz utan knep** | 350,70 | 1,12× | −8,1 % | 44 s | 1 s | ja |
+| **nvz normal** | 291,25 | 1,35× | −23,7 % | 44 s | 1 s | ja |
+| **nvz liten** | 291,25 | 1,35× | −23,7 % | 44 s | 1 s | ja |
+
+### Loggfiler — 238 3 MiB i 76 filer
+
+| packare | storlek MiB | kvot | mot dagens | packtid | uppacktid | exakt |
+|:--|--:|--:|--:|--:|--:|:-:|
+| tar (okomprimerad) | 238,39 | 1,00× | +965,0 % | 0 s | 0 s | ja |
+| tar.gz -6 | 30,46 | 7,82× | +36,1 % | 4 s | 1 s | ja |
+| tar.gz -9 (pigz) | 29,03 | 8,21× | +29,7 % | 1 s | 1 s | ja |
+| tar.bz2 -9 | 18,92 | 12,60× | −15,5 % | 32 s | 6 s | ja |
+| tar.zst -3 (dagens) | 22,38 | 10,65× | +0,0 % | **0 s** | 0 s | ja |
+| tar.zst -19 --long | 13,09 | 18,21× | −41,5 % | 113 s | 0 s | ja |
+| tar.zst -22 --ultra | 12,92 | 18,45× | −42,3 % | 986 s | 0 s | ja |
+| tar.xz -9e | 11,84 | 20,12× | −47,1 % | 897 s | 1 s | ja |
+| **nvz snabb** | 22,41 | 10,63× | +0,1 % | 2 s | 1 s | ja |
+| **nvz utan knep** | 11,97 | 19,91× | −46,5 % | 940 s | 2 s | ja |
+| **nvz normal** | 11,97 | 19,91× | −46,5 % | 938 s | 2 s | ja |
+| **nvz liten** | **10,03** | 23,77× | −55,2 % | 247 s | 221 s | ja |
+
+### Blandat projektträd (symbios-3d) — 1 814 4 MiB i 15 139 filer
+
+| packare | storlek MiB | kvot | mot dagens | packtid | uppacktid | exakt |
+|:--|--:|--:|--:|--:|--:|:-:|
+| tar (okomprimerad) | 1 804,14 | 1,01× | +298,4 % | 7 s | 2 s | ja |
+| tar.gz -6 | 494,04 | 3,67× | +9,1 % | 99 s | 10 s | ja |
+| tar.gz -9 (pigz) | 489,62 | 3,71× | +8,1 % | 19 s | 9 s | ja |
+| tar.bz2 -9 | 442,88 | 4,10× | −2,2 % | 208 s | 82 s | ja |
+| tar.zst -3 (dagens) | 452,83 | 4,01× | +0,0 % | **2 s** | 3 s | ja |
+| tar.zst -19 --long | 319,30 | 5,68× | −29,5 % | 149 s | 4 s | ja |
+| tar.zst -22 --ultra | 301,21 | 6,02× | −33,5 % | 623 s | 4 s | ja |
+| tar.xz -9e | 297,54 | 6,10× | −34,3 % | 289 s | 5 s | ja |
+| **nvz snabb** | 407,37 | 4,45× | −10,0 % | 14 s | 4 s | ja |
+| **nvz normal** | 282,25 | 6,43× | −37,7 % | 315 s | 8 s | ja |
+| **nvz liten** | **279,10** | 6,50× | −38,4 % | 325 s | 207 s | ja |
+
+### Silesia (standardkorpus) — 202 1 MiB i 12 filer
+
+| packare | storlek MiB | kvot | mot dagens | packtid | uppacktid | exakt |
+|:--|--:|--:|--:|--:|--:|:-:|
+| tar (okomprimerad) | 202,14 | 1,00× | +220,1 % | **0 s** | 0 s | ja |
+| tar.gz -6 | 65,06 | 3,11× | +3,0 % | 12 s | 1 s | ja |
+| tar.gz -9 (pigz) | 64,52 | 3,13× | +2,2 % | 2 s | 1 s | ja |
+| tar.bz2 -9 | 52,04 | 3,88× | −17,6 % | 24 s | 10 s | ja |
+| tar.zst -3 (dagens) | 63,15 | 3,20× | +0,0 % | 0 s | 0 s | ja |
+| tar.zst -19 --long | 50,17 | 4,03× | −20,6 % | 63 s | 0 s | ja |
+| tar.zst -22 --ultra | 49,82 | 4,06× | −21,1 % | 179 s | 0 s | ja |
+| tar.xz -9e | 46,17 | 4,38× | −26,9 % | 158 s | 3 s | ja |
+| **nvz snabb** | 63,16 | 3,20× | +0,0 % | 1 s | 0 s | ja |
+| **nvz utan knep** | 46,16 | 4,38× | −26,9 % | 94 s | 2 s | ja |
+| **nvz normal** | 46,16 | 4,38× | −26,9 % | 94 s | 2 s | ja |
+| **nvz liten** | **43,54** | 4,64× | −31,0 % | 102 s | 100 s | ja |
+
+### enwik8 (standardkorpus) — 95 4 MiB i 1 filer
+
+| packare | storlek MiB | kvot | mot dagens | packtid | uppacktid | exakt |
+|:--|--:|--:|--:|--:|--:|:-:|
+| tar (okomprimerad) | 95,37 | 1,00× | +182,1 % | **0 s** | 0 s | ja |
+| tar.gz -6 | 34,83 | 2,74× | +3,0 % | 7 s | 1 s | ja |
+| tar.gz -9 (pigz) | 34,80 | 2,74× | +2,9 % | 1 s | 1 s | ja |
+| tar.bz2 -9 | 27,66 | 3,45× | −18,2 % | 11 s | 6 s | ja |
+| tar.zst -3 (dagens) | 33,80 | 2,82× | +0,0 % | 0 s | 0 s | ja |
+| tar.zst -19 --long | 25,18 | 3,79× | −25,5 % | 61 s | 0 s | ja |
+| tar.zst -22 --ultra | 24,11 | 3,96× | −28,7 % | 118 s | 0 s | ja |
+| tar.xz -9e | 23,68 | 4,03× | −29,9 % | 121 s | 1 s | ja |
+| **nvz snabb** | 33,80 | 2,82× | +0,0 % | 1 s | 0 s | ja |
+| **nvz utan knep** | 23,68 | 4,03× | −29,9 % | 124 s | 2 s | ja |
+| **nvz normal** | 23,68 | 4,03× | −29,9 % | 126 s | 2 s | ja |
+| **nvz liten** | **20,43** | 4,67× | −39,6 % | 133 s | 135 s | ja |
 
 <!-- SLUT TABELLER -->
 
@@ -619,11 +626,18 @@ användas. Vill du ha arkivet mindre: `--läge liten`. Vill du ha det fort:
 ## Hur den är byggd
 
 ```
-src/nvz.py    packaren: klassning, dedup, sortering, block, register
-src/png.py       PNG-utvecklingen och receptsökningen
-src/jpeg.py      skalet runt nvjpg, och delningen i huvud och ström
-src/nvjpg.c      förlustfri JPEG-ompackning (aritmetisk kodare + modeller)
-src/nvcm.c        kontextblandande kompressor för text och källkod
+src/cpp/         nvz: EN C++-binär — arkivet, kodekarna, gzip-ytan
+  huvud.cpp        kommandoraden och underkommandona
+  yta.cpp          gzip-ytan: filer, kataloger, rör, slutstatus
+  arkiv.cpp        klassning, dedup, sortering, block, register (v2 + läser v1)
+  kodek.cpp        zstd/xz/zlib i process; nvcm och nvlz via arbetare
+  omvandla.cpp     PNG-receptsökningen och JPEG-delningen
+  trad.cpp         trädvandring och metadata
+  sjalv.cpp        arbetarprocesser: binären startar sig själv
+src/nvcm.c       kontextblandande kompressor (inlänkad + egen binär)
+src/nvjpg.c      förlustfri JPEG-ompackning (inlänkad + egen binär)
+src/nvgpu.c      GPU-mätinstrumentet (eget program, vulkan)
+src/nvz.py       pythonversionen — referens, anropas inte
 korpus/          bygger testkorpusarna som hårdlänkar
 matning/         mätharness och rapportgenerator
 experiment/      försöken som designbesluten kommer ur

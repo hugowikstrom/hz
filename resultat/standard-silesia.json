@@ -69,8 +69,8 @@
     "uppackmibs": 75.5,
     "exakt": true
    },
-   "nvz": {
-    "kodek": "nvz",
+   "nvcm": {
+    "kodek": "nvcm",
     "byte": 2234894,
     "packsek": 12.2,
     "uppacksek": 13.48,
@@ -148,8 +148,8 @@
     "uppackmibs": 56.3,
     "exakt": true
    },
-   "nvz": {
-    "kodek": "nvz",
+   "nvcm": {
+    "kodek": "nvcm",
     "byte": 14366242,
     "packsek": 61.35,
     "uppacksek": 67.73,
@@ -227,8 +227,8 @@
     "uppackmibs": 47.8,
     "exakt": true
    },
-   "nvz": {
-    "kodek": "nvz",
+   "nvcm": {
+    "kodek": "nvcm",
     "byte": 2205358,
     "packsek": 10.55,
     "uppacksek": 11.53,
@@ -306,8 +306,8 @@
     "uppackmibs": 216.9,
     "exakt": true
    },
-   "nvz": {
-    "kodek": "nvz",
+   "nvcm": {
+    "kodek": "nvcm",
     "byte": 1505038,
     "packsek": 25.45,
     "uppacksek": 28.01,
@@ -385,8 +385,8 @@
     "uppackmibs": 35.4,
     "exakt": true
    },
-   "nvz": {
-    "kodek": "nvz",
+   "nvcm": {
+    "kodek": "nvcm",
     "byte": 2379789,
     "packsek": 8.3,
     "uppacksek": 9.16,
@@ -464,8 +464,8 @@
     "uppackmibs": 57.6,
     "exakt": true
    },
-   "nvz": {
-    "kodek": "nvz",
+   "nvcm": {
+    "kodek": "nvcm",
     "byte": 2395972,
     "packsek": 12.68,
     "uppacksek": 14.04,
@@ -543,8 +543,8 @@
     "uppackmibs": 82.3,
     "exakt": true
    },
-   "nvz": {
-    "kodek": "nvz",
+   "nvcm": {
+    "kodek": "nvcm",
     "byte": 1053488,
     "packsek": 7.35,
     "uppacksek": 7.94,
@@ -622,8 +622,8 @@
     "uppackmibs": 89.7,
     "exakt": true
    },
-   "nvz": {
-    "kodek": "nvz",
+   "nvcm": {
+    "kodek": "nvcm",
     "byte": 3377043,
     "packsek": 22.34,
     "uppacksek": 24.74,
@@ -701,8 +701,8 @@
     "uppackmibs": 29.7,
     "exakt": true
    },
-   "nvz": {
-    "kodek": "nvz",
+   "nvcm": {
+    "kodek": "nvcm",
     "byte": 4509261,
     "packsek": 10.72,
     "uppacksek": 11.86,
@@ -780,8 +780,8 @@
     "uppackmibs": 84.8,
     "exakt": true
    },
-   "nvz": {
-    "kodek": "nvz",
+   "nvcm": {
+    "kodek": "nvcm",
     "byte": 6317041,
     "packsek": 46.62,
     "uppacksek": 50.71,
@@ -859,8 +859,8 @@
     "uppackmibs": 26.7,
     "exakt": true
    },
-   "nvz": {
-    "kodek": "nvz",
+   "nvcm": {
+    "kodek": "nvcm",
     "byte": 3742075,
     "packsek": 11.86,
     "uppacksek": 12.83,
@@ -938,8 +938,8 @@
     "uppackmibs": 115.0,
     "exakt": true
    },
-   "nvz": {
-    "kodek": "nvz",
+   "nvcm": {
+    "kodek": "nvcm",
     "byte": 353039,
     "packsek": 5.19,
     "uppacksek": 5.62,
@@ -1000,7 +1000,7 @@
    "bpb": 1.8291,
    "exakt": true
   },
-  "nvz": {
+  "nvcm": {
    "byte": 44439240,
    "packsek": 234.61,
    "uppacksek": 257.65,

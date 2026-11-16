@@ -17,7 +17,9 @@ nvz \- innehållsmedveten arkivpackare
 .I katalog
 .SH BESKRIVNING
 .B nvz
-packar ett katalogträd till ett arkiv. Till skillnad från
+packar ett katalogträd till ett arkiv. Den är EN binär: kompressorerna
+nvcm och nvjpg är inlänkade, och zstd, xz och zlib anropas som bibliotek i
+samma process \(em inga yttre program, ingen tolk. Till skillnad från
 .BR tar (1)
 i rör med en komprimerare vet nvz vad den packar, och gör fem saker som
 röret inte kan göra:
@@ -53,14 +55,14 @@ med originalet innan det godtas. Går det inte ihop lagras filen rå. Arkivet
 .SS packa
 .TP
 .BI \-\-läge " snabb|normal|liten|gpu"
+.B liten
+är STANDARD: omvandlingarna på, och
+.BR nvcm (1)
+får tävla om textblocken \(em det minsta arkivet nvz kan göra.
+.B normal
+hoppar över nvcm (snabbare packning, något större arkiv).
 .B snabb
 motsvarar dagens arkivskript: zstd \-3 och inga omvandlingar.
-.B normal
-slår på omvandlingarna och väljer zstd \-19 eller xz efter prov.
-.B liten
-låter dessutom
-.BR nvz (1)
-tävla om textblocken.
 .B gpu
 låter kodeken nvlz tävla; se ANMÄRKNINGAR.
 .TP
@@ -88,7 +90,7 @@ Säg ingenting.
 .SH EXEMPEL
 .RS
 .EX
-nvz packa ~/projekt projekt.nv \-\-läge normal
+nvz packa ~/projekt projekt.nv
 nvz lista projekt.nv
 nvz packa\-upp projekt.nv /tmp/åter
 nvz prova ~/projekt        # packa, packa upp, jämför bit för bit

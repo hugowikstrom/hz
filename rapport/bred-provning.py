@@ -12,6 +12,7 @@ from pathlib import Path
 ROT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROT / 'matning'))
 import rapport as r
+from rapport import tal
 
 MIB = 1048576
 NYA = {'gif': 'Bilder (GIF)', 'film': 'Film (h264 och VP9)',
@@ -45,14 +46,16 @@ def oversikt() -> str:
                  key=lambda x: x['byte'])
         bk = next(k for k in m if m[k] is bast_klassisk)
         nk = next(k for k in m if m[k] is nv)
+        def procent(x):
+            return ('+' if x >= 0 else '−') + tal(abs(x), 1) + ' %'
         rader.append((
             rubrik,
-            f'{d["rabyte"]/MIB:,.0f}'.replace(',', ' '),
-            f'{idag["byte"]/MIB:,.1f}'.replace(',', ' '),
-            f'{bast_klassisk["byte"]/MIB:,.1f} ({bk.replace("tar.", "").replace(" --long", "").replace(" --ultra", "")})'.replace(',', ' '),
-            f'{nv["byte"]/MIB:,.1f} ({nk.split()[1]})'.replace(',', ' '),
-            f'{100*(nv["byte"]-idag["byte"])/idag["byte"]:+.1f} %',
-            f'{100*(nv["byte"]-bast_klassisk["byte"])/bast_klassisk["byte"]:+.1f} %',
+            tal(d["rabyte"]/MIB, 0),
+            tal(idag["byte"]/MIB, 1),
+            tal(bast_klassisk["byte"]/MIB, 1) + ' (' + bk.replace("tar.", "").replace(" --long", "").replace(" --ultra", "") + ')',
+            tal(nv["byte"]/MIB, 1) + ' (' + nk.split()[1] + ')',
+            procent(100*(nv["byte"]-idag["byte"])/idag["byte"]),
+            procent(100*(nv["byte"]-bast_klassisk["byte"])/bast_klassisk["byte"]),
             f'{nv["packsek"]:.0f} / {bast_klassisk["packsek"]:.0f} s',
         ))
     rubrik = ('korpus', 'rå MiB', 'dagens MiB', 'bästa klassiska MiB', 'bästa nvz MiB',
@@ -95,8 +98,9 @@ def dubbletter() -> str:
     ut = ['| korpus | filer | unika filer | rå MiB | exakta dubbletter MiB | andel |',
           '|:--|--:|--:|--:|--:|--:|']
     for namn, v in d.items():
-        ut.append(f'| {namn} | {v["filer"]:,} | {v["unika"]:,} | {v["rabyte"]/MIB:,.1f} | '
-                  f'{v["dubblettbyte"]/MIB:,.1f} | {v["andel"]:.1f} % |'.replace(',', ' '))
+        ut.append(f'| {namn} | {v["filer"]:,} | {v["unika"]:,} | '.replace(',', ' ') +
+                  f'{tal(v["rabyte"]/MIB, 1)} | {tal(v["dubblettbyte"]/MIB, 1)} | '
+                  f'{tal(v["andel"], 1)} % |')
     return '\n'.join(ut)
 
 
@@ -114,9 +118,11 @@ def standard() -> str:
             fet = kodek == 'nvcm'
             namn = f'**{kodek}**' if fet else kodek
             rader.append(
-                f'| {namn} | {v["byte"]:,} | {v["kvot"]:.3f}× | {v["bpb"]:.3f} | '
-                f'{rå/MIB/max(v["packsek"],1e-9):,.1f} | {rå/MIB/max(v["uppacksek"],1e-9):,.1f} | '
-                f'{"ja" if v["exakt"] else "NEJ"} |'.replace(',', ' '))
+                f'| {namn} | ' + f'{v["byte"]:,}'.replace(',', ' ') +
+                f' | {tal(v["kvot"], 3)}× | {tal(v["bpb"], 3)} | '
+                f'{tal(rå/MIB/max(v["packsek"],1e-9), 1)} | '
+                f'{tal(rå/MIB/max(v["uppacksek"],1e-9), 1)} | '
+                f'{"ja" if v["exakt"] else "NEJ"} |')
         delar.append(f'**{rubrik}** — {rå:,} byte'.replace(',', ' ') + '\n\n' + '\n'.join(rader))
     return '\n\n'.join(delar) if delar else '*(standardbenchmarken inte körd)*'
 
@@ -145,8 +151,9 @@ def silesia_per_fil() -> str:
             celler.append(f'{v["byte"]:,}'.replace(',', ' ') if v else '—')
         andra = [rad[k]['byte'] for k in rad if k != 'nvcm']
         mot = 100 * (rad['nvcm']['byte'] - min(andra)) / min(andra)
+        mottext = ('+' if mot >= 0 else '−') + tal(abs(mot), 1) + ' %'
         ut.append(f'| `{namn}` | {OM.get(namn, "")} | ' + f'{råbyte:,}'.replace(',', ' ') +
-                  ' | ' + ' | '.join(celler) + f' | {mot:+.1f} % |')
+                  ' | ' + ' | '.join(celler) + f' | {mottext} |')
     return '\n'.join(ut)
 
 
@@ -166,17 +173,17 @@ def enwik8_plats() -> str:
     s = d.get('summor', {})
     if 'nvcm' not in s: return '*(nvcm inte mätt på enwik8)*'
     nv = s['nvcm']
-    rader = [f'Vår egen mätning: **nvcm gör enwik8 på {nv["byte"]:,} byte, '
-             f'{nv["bpb"]:.3f} bits/byte**'.replace(',', ' ')]
+    rader = ['Vår egen mätning: **nvcm gör enwik8 på ' + f'{nv["byte"]:,}'.replace(',', ' ') +
+             f' byte, {tal(nv["bpb"], 3)} bits/byte**']
     egna = {k: v for k, v in s.items() if k != 'nvcm'}
     if egna:
         bast = min(egna.values(), key=lambda v: v['byte'])
         bastnamn = next(k for k, v in egna.items() if v is bast)
         d_proc = 100 * (nv['byte'] - bast['byte']) / bast['byte']
-        rader.append(f'— {abs(d_proc):.1f} % {"mindre" if d_proc < 0 else "större"} än '
-                     f'`{bastnamn}` på samma maskin ({bast["byte"]:,} byte, '
-                     f'{bast["bpb"]:.3f} bpb).'.replace(',', ' '))
-    takt = f'{nv["byte"]*8/100_000_000:.2f}'
+        rader.append(f'— {tal(abs(d_proc), 1)} % {"mindre" if d_proc < 0 else "större"} än '
+                     f'`{bastnamn}` på samma maskin (' + f'{bast["byte"]:,}'.replace(',', ' ') +
+                     f' byte, {tal(bast["bpb"], 3)} bpb).')
+    takt = tal(nv["byte"]*8/100_000_000)
     rader.append(f'\nMed {takt} bits/byte hamnar nvcm mellan ordbokspackarna '
                  'och de tunga kontextblandarna i tabellen ovan: den tar hem det '
                  'en ordbokspackare inte kan se, men den har åtta modeller där '
@@ -198,7 +205,7 @@ def tider() -> str:
             v = m.get(packare)
             if not v: return '—'
             s = v[nyckel]
-            return f'{rå/s:,.0f}'.replace(',', ' ') if s >= 0.05 else '>2 000'
+            return tal(rå/s, 0) if s >= 0.05 else '>2 000'
         ut.append(f'| {rubrik} | {fart("nvz normal")} | '
                   f'{fart("nvz normal", "uppacksek")} | {fart("tar.zst -3 (dagens)")} | '
                   f'{fart("tar.zst -19 --long")} | {fart("tar.xz -9e")} |')

@@ -23,6 +23,12 @@ KORPUS = {'kod': 'Programkod', 'png': 'Bilder (PNG)', 'foto': 'Foton (JPEG)',
 MIB = 1048576
 
 
+def tal(x, d=2):
+    """Svenskt talformat: decimalkomma, mellanslag som tusenavskiljare.
+    Tabellerna är svenska — då är 27.4 fel och 27,4 rätt."""
+    return f'{x:,.{d}f}'.replace(',', ' ').replace('.', ',')
+
+
 def läs(namn):
     f = ROT / 'resultat' / f'{namn}.json'
     return json.loads(f.read_text()) if f.exists() else None
@@ -33,13 +39,23 @@ def tabell(data, md=True):
     mät = data['matningar']
     bas = mät.get('tar.zst -3 (dagens)', {}).get('byte')
     rader = []
+    # Minsta arkiv och kortaste packtid markeras, så att kolumnjämförelsen
+    # går att göra med blicken i stället för med huvudräkning.
+    med = [m for namn in ORDNING if (m := mät.get(namn))]
+    minsta = min((m['byte'] for m in med), default=None)
+    snabbast = min((m['packsek'] for m in med), default=None)
     for namn in ORDNING:
         m = mät.get(namn)
         if not m: continue
-        mot = f'{100*(m["byte"]-bas)/bas:+.1f} %' if bas else '—'
-        rader.append((namn, f'{m["byte"]/MIB:,.2f}'.replace(',', ' '),
-                      f'{rå/m["byte"]:.2f}×', mot,
-                      f'{m["packsek"]:.0f} s', f'{m["uppacksek"]:.0f} s',
+        mot = (('+' if m['byte'] >= bas else '−') +
+               tal(abs(100*(m['byte']-bas)/bas), 1) + ' %') if bas else '—'
+        storlek = tal(m['byte']/MIB)
+        if m['byte'] == minsta: storlek = f'**{storlek}**'
+        ptid = f'{m["packsek"]:.0f} s'
+        if m['packsek'] == snabbast: ptid = f'**{ptid}**'
+        rader.append((namn, storlek,
+                      tal(rå/m['byte']) + '×', mot,
+                      ptid, f'{m["uppacksek"]:.0f} s',
                       'ja' if m.get('identisk') else 'NEJ'))
     rubrik = ('packare', 'storlek MiB', 'kvot', 'mot dagens', 'packtid', 'uppacktid', 'exakt')
     if md:
@@ -74,9 +90,9 @@ def main():
         d = läs(namn)
         if not d: continue
         rå = d['rabyte']
-        huvud = (f'### {rubrik} — {rå/MIB:,.1f} MiB i {d["filer"]:,} filer'
+        huvud = (f'### {rubrik} — {tal(rå/MIB, 1)} MiB i {d["filer"]:,} filer'
                  .replace(',', ' ')) if md else \
-                f'{rubrik} — {rå/MIB:.1f} MiB i {d["filer"]} filer'
+                f'{rubrik} — {tal(rå/MIB, 1)} MiB i {d["filer"]} filer'
         delar.append(huvud + '\n\n' + tabell(d, md))
     text = '\n\n'.join(delar)
     if '--in-i-readme' in sys.argv:

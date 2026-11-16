@@ -1,12 +1,33 @@
-# nvz: python-delen behöver inget bygge, C-delen gör det.
+# nvz är C++ sedan 2026-11-16: EN binär med nvcm och nvjpg inlänkade och
+# libzstd/liblzma/libz i process. Pythonversionen ligger kvar som referens i
+# src/nvz.py men byggs inte och anropas inte av någonting.
 CFLAGS ?= -O2 -Wall -Wextra -Wno-implicit-fallthrough
+CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra
+CPPKALLOR = src/cpp/huvud.cpp src/cpp/yta.cpp src/cpp/arkiv.cpp src/cpp/kodek.cpp \
+            src/cpp/omvandla.cpp src/cpp/trad.cpp src/cpp/json.cpp \
+            src/cpp/sjalv.cpp src/cpp/verktyg.cpp
+CPPOBJ = $(CPPKALLOR:src/cpp/%.cpp=src/cpp/%.o)
 
 # GPU-delen byggs bara om maskinen har förutsättningarna. Vulkanhuvudena och
 # glslc finns inte överallt, och resten av nvz ska gå att bygga utan dem.
 HAR_GPU := $(shell [ -f /usr/include/vulkan/vulkan.h ] && command -v glslc >/dev/null 2>&1 && echo ja)
 SPV = src/band.spv src/blake2b.spv src/matcher.spv
 
-all: src/nvjpg src/nvcm $(if $(HAR_GPU),gpu,utan-gpu)
+all: src/nvz src/nvjpg src/nvcm $(if $(HAR_GPU),gpu,utan-gpu)
+
+# --- nvz: C++-binären -------------------------------------------------------
+src/cpp/%.o: src/cpp/%.cpp src/cpp/nvz.hpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# nvcm.c och nvjpg.c kompileras som C och länkas in via wrappers som byter
+# bort deras main. De är samma filer som bygger de fristående binärerna.
+src/cpp/cwrap_nvcm.o: src/cpp/cwrap_nvcm.c src/nvcm.c
+	$(CC) $(CFLAGS) -c $< -o $@
+src/cpp/cwrap_nvjpg.o: src/cpp/cwrap_nvjpg.c src/nvjpg.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+src/nvz: $(CPPOBJ) src/cpp/cwrap_nvcm.o src/cpp/cwrap_nvjpg.o
+	$(CXX) $(CXXFLAGS) -o $@ $^ -lzstd -llzma -lz -lpthread
 
 src/nvjpg: src/nvjpg.c
 	$(CC) $(CFLAGS) -o $@ $<
@@ -43,11 +64,8 @@ LIBDIR  = $(DESTDIR)$(PREFIX)/lib/nvz
 MANDIR  = $(DESTDIR)$(PREFIX)/share/man/man1
 
 installera: all
-	install -d $(BINDIR) $(LIBDIR) $(MANDIR)
-	install -m 755 src/nvcm src/nvjpg $(BINDIR)
-	install -m 644 src/nvz.py src/png.py src/jpeg.py $(LIBDIR)
-	printf '#!/bin/sh\nexec python3 %s/nvz.py "$$@"\n' "$(PREFIX)/lib/nvz" > $(BINDIR)/nvz
-	chmod 755 $(BINDIR)/nvz
+	install -d $(BINDIR) $(MANDIR)
+	install -m 755 src/nvz src/nvcm src/nvjpg $(BINDIR)
 	install -m 644 man/nvcm.1 man/nvz.1 man/nvjpg.1 $(MANDIR)
 	@echo "installerat i $(PREFIX). Prova: man nvz"
 
@@ -62,36 +80,19 @@ man: man/nvcm.1 man/nvz.1 man/nvjpg.1
 	@for m in $^; do man --warnings -E UTF-8 -l $$m >/dev/null || exit 1; done
 	@echo "man-sidorna är rena mot groffs varningar"
 
-# EN FIL. gzip är ett program man kopierar; nvz är tre pythonmoduler och två
-# hjälpbinärer. `make enfil` buntar pythondelen till dist/nvz — en körbar fil
-# med shebang, byggd som zipapp. Hjälpbinärerna nvcm och nvjpg söks då i PATH
-# (se hjälpbinär() i nvz.py). Saknas de packar nvz ändå, men utan sina egna
-# omvandlingar — det är skillnaden mot gzip, och den står i README.
-enfil: dist/nvz
-
-dist/nvz: src/nvz.py src/png.py src/jpeg.py
-	@rm -rf .bygg-enfil && mkdir -p .bygg-enfil dist
-	# Koden får ett MODULNAMN och __main__ blir ett skal som importerar det.
-	# Process-poolen plockar isär sina uppgifter med pickle, och pickle sparar
-	# en funktion som "modul + namn". Ligger koden i __main__ kan barnprocessen
-	# inte importera den igen ur zipen, och poolen dör med BrokenProcessPool.
-	cp src/nvz.py .bygg-enfil/nvzkod.py
-	cp src/png.py src/jpeg.py .bygg-enfil/
-	printf 'import sys\nfrom nvzkod import main\nsys.exit(main())\n' > .bygg-enfil/__main__.py
-	python3 -m zipapp .bygg-enfil -o $@ -p "/usr/bin/env python3"
-	@chmod 755 $@ && rm -rf .bygg-enfil
-	@echo "$@  $$(stat -c%s $@) byte  (kräver python3; nvcm och nvjpg söks i PATH)"
-
+# EN FIL: det är nvz numera av sig själv — en statiskt länkbar C++-binär
+# med nvcm och nvjpg inbyggda. zipapp-målet som buntade pythonversionen
+# behövs inte längre och är borttaget.
 pdf: rapport/nvz-rapport.pdf
 
 rapport/nvz-rapport.pdf: rapport/bygg-tryck.py $(wildcard resultat/*.json)
 	bash rapport/bygg-pdf.sh
 
 rent:
-	rm -f src/nvjpg src/nvcm src/nvgpu $(SPV)
+	rm -f src/nvjpg src/nvcm src/nvgpu src/nvz src/cpp/*.o $(SPV)
 	rm -rf dist .bygg-enfil
 
-.PHONY: all prov pdf rent gpu utan-gpu installera avinstallera man enfil
+.PHONY: all prov pdf rent gpu utan-gpu installera avinstallera man
 
 src/nvcm: src/nvcm.c
 	$(CC) $(CFLAGS) -o $@ $<
