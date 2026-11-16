@@ -1,0 +1,91 @@
+{
+ "korpus": "silesia",
+ "rabyte": 211938580,
+ "filer": 12,
+ "matningar": {
+  "tar (okomprimerad)": {
+   "packare": "tar (okomprimerad)",
+   "byte": 211957760,
+   "packsek": 0.11,
+   "uppacksek": 0.13,
+   "identisk": true
+  },
+  "tar.gz -6": {
+   "packare": "tar.gz -6",
+   "byte": 68217945,
+   "packsek": 11.92,
+   "uppacksek": 1.23,
+   "identisk": true
+  },
+  "tar.gz -9 (pigz)": {
+   "packare": "tar.gz -9 (pigz)",
+   "byte": 67659202,
+   "packsek": 2.0,
+   "uppacksek": 1.17,
+   "identisk": true
+  },
+  "tar.bz2 -9": {
+   "packare": "tar.bz2 -9",
+   "byte": 54563025,
+   "packsek": 24.45,
+   "uppacksek": 10.1,
+   "identisk": true
+  },
+  "tar.zst -3 (dagens)": {
+   "packare": "tar.zst -3 (dagens)",
+   "byte": 66216171,
+   "packsek": 0.33,
+   "uppacksek": 0.35,
+   "identisk": true
+  },
+  "tar.zst -19 --long": {
+   "packare": "tar.zst -19 --long",
+   "byte": 52604283,
+   "packsek": 63.37,
+   "uppacksek": 0.48,
+   "identisk": true
+  },
+  "tar.zst -22 --ultra": {
+   "packare": "tar.zst -22 --ultra",
+   "byte": 52243182,
+   "packsek": 179.24,
+   "uppacksek": 0.47,
+   "identisk": true
+  },
+  "tar.xz -9e": {
+   "packare": "tar.xz -9e",
+   "byte": 48408228,
+   "packsek": 157.73,
+   "uppacksek": 2.68,
+   "identisk": true
+  },
+  "nvz snabb": {
+   "packare": "nvz snabb",
+   "byte": 66226869,
+   "packsek": 0.97,
+   "uppacksek": 0.5,
+   "identisk": true
+  },
+  "nvz normal": {
+   "packare": "nvz normal",
+   "byte": 48404802,
+   "packsek": 93.77,
+   "uppacksek": 2.36,
+   "identisk": true
+  },
+  "nvz liten": {
+   "packare": "nvz liten",
+   "byte": 45659844,
+   "packsek": 101.99,
+   "uppacksek": 99.87,
+   "identisk": true
+  },
+  "nvz utan knep": {
+   "packare": "nvz utan knep",
+   "byte": 48404803,
+   "packsek": 94.05,
+   "uppacksek": 2.35,
+   "identisk": true
+  }
+ }
+}

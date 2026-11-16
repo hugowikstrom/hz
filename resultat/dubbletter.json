@@ -1,0 +1,65 @@
+{
+ "kod": {
+  "filer": 5974,
+  "rabyte": 58017251,
+  "dubblettbyte": 382758,
+  "andel": 0.7,
+  "unika": 5898
+ },
+ "png": {
+  "filer": 4618,
+  "rabyte": 452014330,
+  "dubblettbyte": 129776531,
+  "andel": 28.7,
+  "unika": 1963
+ },
+ "foto": {
+  "filer": 1143,
+  "rabyte": 428360423,
+  "dubblettbyte": 45600,
+  "andel": 0.0,
+  "unika": 1142
+ },
+ "gif": {
+  "filer": 105,
+  "rabyte": 28726715,
+  "dubblettbyte": 13586436,
+  "andel": 47.3,
+  "unika": 59
+ },
+ "film": {
+  "filer": 67,
+  "rabyte": 562820616,
+  "dubblettbyte": 0,
+  "andel": 0.0,
+  "unika": 67
+ },
+ "arkiv": {
+  "filer": 133,
+  "rabyte": 410833681,
+  "dubblettbyte": 65826017,
+  "andel": 16.0,
+  "unika": 130
+ },
+ "logg": {
+  "filer": 76,
+  "rabyte": 249896132,
+  "dubblettbyte": 0,
+  "andel": 0.0,
+  "unika": 74
+ },
+ "silesia": {
+  "filer": 12,
+  "rabyte": 211938580,
+  "dubblettbyte": 0,
+  "andel": 0.0,
+  "unika": 12
+ },
+ "enwik8": {
+  "filer": 1,
+  "rabyte": 100000000,
+  "dubblettbyte": 0,
+  "andel": 0.0,
+  "unika": 1
+ }
+}

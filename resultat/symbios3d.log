@@ -1,0 +1,12 @@
+symbios3d: 1814.4 MiB i 15139 filer
+  tar (okomprimerad)       1804.14 MiB  x 1.01  pack     6.6s  upp    1.5s  exakt
+  tar.zst -3 (dagens)       452.83 MiB  x 4.01  pack     2.1s  upp    3.1s  exakt
+  nvpack snabb              407.37 MiB  x 4.45  pack    14.2s  upp    3.8s  exakt
+  tar.zst -19 --long        319.30 MiB  x 5.68  pack   148.9s  upp    4.3s  exakt
+  nvpack normal             282.25 MiB  x 6.43  pack   315.4s  upp    8.3s  exakt
+  nvpack liten              279.10 MiB  x 6.50  pack   325.4s  upp  207.4s  exakt
+  tar.xz -9e                297.54 MiB  x 6.10  pack   289.3s  upp    5.3s  exakt
+  tar.zst -22 --ultra       301.21 MiB  x 6.02  pack   622.9s  upp    4.1s  exakt
+  tar.gz -6                 494.04 MiB  x 3.67  pack    98.9s  upp   10.0s  exakt
+  tar.gz -9 (pigz)          489.62 MiB  x 3.71  pack    19.1s  upp    9.4s  exakt
+  tar.bz2 -9                442.88 MiB  x 4.10  pack   207.6s  upp   82.1s  exakt

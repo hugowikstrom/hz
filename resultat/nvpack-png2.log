@@ -1,0 +1,9 @@
+png: 431.0 MiB i 4617 filer
+  nvpack snabb              279.28 MiB  x 1.54  pack     2.6s  upp    0.9s  exakt
+  nvpack utan knep          256.42 MiB  x 1.68  pack    45.0s  upp    1.2s  exakt
+  nvpack normal             208.88 MiB  x 2.06  pack   254.0s  upp    9.5s  exakt
+  nvpack liten              208.88 MiB  x 2.06  pack   250.8s  upp    9.3s  exakt
+foto: 408.5 MiB i 1143 filer
+  nvpack utan knep          408.21 MiB  x 1.00  pack    13.8s  upp    0.5s  exakt
+  nvpack normal             345.07 MiB  x 1.18  pack    21.6s  upp    7.8s  exakt
+  nvpack liten              345.07 MiB  x 1.18  pack    40.3s  upp   14.1s  exakt

@@ -1,0 +1,235 @@
+#version 450
+#extension GL_ARB_gpu_shader_int64 : require
+/* blake2b-128, en tråd per fil. Måste ge BIT FÖR BIT samma svar som
+ * hashlib.blake2b(digest_size=16) i pythondelen — dedupen och
+ * uppackningens objektkontroll hänger på det.
+ *
+ * Varven är utrullade och tillståndet ligger i namngivna variabler, inte i
+ * arrayer: en array som indexeras med något annat än en konstant hamnar i
+ * scratch-minne på en AMD-gpu. Den här filen är därför GENERERAD av
+ * src/gen-blake2b.py — rör den inte för hand.
+ *
+ * En tråd per fil betyder att lastbalansen följer filstorlekarna: tusentals
+ * små filer fyller maskinen fint, men en enda stor fil körs av EN tråd och
+ * då är gpu:n hopplös. Anroparen delar därför upp stora filer själv. */
+layout(local_size_x_id = 0) in;
+layout(constant_id = 0) const uint GRUPP = 64;
+
+layout(std430, binding = 0) readonly buffer Data { uint d[]; };
+layout(std430, binding = 1) readonly buffer Jobb { uvec2 j[]; };   /* (ordoffset, bytelängd) */
+layout(std430, binding = 2) writeonly buffer Ut  { uvec4 u[]; };   /* 16 byte per jobb */
+
+layout(push_constant) uniform P { uint antal; } p;
+
+const uint64_t IV0 = 0x6a09e667f3bcc908ul, IV1 = 0xbb67ae8584caa73bul,
+               IV2 = 0x3c6ef372fe94f82bul, IV3 = 0xa54ff53a5f1d36f1ul,
+               IV4 = 0x510e527fade682d1ul, IV5 = 0x9b05688c2b3e6c1ful,
+               IV6 = 0x1f83d9abfb41bd6bul, IV7 = 0x5be0cd19137e2179ul;
+
+uint64_t rotr(uint64_t x, uint n) { return (x >> n) | (x << (64u - n)); }
+
+#define G(a, b, c, dd, x, y) \
+    a = a + b + (x); dd = rotr(dd ^ a, 32u); \
+    c = c + dd;      b  = rotr(b ^ c, 24u); \
+    a = a + b + (y); dd = rotr(dd ^ a, 16u); \
+    c = c + dd;      b  = rotr(b ^ c, 63u)
+
+uint64_t h0, h1, h2, h3, h4, h5, h6, h7;
+uint64_t m0;
+uint64_t m1;
+uint64_t m2;
+uint64_t m3;
+uint64_t m4;
+uint64_t m5;
+uint64_t m6;
+uint64_t m7;
+uint64_t m8;
+uint64_t m9;
+uint64_t m10;
+uint64_t m11;
+uint64_t m12;
+uint64_t m13;
+uint64_t m14;
+uint64_t m15;
+
+void komprimera(uint64_t t, bool sista) {
+    uint64_t v0 = h0, v1 = h1, v2 = h2, v3 = h3, v4 = h4, v5 = h5, v6 = h6, v7 = h7;
+    uint64_t v8 = IV0, v9 = IV1, v10 = IV2, v11 = IV3;
+    uint64_t v12 = IV4 ^ t, v13 = IV5, v14 = sista ? ~IV6 : IV6, v15 = IV7;
+    /* varv 0 */
+    G(v0, v4, v8, v12, m0, m1);
+    G(v1, v5, v9, v13, m2, m3);
+    G(v2, v6, v10, v14, m4, m5);
+    G(v3, v7, v11, v15, m6, m7);
+    G(v0, v5, v10, v15, m8, m9);
+    G(v1, v6, v11, v12, m10, m11);
+    G(v2, v7, v8, v13, m12, m13);
+    G(v3, v4, v9, v14, m14, m15);
+    /* varv 1 */
+    G(v0, v4, v8, v12, m14, m10);
+    G(v1, v5, v9, v13, m4, m8);
+    G(v2, v6, v10, v14, m9, m15);
+    G(v3, v7, v11, v15, m13, m6);
+    G(v0, v5, v10, v15, m1, m12);
+    G(v1, v6, v11, v12, m0, m2);
+    G(v2, v7, v8, v13, m11, m7);
+    G(v3, v4, v9, v14, m5, m3);
+    /* varv 2 */
+    G(v0, v4, v8, v12, m11, m8);
+    G(v1, v5, v9, v13, m12, m0);
+    G(v2, v6, v10, v14, m5, m2);
+    G(v3, v7, v11, v15, m15, m13);
+    G(v0, v5, v10, v15, m10, m14);
+    G(v1, v6, v11, v12, m3, m6);
+    G(v2, v7, v8, v13, m7, m1);
+    G(v3, v4, v9, v14, m9, m4);
+    /* varv 3 */
+    G(v0, v4, v8, v12, m7, m9);
+    G(v1, v5, v9, v13, m3, m1);
+    G(v2, v6, v10, v14, m13, m12);
+    G(v3, v7, v11, v15, m11, m14);
+    G(v0, v5, v10, v15, m2, m6);
+    G(v1, v6, v11, v12, m5, m10);
+    G(v2, v7, v8, v13, m4, m0);
+    G(v3, v4, v9, v14, m15, m8);
+    /* varv 4 */
+    G(v0, v4, v8, v12, m9, m0);
+    G(v1, v5, v9, v13, m5, m7);
+    G(v2, v6, v10, v14, m2, m4);
+    G(v3, v7, v11, v15, m10, m15);
+    G(v0, v5, v10, v15, m14, m1);
+    G(v1, v6, v11, v12, m11, m12);
+    G(v2, v7, v8, v13, m6, m8);
+    G(v3, v4, v9, v14, m3, m13);
+    /* varv 5 */
+    G(v0, v4, v8, v12, m2, m12);
+    G(v1, v5, v9, v13, m6, m10);
+    G(v2, v6, v10, v14, m0, m11);
+    G(v3, v7, v11, v15, m8, m3);
+    G(v0, v5, v10, v15, m4, m13);
+    G(v1, v6, v11, v12, m7, m5);
+    G(v2, v7, v8, v13, m15, m14);
+    G(v3, v4, v9, v14, m1, m9);
+    /* varv 6 */
+    G(v0, v4, v8, v12, m12, m5);
+    G(v1, v5, v9, v13, m1, m15);
+    G(v2, v6, v10, v14, m14, m13);
+    G(v3, v7, v11, v15, m4, m10);
+    G(v0, v5, v10, v15, m0, m7);
+    G(v1, v6, v11, v12, m6, m3);
+    G(v2, v7, v8, v13, m9, m2);
+    G(v3, v4, v9, v14, m8, m11);
+    /* varv 7 */
+    G(v0, v4, v8, v12, m13, m11);
+    G(v1, v5, v9, v13, m7, m14);
+    G(v2, v6, v10, v14, m12, m1);
+    G(v3, v7, v11, v15, m3, m9);
+    G(v0, v5, v10, v15, m5, m0);
+    G(v1, v6, v11, v12, m15, m4);
+    G(v2, v7, v8, v13, m8, m6);
+    G(v3, v4, v9, v14, m2, m10);
+    /* varv 8 */
+    G(v0, v4, v8, v12, m6, m15);
+    G(v1, v5, v9, v13, m14, m9);
+    G(v2, v6, v10, v14, m11, m3);
+    G(v3, v7, v11, v15, m0, m8);
+    G(v0, v5, v10, v15, m12, m2);
+    G(v1, v6, v11, v12, m13, m7);
+    G(v2, v7, v8, v13, m1, m4);
+    G(v3, v4, v9, v14, m10, m5);
+    /* varv 9 */
+    G(v0, v4, v8, v12, m10, m2);
+    G(v1, v5, v9, v13, m8, m4);
+    G(v2, v6, v10, v14, m7, m6);
+    G(v3, v7, v11, v15, m1, m5);
+    G(v0, v5, v10, v15, m15, m11);
+    G(v1, v6, v11, v12, m9, m14);
+    G(v2, v7, v8, v13, m3, m12);
+    G(v3, v4, v9, v14, m13, m0);
+    /* varv 10 */
+    G(v0, v4, v8, v12, m0, m1);
+    G(v1, v5, v9, v13, m2, m3);
+    G(v2, v6, v10, v14, m4, m5);
+    G(v3, v7, v11, v15, m6, m7);
+    G(v0, v5, v10, v15, m8, m9);
+    G(v1, v6, v11, v12, m10, m11);
+    G(v2, v7, v8, v13, m12, m13);
+    G(v3, v4, v9, v14, m14, m15);
+    /* varv 11 */
+    G(v0, v4, v8, v12, m14, m10);
+    G(v1, v5, v9, v13, m4, m8);
+    G(v2, v6, v10, v14, m9, m15);
+    G(v3, v7, v11, v15, m13, m6);
+    G(v0, v5, v10, v15, m1, m12);
+    G(v1, v6, v11, v12, m0, m2);
+    G(v2, v7, v8, v13, m11, m7);
+    G(v3, v4, v9, v14, m5, m3);
+    h0 ^= v0 ^ v8;  h1 ^= v1 ^ v9;  h2 ^= v2 ^ v10; h3 ^= v3 ^ v11;
+    h4 ^= v4 ^ v12; h5 ^= v5 ^ v13; h6 ^= v6 ^ v14; h7 ^= v7 ^ v15;
+}
+
+/* Ett 32-bitsord ur jobbet, nollat utanför längden. Jobben ligger
+ * ordjusterade, så orden läses rakt. */
+uint ord(uint bas, uint w, uint len) {
+    uint b = w * 4u;
+    if (b + 4u <= len) return d[bas + w];
+    if (b >= len) return 0u;
+    uint kvar = len - b;
+    return d[bas + w] & ((1u << (kvar * 8u)) - 1u);
+}
+
+void main() {
+    uint jag = gl_GlobalInvocationID.x;
+    if (jag >= p.antal) return;
+    uint bas = j[jag].x, len = j[jag].y;
+
+    h0 = IV0 ^ 0x01010010ul;   /* fanout 1, djup 1, nyckellängd 0, utlängd 16 */
+    h1 = IV1; h2 = IV2; h3 = IV3; h4 = IV4; h5 = IV5; h6 = IV6; h7 = IV7;
+
+    uint64_t t = 0ul;
+    uint i = 0u;
+    while (len - i > 128u) {            /* alla hela block UTOM det sista */
+        uint w = i >> 2u;
+        m0 = uint64_t(d[bas + w + 0u]) | (uint64_t(d[bas + w + 1u]) << 32u);
+        m1 = uint64_t(d[bas + w + 2u]) | (uint64_t(d[bas + w + 3u]) << 32u);
+        m2 = uint64_t(d[bas + w + 4u]) | (uint64_t(d[bas + w + 5u]) << 32u);
+        m3 = uint64_t(d[bas + w + 6u]) | (uint64_t(d[bas + w + 7u]) << 32u);
+        m4 = uint64_t(d[bas + w + 8u]) | (uint64_t(d[bas + w + 9u]) << 32u);
+        m5 = uint64_t(d[bas + w + 10u]) | (uint64_t(d[bas + w + 11u]) << 32u);
+        m6 = uint64_t(d[bas + w + 12u]) | (uint64_t(d[bas + w + 13u]) << 32u);
+        m7 = uint64_t(d[bas + w + 14u]) | (uint64_t(d[bas + w + 15u]) << 32u);
+        m8 = uint64_t(d[bas + w + 16u]) | (uint64_t(d[bas + w + 17u]) << 32u);
+        m9 = uint64_t(d[bas + w + 18u]) | (uint64_t(d[bas + w + 19u]) << 32u);
+        m10 = uint64_t(d[bas + w + 20u]) | (uint64_t(d[bas + w + 21u]) << 32u);
+        m11 = uint64_t(d[bas + w + 22u]) | (uint64_t(d[bas + w + 23u]) << 32u);
+        m12 = uint64_t(d[bas + w + 24u]) | (uint64_t(d[bas + w + 25u]) << 32u);
+        m13 = uint64_t(d[bas + w + 26u]) | (uint64_t(d[bas + w + 27u]) << 32u);
+        m14 = uint64_t(d[bas + w + 28u]) | (uint64_t(d[bas + w + 29u]) << 32u);
+        m15 = uint64_t(d[bas + w + 30u]) | (uint64_t(d[bas + w + 31u]) << 32u);
+        t += 128ul;
+        komprimera(t, false);
+        i += 128u;
+    }
+    uint w = i >> 2u;
+    m0 = uint64_t(ord(bas, w + 0u, len)) | (uint64_t(ord(bas, w + 1u, len)) << 32u);
+    m1 = uint64_t(ord(bas, w + 2u, len)) | (uint64_t(ord(bas, w + 3u, len)) << 32u);
+    m2 = uint64_t(ord(bas, w + 4u, len)) | (uint64_t(ord(bas, w + 5u, len)) << 32u);
+    m3 = uint64_t(ord(bas, w + 6u, len)) | (uint64_t(ord(bas, w + 7u, len)) << 32u);
+    m4 = uint64_t(ord(bas, w + 8u, len)) | (uint64_t(ord(bas, w + 9u, len)) << 32u);
+    m5 = uint64_t(ord(bas, w + 10u, len)) | (uint64_t(ord(bas, w + 11u, len)) << 32u);
+    m6 = uint64_t(ord(bas, w + 12u, len)) | (uint64_t(ord(bas, w + 13u, len)) << 32u);
+    m7 = uint64_t(ord(bas, w + 14u, len)) | (uint64_t(ord(bas, w + 15u, len)) << 32u);
+    m8 = uint64_t(ord(bas, w + 16u, len)) | (uint64_t(ord(bas, w + 17u, len)) << 32u);
+    m9 = uint64_t(ord(bas, w + 18u, len)) | (uint64_t(ord(bas, w + 19u, len)) << 32u);
+    m10 = uint64_t(ord(bas, w + 20u, len)) | (uint64_t(ord(bas, w + 21u, len)) << 32u);
+    m11 = uint64_t(ord(bas, w + 22u, len)) | (uint64_t(ord(bas, w + 23u, len)) << 32u);
+    m12 = uint64_t(ord(bas, w + 24u, len)) | (uint64_t(ord(bas, w + 25u, len)) << 32u);
+    m13 = uint64_t(ord(bas, w + 26u, len)) | (uint64_t(ord(bas, w + 27u, len)) << 32u);
+    m14 = uint64_t(ord(bas, w + 28u, len)) | (uint64_t(ord(bas, w + 29u, len)) << 32u);
+    m15 = uint64_t(ord(bas, w + 30u, len)) | (uint64_t(ord(bas, w + 31u, len)) << 32u);
+    t += uint64_t(len - i);
+    komprimera(t, true);
+
+    u[jag] = uvec4(uint(h0 & 0xfffffffful), uint(h0 >> 32u),
+                   uint(h1 & 0xfffffffful), uint(h1 >> 32u));
+}

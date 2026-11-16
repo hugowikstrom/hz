@@ -1,0 +1,23 @@
+#version 450
+/* Bandbreddstaket: läser hela bufferten och summerar. Summan skrivs ut så
+ * att ingen optimerare kan tänka bort läsningen. Det här är den översta
+ * gränsen för vad ETT GPU-pass över data kan göra — ingen kärna i nvpack kan
+ * bli snabbare än den här. */
+layout(local_size_x_id = 0) in;
+layout(constant_id = 0) const uint GRUPP = 64;
+
+layout(std430, binding = 0) readonly buffer Data { uint d[]; };
+layout(std430, binding = 1) writeonly buffer Ut   { uint u[]; };
+
+layout(push_constant) uniform P { uint ord; uint varv; } p;
+
+void main() {
+    uint tradar = gl_NumWorkGroups.x * GRUPP;
+    uint jag = gl_GlobalInvocationID.x;
+    uint summa = 0u;
+    for (uint v = 0u; v < p.varv; v++)
+        /* Svepande access: granntradar läser grannord, så minnesbussen får
+         * hela cacherader i stället för en fjärdedel av varje. */
+        for (uint i = jag; i < p.ord; i += tradar) summa += d[i];
+    u[jag] = summa;
+}

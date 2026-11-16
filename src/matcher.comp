@@ -1,0 +1,75 @@
+#version 450
+/* LZ77: längsta matchningen för VARJE position, en tråd per position.
+ *
+ * Det här är den enda verkligt parallella kärnan i en packare. Allt annat i
+ * ledet — det lata valet mellan matchning och litteral, Huffman- eller
+ * aritmetikkodningen — är seriellt av konstruktion: nästa symbol beror på
+ * den förra. Matchningssökningen gör det inte. Den är samma oberoende fråga
+ * ställd N gånger, och det är den frågan som kostar tiden i `xz -9e`,
+ * `zstd -19` och i zlib-nivå 9 (och därmed i PNG-receptsökningen).
+ *
+ * Kandidaterna kommer ur hinkar som CPU:n har byggt: en hink per 3-bytehash,
+ * positionerna i stigande ordning. plats[p] säger var p självt ligger i sin
+ * hink, så varje tråd kan gå bakåt därifrån utan att söka. GPU och CPU går
+ * igenom exakt samma kandidater i samma ordning — annars vore tiderna inte
+ * jämförbara, och jämförbarhet är hela poängen med programmet. */
+layout(local_size_x_id = 0) in;
+layout(constant_id = 0) const uint GRUPP = 64;
+
+layout(std430, binding = 0) readonly buffer Data  { uint d[]; };
+layout(std430, binding = 1) readonly buffer Start { uint start[]; };  /* hinkoffset, NB+1 långt */
+layout(std430, binding = 2) readonly buffer Hink  { uint hink[]; };   /* positioner, stigande */
+layout(std430, binding = 3) readonly buffer Plats { uint plats[]; };  /* p:s index i sin hink */
+layout(std430, binding = 4) writeonly buffer Ut   { uint u[]; };      /* len<<23 | dist */
+
+layout(push_constant) uniform P {
+    uint n;         /* bytes i data */
+    uint fonster;   /* hur långt bakåt en matchning får peka */
+    uint kedja;     /* hur många kandidater som får provas */
+    uint hmask;     /* hinkmask (antal hinkar - 1) */
+    uint bas;       /* första positionen i det här anropet */
+    uint nog;       /* en matchning så lång räcker: sluta leta */
+} p;
+
+uint bajt(uint i) { return (d[i >> 2u] >> ((i & 3u) * 8u)) & 255u; }
+
+uint hash3(uint i) {
+    /* Samma funktion som CPU-sidan. Tre bytes räcker: kortare matchningar än
+     * tre är inte värda en avståndskod i någon LZ-kodning. */
+    uint h = (bajt(i) << 10u) ^ (bajt(i + 1u) << 5u) ^ bajt(i + 2u);
+    return (h * 2654435761u >> 15u) & p.hmask;
+}
+
+void main() {
+    /* Anropen SKIVAS. En kärna som maler i flera sekunder dödas av
+     * drivrutinens vakthund — gpu:n sitter i samma krets som skärmen, och en
+     * hård återställning tar hela skrivbordet med sig. Det hände en gång här
+     * med ett helt 32-MiB-stycke i ett anrop. */
+    uint pos = p.bas + gl_GlobalInvocationID.x;
+    if (pos + 2u >= p.n) { if (pos < p.n) u[pos] = 0u; return; }
+
+    uint tak = min(258u, p.n - pos);
+    uint h = hash3(pos);
+    uint i = plats[pos];                       /* p:s eget index i hinken */
+    uint bas = start[h];
+    uint undre = pos > p.fonster ? pos - p.fonster : 0u;
+
+    uint bast_len = 0u, bast_dist = 0u;
+    uint provade = 0u;
+    while (i > bas && provade < p.kedja) {
+        i--;
+        uint c = hink[i];
+        if (c < undre) break;                  /* hinken är stigande: resten är ännu äldre */
+        provade++;
+        /* Snabbt avslag: byten EFTER nuvarande bästa längd. Stämmer den inte
+         * kan matchningen inte bli längre, och då är kandidaten ointressant. */
+        if (bast_len >= 1u && bajt(c + bast_len) != bajt(pos + bast_len)) continue;
+        uint l = 0u;
+        while (l < tak && bajt(c + l) == bajt(pos + l)) l++;
+        if (l > bast_len) {
+            bast_len = l; bast_dist = pos - c;
+            if (l >= tak || l >= p.nog) break;   /* nog är nog */
+        }
+    }
+    u[pos] = bast_len >= 3u ? (bast_len << 23u) | bast_dist : 0u;
+}

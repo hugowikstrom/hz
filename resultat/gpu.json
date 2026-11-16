@@ -1,0 +1,129 @@
+{
+ "maskin": "AMD Ryzen AI 9 HX 470 w/ Radeon 890M",
+ "enhet": "AMD Radeon 890M (RADV STRIX1)",
+ "last": "5.47",
+ "block_mib": 16,
+ "korpus": "kod",
+ "tak": {
+  "gpu_mibs": 34881.0,
+  "cpu_mibs": 31349.0,
+  "cpu_delat_mibs": 465.0
+ },
+ "hash": {
+  "kod": {
+   "filer": 5974,
+   "mib": 55.3,
+   "gpu_sek": 0.185,
+   "cpu_sek": 0.095,
+   "gpu_mibs": 299,
+   "cpu_mibs": 581,
+   "identiska": true
+  },
+  "png": {
+   "filer": 4618,
+   "mib": 431.1,
+   "gpu_sek": 0.505,
+   "cpu_sek": 0.189,
+   "gpu_mibs": 854,
+   "cpu_mibs": 2275,
+   "identiska": true
+  }
+ },
+ "matchare": {
+  "16": {
+   "cpu_sek": 0.198,
+   "gpu_sek": 0.073,
+   "gpu_kopiering_sek": 0.03,
+   "avvikelser": 0
+  },
+  "64": {
+   "cpu_sek": 0.258,
+   "gpu_sek": 0.111,
+   "gpu_kopiering_sek": 0.037,
+   "avvikelser": 0
+  },
+  "256": {
+   "cpu_sek": 0.327,
+   "gpu_sek": 0.153,
+   "gpu_kopiering_sek": 0.034,
+   "avvikelser": 0
+  },
+  "4096": {
+   "cpu_sek": 0.533,
+   "gpu_sek": 0.247,
+   "gpu_kopiering_sek": 0.03,
+   "avvikelser": 0
+  }
+ },
+ "kodek": {
+  "nvlz (gpu)": {
+   "byte": 2086209,
+   "kvot": 8.04,
+   "packsek": 0.83,
+   "uppacksek": 0.33,
+   "identisk": true
+  },
+  "nvlz (cpu)": {
+   "byte": 2086209,
+   "kvot": 8.04,
+   "packsek": 0.84,
+   "uppacksek": 0.33,
+   "identisk": true
+  },
+  "zstd -3": {
+   "byte": 2203155,
+   "kvot": 7.62,
+   "packsek": 0.05,
+   "uppacksek": 0.02,
+   "identisk": true
+  },
+  "zstd -6": {
+   "byte": 2007593,
+   "kvot": 8.36,
+   "packsek": 0.11,
+   "uppacksek": 0.03,
+   "identisk": true
+  },
+  "zstd -12": {
+   "byte": 1911072,
+   "kvot": 8.78,
+   "packsek": 0.49,
+   "uppacksek": 0.03,
+   "identisk": true
+  },
+  "zstd -19": {
+   "byte": 1772970,
+   "kvot": 9.46,
+   "packsek": 5.77,
+   "uppacksek": 0.04,
+   "identisk": true
+  },
+  "xz -9e": {
+   "byte": 1703344,
+   "kvot": 9.85,
+   "packsek": 7.19,
+   "uppacksek": 0.18,
+   "identisk": true
+  }
+ },
+ "arkiv": {
+  "normal": {
+   "byte": 8597541,
+   "packsek": 44.7,
+   "uppacksek": 1.3,
+   "identisk": true,
+   "kodekar": [
+    "xz9e"
+   ]
+  },
+  "gpu": {
+   "byte": 8597837,
+   "packsek": 44.5,
+   "uppacksek": 1.3,
+   "identisk": true,
+   "kodekar": [
+    "xz9e"
+   ]
+  }
+ }
+}

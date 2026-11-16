@@ -1,0 +1,566 @@
+<meta charset="utf-8">
+<title>nvpack — mätrapport</title>
+<style>
+@page { size: A4 portrait; margin: 0; }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #fff; }
+body {
+  font-family: "Noto Serif", serif;
+  font-size: 9.4pt;
+  line-height: 1.52;
+  color: #14201d;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.sida {
+  position: relative;
+  width: 210mm; height: 297mm;
+  padding: 18mm 20mm 16mm;
+  page-break-after: always;
+  break-after: page;
+  overflow: hidden;
+}
+.sida:last-child { page-break-after: auto; break-after: auto; }
+
+.fot {
+  position: absolute; left: 20mm; right: 20mm; bottom: 10mm;
+  display: flex; justify-content: space-between; align-items: baseline;
+  border-top: 0.4pt solid #d7dfdb; padding-top: 2.4mm;
+  font-family: Archivo, sans-serif; font-size: 6.6pt; letter-spacing: 0.05em;
+  color: #8b9a94; text-transform: uppercase;
+}
+
+h1, h2, h3, h4, .etikett, .stort, th, .bnamn, .bmib, .bdelta, .bfot, .nr {
+  font-family: Archivo, sans-serif;
+}
+h2 {
+  font-size: 15pt; font-weight: 700; letter-spacing: -0.02em;
+  margin: 0 0 1.5mm; line-height: 1.12;
+}
+h3 {
+  font-size: 10.4pt; font-weight: 600; letter-spacing: -0.01em;
+  margin: 5mm 0 1.2mm;
+}
+h4 { font-size: 9.2pt; font-weight: 600; margin: 0 0 0.8mm; }
+p { margin: 0 0 2.4mm; }
+p.lead { font-size: 10pt; color: #41524d; margin-bottom: 4mm; }
+strong { font-weight: 700; }
+em { font-style: italic; }
+
+.etikett {
+  font-size: 6.8pt; font-weight: 600; letter-spacing: 0.16em;
+  text-transform: uppercase; color: #8b9a94; display: block; margin-bottom: 2.4mm;
+}
+.regel { border: 0; border-top: 0.6pt solid #14201d; margin: 0 0 4mm; }
+code, .mono { font-family: "Liberation Mono", monospace; font-size: 8.3pt; }
+
+/* ------------------------------------------------ försättssida -------- */
+.titel { height: calc(100% - 5mm); display: flex; flex-direction: column; }
+.titel .topp { flex: 0 0 auto; }
+.titel h1 {
+  font-family: Archivo, sans-serif; font-size: 58pt; font-weight: 800;
+  letter-spacing: -0.045em; line-height: 0.9; margin: 22mm 0 6mm;
+}
+.titel .under {
+  font-size: 13pt; line-height: 1.38; color: #41524d; max-width: 125mm;
+}
+.titel .under b { color: #14201d; }
+.titel .mitt { flex: 1 1 auto; display: flex; align-items: center; }
+.titel .botten { flex: 0 0 auto; font-size: 8.4pt; color: #717f7a; }
+
+.nyckeltal { display: flex; gap: 0; width: 100%; border-top: 0.6pt solid #14201d; }
+.nyckeltal > div {
+  flex: 1; padding: 5mm 4mm 5mm 0; border-right: 0.4pt solid #d7dfdb;
+}
+.nyckeltal > div:last-child { border-right: 0; }
+.nyckeltal .etikett { font-size: 6.4pt; margin-bottom: 2mm; }
+.nyckeltal .stort {
+  font-size: 23pt; font-weight: 700; letter-spacing: -0.035em;
+  color: #00725b; display: block; line-height: 1;
+}
+.nyckeltal .spec {
+  font-family: "Liberation Mono", monospace; font-size: 7.2pt;
+  color: #717f7a; display: block; margin-top: 2mm; line-height: 1.4;
+}
+
+/* ------------------------------------------------ diagram ------------- */
+.diagram { margin: 2mm 0 0; }
+.brad {
+  display: grid; grid-template-columns: 38mm 1fr 15mm 13mm;
+  align-items: center; gap: 3mm; margin-bottom: 1.5mm;
+}
+.bnamn {
+  font-size: 7.2pt; text-align: right; color: #41524d;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.brad.nv .bnamn { color: #14201d; font-weight: 600; }
+.bspår { position: relative; display: block; height: 4.2mm; background: #eef2f0; border-radius: 0.5mm; }
+.bstapel {
+  position: absolute; left: 0; top: 0; bottom: 0; display: block;
+  background: #9aa8a3; border-radius: 0 1mm 1mm 0;
+}
+.brad.nv .bstapel { background: #00725b; }
+.brad.idag .bstapel { background: #b04c24; }
+.brad.ra .bstapel { background: #e6ebe8; box-shadow: inset 0 0 0 0.4pt #c9d3cf; }
+.bmärke { position: absolute; top: -1mm; bottom: -1mm; width: 0; border-left: 0.5pt dashed #b04c24; }
+.bmib, .bdelta { font-family: "Liberation Mono", monospace; font-size: 7.2pt; text-align: right; }
+.bmib { color: #41524d; }
+.bdelta { color: #8b9a94; }
+.brad.nv .bmib { color: #14201d; font-weight: 700; }
+.brad.nv .bdelta { color: #00725b; font-weight: 700; }
+.brad.nv.plus .bdelta { color: #8b9a94; font-weight: 400; }
+tr.nv.plus td:nth-child(4) { color: #717f7a; font-weight: 400; }
+.brad.idag .bdelta { color: #b04c24; }
+.bfot {
+  display: flex; justify-content: space-between; margin-top: 2.5mm; padding-top: 1.8mm;
+  border-top: 0.4pt solid #e6ebe8; font-size: 6.6pt; color: #8b9a94;
+}
+.prick { display: inline-block; width: 2.2mm; height: 2.2mm; border-radius: 0.4mm; vertical-align: middle; }
+.prick.nv { background: #00725b; } .prick.idag { background: #b04c24; } .prick.kl { background: #9aa8a3; }
+
+/* ------------------------------------------------ tabeller ------------ */
+table { border-collapse: collapse; width: 100%; margin: 1mm 0 3mm; }
+th, td { text-align: right; padding: 1.3mm 2mm; }
+th:first-child, td:first-child { text-align: left; }
+th {
+  font-size: 6.6pt; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase;
+  color: #717f7a; border-bottom: 0.6pt solid #14201d;
+}
+td {
+  font-family: "Liberation Mono", monospace; font-size: 7.4pt;
+  color: #41524d; border-bottom: 0.3pt solid #eef2f0;
+}
+tr.nv td { color: #14201d; }
+tr.nv td:first-child { font-weight: 700; }
+tr.nv td.ja, td.ja { color: #00725b; }
+tr.idag td { color: #b04c24; }
+
+table.jämför td, table.jämför th { font-family: "Noto Serif", serif; font-size: 8pt; }
+table.jämför td:first-child { font-family: Archivo, sans-serif; font-weight: 600; font-size: 8pt; color: #14201d; }
+table.jämför td.mitt { text-align: center; font-family: Archivo, sans-serif; }
+
+/* ------------------------------------------------ övrigt -------------- */
+.kolumner { display: grid; grid-template-columns: 1fr 1fr; gap: 7mm; }
+.ruta {
+  border: 0.4pt solid #d7dfdb; border-left: 1.2pt solid #00725b;
+  padding: 3.5mm 4mm; margin: 0 0 3.5mm; background: #fbfcfb;
+}
+.ruta.varning { border-left-color: #b04c24; }
+.ruta p:last-child { margin-bottom: 0; }
+.ruta .slutsats {
+  font-family: Archivo, sans-serif; font-weight: 700; font-size: 10pt;
+  letter-spacing: -0.01em; margin-bottom: 1.6mm;
+}
+
+.fynd { display: grid; grid-template-columns: 7mm 1fr; gap: 3mm; margin-bottom: 4.5mm; }
+.fynd .nr { font-size: 15pt; font-weight: 800; color: #b04c24; line-height: 0.9; letter-spacing: -0.04em; }
+.fynd p:last-child { margin-bottom: 0; }
+
+ul { margin: 0 0 2.5mm; padding-left: 4.5mm; }
+li { margin-bottom: 1.3mm; }
+li b { font-weight: 700; }
+
+pre {
+  font-family: "Liberation Mono", monospace; font-size: 7.6pt; line-height: 1.6;
+  background: #f6f8f7; border: 0.4pt solid #e6ebe8; padding: 3mm 3.5mm;
+  margin: 2mm 0 3mm; white-space: pre-wrap;
+}
+.figrubrik { margin: 0 0 1mm; }
+.figrubrik .namn { font-family: Archivo, sans-serif; font-weight: 600; font-size: 9pt; }
+.figrubrik .om { font-size: 7.4pt; color: #717f7a; }
+</style>
+<div class="sida">
+<div class="titel">
+  <div class="topp">
+    <span class="etikett">Mätrapport · 16 november 2026 · Hugo Wikström</span>
+    <h1>nvpack</h1>
+    <p class="under">En arkivpackare som <b>vet vad den packar</b> — och som mäter
+      sig mot allt annat som finns installerat på maskinen. Fyra riktiga filträd,
+      tolv packare, fyrtiosju rundgångar, <b>varje enskild bit-exakt</b>.</p>
+  </div>
+  <div class="mitt"></div>
+  <div class="nyckeltal"><div><span class="etikett">Programkod</span><span class="stort">−37 %</span><span class="spec">11,5 → 7,2 MiB<br>13 % under xz −9e</span></div><div><span class="etikett">Bilder (PNG)</span><span class="stort">−42 %</span><span class="spec">362,9 → 208,9 MiB<br>15 % under zstd −22</span></div><div><span class="etikett">Foton (JPEG)</span><span class="stort">−15 %</span><span class="spec">406,3 → 345,1 MiB<br>15 % under bzip2 −9</span></div><div><span class="etikett">Blandat projektträd</span><span class="stort">−38 %</span><span class="spec">452,8 → 279,1 MiB<br>6 % under xz −9e</span></div></div>
+  <div class="botten">
+    Mätt på en Ryzen AI 9 HX 470 (24 trådar, 2,0 GHz) med NVMe-disk.<br>
+    Koden, korpusbyggaren och alla mätvärden ligger i <code>~/nvpack</code>.
+  </div>
+</div><div class="fot"><span>nvpack · mätrapport · november 2026</span><span>sida 1 av 9</span></div></div>
+<div class="sida">
+<span class="etikett">Sammanfattning</span>
+<h2>Vad problemet är</h2>
+<hr class="regel">
+<p class="lead"><code>tar | zstd</code> är två program som inte vet något om varandra.
+tar lägger filerna i den ordning katalogträdet råkar ha dem och skickar vidare en
+enda byteström. zstd ser den strömmen genom ett fönster och får aldrig veta att fil
+4 000 är en exakt kopia av fil 12, att de 9 MB "slump" den just gav upp på i själva
+verket är en deflate-ström som går att veckla ut, eller att de 400 MB foton den
+maler igenom har ett entropilager från 1992 som går att byta ut.</p>
+
+<p>nvpack fyller tomrummet mellan behållaren och komprimeraren. Den klassar
+innehållet, byter ut representationen där det finns en bättre, grupperar likt med
+likt, och väljer kodek per block genom att faktiskt prova. Fem mekanismer — och
+den här rapporten redovisar vad var och en gav, inklusive de som gav noll.</p>
+
+<h3>Mekanismerna, och vad de faktiskt bidrog med</h3>
+<table class="jämför">
+<thead><tr><th>mekanism</th><th style="text-align:left">utfall</th><th>mätt på</th></tr></thead>
+<tbody>
+<tr><td>Omvandla innehållet</td><td style="text-align:left">det enda som verkligen bär:
+  <b>−15 %</b> på foton, <b>−42 %</b> på PNG</td><td class="mitt">foto, png</td></tr>
+<tr><td>Dedup på filnivå</td><td style="text-align:left">stort eller noll, aldrig mittemellan:
+  28,7 % dubbletter i PNG-korpusen, 0,7 % i kodkorpusen</td><td class="mitt">alla fyra</td></tr>
+<tr><td>Sortera likt med likt</td><td style="text-align:left"><b>−1,85 %</b> … men registret
+  kostar <b>+1,81 %</b> → netto noll</td><td class="mitt">kod</td></tr>
+<tr><td>Välja kodek genom prov</td><td style="text-align:left">hela stegen
+  zstd −19 → xz → nvcm: 8,53 → 8,23 → 7,19 MiB</td><td class="mitt">kod</td></tr>
+<tr><td>Prova i stället för anta</td><td style="text-align:left"><b>175 MiB</b> på PNG-korpusen,
+  och gränsen mellan vinst och förlust på ett riktigt arkiv</td><td class="mitt">png, skarpt arkiv</td></tr>
+</tbody></table>
+
+<p>Sorteringsraden är värd att stanna vid. Den lät som en av huvudidéerna och visade
+sig betala exakt för sitt eget index, inte mer. Vinsterna kommer från att data
+<em>byter representation</em> före komprimeringen — inte från att den ligger i en
+smartare ordning.</p>
+
+<h3>Resultatet i en tabell</h3>
+<table class="mät"><thead><tr><th>träd</th><th>original MiB</th><th>dagens MiB</th><th>bästa klassiska</th><th>nvpack MiB</th><th>mot dagens</th></tr></thead><tbody><tr><td>Programkod</td><td>55,3</td><td>11,5</td><td>xz −9e · 8,2</td><td class="ja">7,2</td><td class="ja">−37,2 %</td></tr><tr><td>Bilder (PNG)</td><td>431,0</td><td>362,9</td><td>zstd −22 · 245,2</td><td class="ja">208,9</td><td class="ja">−42,4 %</td></tr><tr><td>Foton (JPEG)</td><td>408,5</td><td>406,3</td><td>bzip2 −9 · 404,9</td><td class="ja">345,1</td><td class="ja">−15,1 %</td></tr><tr><td>Blandat projektträd</td><td>1 814,4</td><td>452,8</td><td>xz −9e · 297,5</td><td class="ja">279,1</td><td class="ja">−38,4 %</td></tr></tbody></table>
+
+<div class="ruta">
+  <p class="slutsats">Allt är förlustfritt och bit-exakt — bevisat, inte påstått.</p>
+  <p>Varje omvandling syr ihop sitt resultat igen och jämför med originalet redan vid
+  packningen. Stämmer inte varje byte lagras filen rå i stället. Ett arkiv kan därför
+  aldrig bli "nästan rätt": antingen är omvandlingen bevisad, eller så användes den
+  inte. Utöver det packas och packas varje mätning i den här rapporten upp i sin
+  helhet, och jämförs mot originalträdet med <code>diff -rq</code>.</p>
+</div><div class="fot"><span>nvpack · mätrapport</span><span>sida 2 av 9</span></div></div>
+<div class="sida">
+<span class="etikett">Delarna</span>
+<h2>Tre lager som ingen vanlig packare rör</h2>
+<hr class="regel">
+
+<h3>JPEG kodas om utan att en pixel rörs &nbsp;<span class="mono" style="font-size:7.6pt;color:#717f7a">src/nvjpg.c · 760 rader C</span></h3>
+<p>En JPEG är DCT-koefficienter entropikodade med Huffman. Huffman kan inte koda en
+symbol på mindre än en bit, och vet ingenting om att blocket bredvid såg nästan
+likadant ut. nvjpg avkodar koefficienterna och kodar om dem med en adaptiv
+aritmetisk kodare vars modeller frågar tre grannskap: blocket till vänster och
+ovanför (<em>hur rörig är den här delen av bilden?</em>), samma plats i grannblocken
+(<em>hur stor brukar just den frekvensen vara här?</em>), och platserna till vänster
+och ovanför inuti samma block (<em>var ligger energin?</em>).</p>
+<p>Resultat på hela fotokorpusen: <b>1 143 av 1 143 filer bit-exakta, −15,0 %</b>.
+Noll råfall. Modellen trimmades fram i mätbara steg: första fungerande modell
+−12,0 %, grannskapskontexter −13,1 %, finare hinkar −13,9 %, takt som sjunker med
+antalet observationer −14,6 %, blockets täthet i storleksmodellen −14,8 %. Två
+idéer som lät bra ströks efter mätning: egen kontextdimension för grannblockets
+riktning (−13,3 %, kontexterna tunnades ut) och två fasta adaptionstakter som vägs
+ihop (−11,6 %, den långsamma takten drog medelvärdet mot 50 % hela bilden igenom).</p>
+
+<h3>PNG vecklas ut och packas om &nbsp;<span class="mono" style="font-size:7.6pt;color:#717f7a">src/png.py</span></h3>
+<p>Deflate från 1996 är ett dåligt skal runt bilddata: 32 kB fönster, en fil i taget.
+nvpack vecklar ut IDAT-strömmen till råa filterrader och packar dem tillsammans med
+alla andra bilders rådata. Vägen tillbaka är det svåra — deflate är inte en kanonisk
+kodning, så samma indata ger olika utdata beroende på nivå, minnesnivå och strategi.
+nvpack letar därför upp <b>receptet</b>: den uppsättning zlib-parametrar som råkar ge
+precis den ström filen redan har. Sökningen är billig eftersom zlib-huvudet röjer
+fönsterstorlek och nivågrupp, eftersom fel kandidat avviker inom de första hundra
+kilobytena och då avbryts, och eftersom receptet som senast fungerade provas först.</p>
+<p>Hittas inget recept lagras filen rå, och det händer ofta: Chrome och
+gnome-screenshot använder deflate-motorer som systemets zlib inte kan härma. I
+PNG-korpusen gick 281 av 4 422 provade filer att veckla ut — vinsten på dem som gick
+är desto större.</p>
+
+<h3>En egen kompressor för källkod &nbsp;<span class="mono" style="font-size:7.6pt;color:#717f7a">src/nvcm.c · 450 rader C</span></h3>
+<p>xz var det starkaste som fanns installerat, så nvpack fick något starkare. I
+stället för att hänvisa bakåt i en ordbok gissar nvcm nästa <em>bit</em>, med åtta
+modeller samtidigt: ordning 0–8, en ordmodell, och en matchmodell som gör
+ordbokspackarens trick som en röst bland andra. En blandare lär sig under tiden vem
+som brukar ha rätt, och två efterjusterare putsar resultatet.</p>
+<table class="jämför">
+<thead><tr><th>indata</th><th>xz −9e</th><th>nvcm</th><th></th></tr></thead>
+<tbody>
+<tr><td>källkod, 8 MB</td><td>782 876</td><td><b>663 744</b></td><td>−15 %</td></tr>
+<tr><td>seq 1 50000</td><td><b>10 160</b></td><td>47 548</td><td>+368 %</td></tr>
+</tbody></table>
+<p>Den är alltså inte bättre på allt — en modell som gissar nästa bit ur de
+föregående byten ser inte att ett tal ökar med ett, medan ordbokspackarens
+matchningslängd gör det. Därför <em>provas</em> nvcm mot xz och zstd per block i
+stället för att väljas på filtyp.</p><div class="fot"><span>nvpack · mätrapport</span><span>sida 3 av 9</span></div></div>
+<div class="sida"><span class="etikett">Mätningen</span><h2>Fyra träd, tolv packare</h2><hr class="regel"><p class="lead">Stapeln visar hur stor del av originalet som är kvar — kortare är bättre. Det streckade märket är dagens arkivskript: allt till vänster om det är en vinst, allt till höger en förlust.</p>
+<div class="figrubrik"><div class="namn">Programkod — 55,3 MiB i 5 962 filer</div><div class="om">Källkod ur arton projekt på maskinen: .mjs, .py, .ts, .json, .html, .css, .md</div></div>
+<div class="diagram">
+<div class="brad  plus"><span class="bnamn">tar.gz -6</span><span class="bspår"><i class="bstapel" style="width:100.00%"></i><i class="bmärke" style="left:93.03%"></i></span><span class="bmib">12,32</span><span class="bdelta">+7,5</span></div>
+<div class="brad  plus"><span class="bnamn">tar.gz -9 (pigz)</span><span class="bspår"><i class="bstapel" style="width:98.84%"></i><i class="bmärke" style="left:93.03%"></i></span><span class="bmib">12,18</span><span class="bdelta">+6,3</span></div>
+<div class="brad idag"><span class="bnamn">tar.zst -3 (dagens)</span><span class="bspår"><i class="bstapel" style="width:93.03%"></i><i class="bmärke" style="left:93.03%"></i></span><span class="bmib">11,46</span><span class="bdelta">—</span></div>
+<div class="brad nv"><span class="bnamn">nvpack snabb</span><span class="bspår"><i class="bstapel" style="width:91.92%"></i><i class="bmärke" style="left:93.03%"></i></span><span class="bmib">11,32</span><span class="bdelta">−1,2</span></div>
+<div class="brad "><span class="bnamn">tar.bz2 -9</span><span class="bspår"><i class="bstapel" style="width:77.22%"></i><i class="bmärke" style="left:93.03%"></i></span><span class="bmib">9,51</span><span class="bdelta">−17,0</span></div>
+<div class="brad "><span class="bnamn">tar.zst -19 --long</span><span class="bspår"><i class="bstapel" style="width:69.24%"></i><i class="bmärke" style="left:93.03%"></i></span><span class="bmib">8,53</span><span class="bdelta">−25,6</span></div>
+<div class="brad "><span class="bnamn">tar.zst -22 --ultra</span><span class="bspår"><i class="bstapel" style="width:68.61%"></i><i class="bmärke" style="left:93.03%"></i></span><span class="bmib">8,45</span><span class="bdelta">−26,2</span></div>
+<div class="brad "><span class="bnamn">tar.xz -9e</span><span class="bspår"><i class="bstapel" style="width:66.81%"></i><i class="bmärke" style="left:93.03%"></i></span><span class="bmib">8,23</span><span class="bdelta">−28,2</span></div>
+<div class="brad nv"><span class="bnamn">nvpack utan knep</span><span class="bspår"><i class="bstapel" style="width:66.48%"></i><i class="bmärke" style="left:93.03%"></i></span><span class="bmib">8,19</span><span class="bdelta">−28,5</span></div>
+<div class="brad nv"><span class="bnamn">nvpack normal</span><span class="bspår"><i class="bstapel" style="width:66.46%"></i><i class="bmärke" style="left:93.03%"></i></span><span class="bmib">8,19</span><span class="bdelta">−28,6</span></div>
+<div class="brad nv"><span class="bnamn">nvpack liten</span><span class="bspår"><i class="bstapel" style="width:58.39%"></i><i class="bmärke" style="left:93.03%"></i></span><span class="bmib">7,19</span><span class="bdelta">−37,2</span></div>
+<div class="bfot"><span><i class="prick nv"></i> nvpack &nbsp; <i class="prick idag"></i> dagens arkivskript &nbsp; <i class="prick kl"></i> klassiska verktyg</span><span>stapel = andel av originalets 55,3 MiB · streck = dagens nivå</span></div>
+</div>
+<div style="height:5mm"></div>
+<div class="figrubrik"><div class="namn">Bilder (PNG) — 431,0 MiB i 4 617 filer</div><div class="om">Skärmdumpar, renderade produktbilder och paritetsklipp ur ting</div></div>
+<div class="diagram">
+<div class="brad  plus"><span class="bnamn">tar.gz -9 (pigz)</span><span class="bspår"><i class="bstapel" style="width:100.00%"></i><i class="bmärke" style="left:90.29%"></i></span><span class="bmib">401,9</span><span class="bdelta">+10,8</span></div>
+<div class="brad  plus"><span class="bnamn">tar.gz -6</span><span class="bspår"><i class="bstapel" style="width:99.94%"></i><i class="bmärke" style="left:90.29%"></i></span><span class="bmib">401,7</span><span class="bdelta">+10,7</span></div>
+<div class="brad  plus"><span class="bnamn">tar.bz2 -9</span><span class="bspår"><i class="bstapel" style="width:95.89%"></i><i class="bmärke" style="left:90.29%"></i></span><span class="bmib">385,4</span><span class="bdelta">+6,2</span></div>
+<div class="brad idag"><span class="bnamn">tar.zst -3 (dagens)</span><span class="bspår"><i class="bstapel" style="width:90.29%"></i><i class="bmärke" style="left:90.29%"></i></span><span class="bmib">362,9</span><span class="bdelta">—</span></div>
+<div class="brad nv"><span class="bnamn">nvpack snabb</span><span class="bspår"><i class="bstapel" style="width:69.49%"></i><i class="bmärke" style="left:90.29%"></i></span><span class="bmib">279,3</span><span class="bdelta">−23,0</span></div>
+<div class="brad "><span class="bnamn">tar.xz -9e</span><span class="bspår"><i class="bstapel" style="width:66.29%"></i><i class="bmärke" style="left:90.29%"></i></span><span class="bmib">266,4</span><span class="bdelta">−26,6</span></div>
+<div class="brad nv"><span class="bnamn">nvpack utan knep</span><span class="bspår"><i class="bstapel" style="width:63.80%"></i><i class="bmärke" style="left:90.29%"></i></span><span class="bmib">256,4</span><span class="bdelta">−29,3</span></div>
+<div class="brad "><span class="bnamn">tar.zst -19 --long</span><span class="bspår"><i class="bstapel" style="width:62.89%"></i><i class="bmärke" style="left:90.29%"></i></span><span class="bmib">252,7</span><span class="bdelta">−30,3</span></div>
+<div class="brad "><span class="bnamn">tar.zst -22 --ultra</span><span class="bspår"><i class="bstapel" style="width:61.02%"></i><i class="bmärke" style="left:90.29%"></i></span><span class="bmib">245,2</span><span class="bdelta">−32,4</span></div>
+<div class="brad nv"><span class="bnamn">nvpack normal</span><span class="bspår"><i class="bstapel" style="width:51.97%"></i><i class="bmärke" style="left:90.29%"></i></span><span class="bmib">208,9</span><span class="bdelta">−42,4</span></div>
+<div class="brad nv"><span class="bnamn">nvpack liten</span><span class="bspår"><i class="bstapel" style="width:51.97%"></i><i class="bmärke" style="left:90.29%"></i></span><span class="bmib">208,9</span><span class="bdelta">−42,4</span></div>
+<div class="bfot"><span><i class="prick nv"></i> nvpack &nbsp; <i class="prick idag"></i> dagens arkivskript &nbsp; <i class="prick kl"></i> klassiska verktyg</span><span>stapel = andel av originalets 431,0 MiB · streck = dagens nivå</span></div>
+</div><div class="fot"><span>nvpack · mätrapport</span><span>sida 4 av 9</span></div></div>
+<div class="sida"><div class="figrubrik"><div class="namn">Foton (JPEG) — 408,5 MiB i 1 143 filer</div><div class="om">Kamerabilder ur Pecka-arkivet plus TikTok-omslag — alla baseline-JPEG</div></div>
+<div class="diagram">
+<div class="brad nv plus"><span class="bnamn">nvpack snabb</span><span class="bspår"><i class="bstapel" style="width:100.00%"></i><i class="bmärke" style="left:99.46%"></i></span><span class="bmib">408,5</span><span class="bdelta">+0,5</span></div>
+<div class="brad nv plus"><span class="bnamn">nvpack utan knep</span><span class="bspår"><i class="bstapel" style="width:99.47%"></i><i class="bmärke" style="left:99.46%"></i></span><span class="bmib">406,4</span><span class="bdelta">+0,0</span></div>
+<div class="brad idag"><span class="bnamn">tar.zst -3 (dagens)</span><span class="bspår"><i class="bstapel" style="width:99.46%"></i><i class="bmärke" style="left:99.46%"></i></span><span class="bmib">406,3</span><span class="bdelta">—</span></div>
+<div class="brad "><span class="bnamn">tar.gz -9 (pigz)</span><span class="bspår"><i class="bstapel" style="width:99.40%"></i><i class="bmärke" style="left:99.46%"></i></span><span class="bmib">406,0</span><span class="bdelta">−0,1</span></div>
+<div class="brad "><span class="bnamn">tar.gz -6</span><span class="bspår"><i class="bstapel" style="width:99.34%"></i><i class="bmärke" style="left:99.46%"></i></span><span class="bmib">405,8</span><span class="bdelta">−0,1</span></div>
+<div class="brad "><span class="bnamn">tar.xz -9e</span><span class="bspår"><i class="bstapel" style="width:99.25%"></i><i class="bmärke" style="left:99.46%"></i></span><span class="bmib">405,4</span><span class="bdelta">−0,2</span></div>
+<div class="brad "><span class="bnamn">tar.zst -19 --long</span><span class="bspår"><i class="bstapel" style="width:99.17%"></i><i class="bmärke" style="left:99.46%"></i></span><span class="bmib">405,1</span><span class="bdelta">−0,3</span></div>
+<div class="brad "><span class="bnamn">tar.zst -22 --ultra</span><span class="bspår"><i class="bstapel" style="width:99.17%"></i><i class="bmärke" style="left:99.46%"></i></span><span class="bmib">405,1</span><span class="bdelta">−0,3</span></div>
+<div class="brad "><span class="bnamn">tar.bz2 -9</span><span class="bspår"><i class="bstapel" style="width:99.13%"></i><i class="bmärke" style="left:99.46%"></i></span><span class="bmib">404,9</span><span class="bdelta">−0,3</span></div>
+<div class="brad nv"><span class="bnamn">nvpack liten</span><span class="bspår"><i class="bstapel" style="width:84.47%"></i><i class="bmärke" style="left:99.46%"></i></span><span class="bmib">345,1</span><span class="bdelta">−15,1</span></div>
+<div class="brad nv"><span class="bnamn">nvpack normal</span><span class="bspår"><i class="bstapel" style="width:84.47%"></i><i class="bmärke" style="left:99.46%"></i></span><span class="bmib">345,1</span><span class="bdelta">−15,1</span></div>
+<div class="bfot"><span><i class="prick nv"></i> nvpack &nbsp; <i class="prick idag"></i> dagens arkivskript &nbsp; <i class="prick kl"></i> klassiska verktyg</span><span>stapel = andel av originalets 408,5 MiB · streck = dagens nivå</span></div>
+</div>
+<div style="height:5mm"></div>
+<div class="figrubrik"><div class="namn">Blandat projektträd — 1 814,4 MiB i 15 139 filer</div><div class="om">Hela ~/symbios-3d: 1,2 GB delade bibliotek, 4 600 .py, 4 600 .pyc, en hel arbetskopia</div></div>
+<div class="diagram">
+<div class="brad  plus"><span class="bnamn">tar.gz -6</span><span class="bspår"><i class="bstapel" style="width:100.00%"></i><i class="bmärke" style="left:91.66%"></i></span><span class="bmib">494,0</span><span class="bdelta">+9,1</span></div>
+<div class="brad  plus"><span class="bnamn">tar.gz -9 (pigz)</span><span class="bspår"><i class="bstapel" style="width:99.11%"></i><i class="bmärke" style="left:91.66%"></i></span><span class="bmib">489,6</span><span class="bdelta">+8,1</span></div>
+<div class="brad idag"><span class="bnamn">tar.zst -3 (dagens)</span><span class="bspår"><i class="bstapel" style="width:91.66%"></i><i class="bmärke" style="left:91.66%"></i></span><span class="bmib">452,8</span><span class="bdelta">—</span></div>
+<div class="brad "><span class="bnamn">tar.bz2 -9</span><span class="bspår"><i class="bstapel" style="width:89.65%"></i><i class="bmärke" style="left:91.66%"></i></span><span class="bmib">442,9</span><span class="bdelta">−2,2</span></div>
+<div class="brad nv"><span class="bnamn">nvpack snabb</span><span class="bspår"><i class="bstapel" style="width:82.46%"></i><i class="bmärke" style="left:91.66%"></i></span><span class="bmib">407,4</span><span class="bdelta">−10,0</span></div>
+<div class="brad "><span class="bnamn">tar.zst -19 --long</span><span class="bspår"><i class="bstapel" style="width:64.63%"></i><i class="bmärke" style="left:91.66%"></i></span><span class="bmib">319,3</span><span class="bdelta">−29,5</span></div>
+<div class="brad "><span class="bnamn">tar.zst -22 --ultra</span><span class="bspår"><i class="bstapel" style="width:60.97%"></i><i class="bmärke" style="left:91.66%"></i></span><span class="bmib">301,2</span><span class="bdelta">−33,5</span></div>
+<div class="brad "><span class="bnamn">tar.xz -9e</span><span class="bspår"><i class="bstapel" style="width:60.23%"></i><i class="bmärke" style="left:91.66%"></i></span><span class="bmib">297,5</span><span class="bdelta">−34,3</span></div>
+<div class="brad nv"><span class="bnamn">nvpack normal</span><span class="bspår"><i class="bstapel" style="width:57.13%"></i><i class="bmärke" style="left:91.66%"></i></span><span class="bmib">282,2</span><span class="bdelta">−37,7</span></div>
+<div class="brad nv"><span class="bnamn">nvpack liten</span><span class="bspår"><i class="bstapel" style="width:56.49%"></i><i class="bmärke" style="left:91.66%"></i></span><span class="bmib">279,1</span><span class="bdelta">−38,4</span></div>
+<div class="bfot"><span><i class="prick nv"></i> nvpack &nbsp; <i class="prick idag"></i> dagens arkivskript &nbsp; <i class="prick kl"></i> klassiska verktyg</span><span>stapel = andel av originalets 1 814,4 MiB · streck = dagens nivå</span></div>
+</div>
+<h3>Vad diagrammen säger</h3>
+<ul>
+<li><b>Foton är det tydligaste fallet.</b> Varje klassiskt verktyg — gzip, bzip2,
+zstd −22, xz −9e — stannar inom en procent från där det började. De kan bara leta
+efter upprepningar i en ström som redan är entropikodad. nvpack byter ut
+entropikodningen och tar 15 %.</li>
+<li><b>På det blandade trädet vinner nvpack även på tid.</b> zstd −22 behövde 623 s
+för 301,2 MiB; nvpack tog 325 s för 279,1 MiB — halva tiden, 7 % mindre. Mot xz −9e
+är det 6 % mindre på i stort sett samma tid.</li>
+<li><b>Läget <code>snabb</code> är gratislunchen.</b> 10 % under dagens arkiv på
+fjorton sekunder, helt och hållet på dedup och sortering. Där finns dubbletter som
+tar aldrig ser.</li>
+</ul><div class="fot"><span>nvpack · mätrapport</span><span>sida 5 av 9</span></div></div>
+<div class="sida">
+<span class="etikett">Fynd</span>
+<h2>Tre gånger hade jag fel</h2>
+<hr class="regel">
+<p class="lead">Varje designbeslut i nvpack är mätt fram, och tre av dem gick tvärtemot
+vad som verkade självklart. De tre är anledningen till att siffrorna ser ut som de gör.</p>
+
+<div class="fynd"><div class="nr">1</div><div>
+<h4>PNG som blåses upp hundra gånger är värda mest</h4>
+<p>Jag satte ett tak: en bild vars rådata blir mer än sexton gånger större än dess
+deflate-ström ansågs inte värd att veckla ut. Mätningen gav <b>−40 % just i den
+högsta klassen</b> — mest av alla. I efterhand är det logiskt. En bild som deflate
+klämt 50:1 är ett skärmklipp med stora enfärgade ytor, och när femtio sådana ligger
+utvecklade i samma block hittar en modern packare likheterna <b>mellan</b> bilderna.
+Det kunde deflate aldrig se genom sitt 32 kB-fönster, en fil i taget.</p></div></div>
+
+<table class="mät" style="margin-bottom:5mm">
+<thead><tr><th>uppblåsning</th><th>filer</th><th>original</th><th>zstd19 på original</th>
+<th>via utveckling</th><th>vinst</th></tr></thead>
+<tbody>
+<tr><td>2–4×</td><td>13</td><td>17,5 MB</td><td>17,48 MB</td><td>13,92 MB</td><td class="ja">20,4 %</td></tr>
+<tr><td>4–8×</td><td>14</td><td>32,1 MB</td><td>26,51 MB</td><td>18,45 MB</td><td class="ja">30,4 %</td></tr>
+<tr><td>8–16×</td><td>40</td><td>61,5 MB</td><td>49,93 MB</td><td>40,95 MB</td><td class="ja">18,0 %</td></tr>
+<tr><td>16–32×</td><td>26</td><td>17,7 MB</td><td>12,24 MB</td><td>9,88 MB</td><td class="ja">19,3 %</td></tr>
+<tr class="nv"><td>32×+</td><td>188</td><td>13,4 MB</td><td>7,31 MB</td><td>4,35 MB</td><td class="ja">40,4 %</td></tr>
+</tbody></table>
+
+<div class="fynd"><div class="nr">2</div><div>
+<h4>"Redan packat" får inte vara ett antagande</h4>
+<p>Film, zip och PNG som inte kunde vecklas ut lagrades rått per definition — det
+sparar packtid på data där ingen komprimerare ändå hittar något. På PNG-korpusen
+kostade det <b>175 MiB</b>, och på det skarpa lostconnection-arkivet gjorde det nvpack
+<b>sämre än dagens</b>: en halv procent av 2,9 GB film är fjorton megabyte, och
+<code>zstd -3</code> tar dem på några sekunder. Nu provpackas varje block på åtta
+ställen med varje kodek, och tröskeln har tre utfall i stället för två — rått under
+0,2 %, billig kodek däremellan, dyr kodek när det finns något att hämta.</p></div></div>
+
+<div class="fynd"><div class="nr">3</div><div>
+<h4>Provsviten hittade tyst dataförlust</h4>
+<p>En symlänk som pekar på en katalog <b>försvann helt ur arkivet</b> — utan fel, utan
+varning. Den dyker upp bland de <em>kataloger</em> <code>os.walk</code> rapporterar,
+inte bland dess filer, och koden letade bara efter länkar bland filerna. Katalogernas egna
+tidsstämplar återställdes inte heller. Båda hade gått obemärkt förbi i <b>varje
+storleksmätning</b> — mätningar jämför innehåll, inte träd. Det är därför provsviten
+bygger ett träd av kantfall: tomma filer, trasiga länkar, filnamn med nyrad i, udda
+rättigheter, tidsstämplar från 1985 och 2031.</p></div></div><div class="fot"><span>nvpack · mätrapport</span><span>sida 6 av 9</span></div></div>
+<div class="sida">
+<span class="etikett">Vad som skiljer den från andra</span>
+<h2>Skillnaden är ett lager, inte en inställning</h2>
+<hr class="regel">
+<p class="lead">gzip, bzip2, xz och zstd är byteströmspackare: de ser en enda ström och
+vet ingenting om filer eller filtyper. tar är en behållare utan komprimering, utan
+index och utan dedup. nvpack bor i tomrummet mellan dem.</p>
+
+<table class="jämför">
+<thead><tr><th></th><th class="mitt">ser filer</th><th class="mitt">index</th>
+<th class="mitt">dedup</th><th class="mitt">omvandlar</th><th class="mitt">väljer kodek</th></tr></thead>
+<tbody>
+<tr><td>gzip / bzip2 / xz / zstd</td><td class="mitt">nej</td><td class="mitt">nej</td>
+  <td class="mitt">via fönstret</td><td class="mitt">nej</td><td class="mitt">nej</td></tr>
+<tr><td>tar</td><td class="mitt">ja</td><td class="mitt">nej</td><td class="mitt">nej</td>
+  <td class="mitt">nej</td><td class="mitt">—</td></tr>
+<tr><td>zip</td><td class="mitt">ja</td><td class="mitt">ja</td><td class="mitt">nej</td>
+  <td class="mitt">nej</td><td class="mitt">nej</td></tr>
+<tr><td>7-Zip</td><td class="mitt">ja</td><td class="mitt">ja</td><td class="mitt">nej</td>
+  <td class="mitt">delvis</td><td class="mitt">per typ</td></tr>
+<tr><td>restic / borg</td><td class="mitt">ja</td><td class="mitt">ja</td>
+  <td class="mitt">starkare</td><td class="mitt">nej</td><td class="mitt">nej</td></tr>
+<tr class="nv"><td>nvpack</td><td class="mitt">ja</td><td class="mitt">ja</td>
+  <td class="mitt">ja</td><td class="mitt">ja</td><td class="mitt">mätt, per block</td></tr>
+</tbody></table>
+
+<h3>Vad som är nytt — och vad som inte är det</h3>
+<p>Ingen av de tre omvandlingarna är uppfunnen här. PNG-receptsökningen gör
+<code>precomp</code> och <code>reflate</code> sedan länge. Förlustfri JPEG-ompackning
+gör <code>lepton</code> och <code>brunsli</code> — och <em>bättre</em> än min, cirka
+22 % mot mina 15 %. Kontextblandning är paq- och zpaq-familjen, och de är långt
+starkare än nvcm. Skillnaden är inte uppfinningen utan <b>integrationen</b>: ett enda
+arkivprogram som gör allt det här, och som för varje omvandling bevisar att den går
+att vända innan den används. Inget av de klassiska verktygen försöker ens; de
+specialiserade gör det var och en för sin filtyp, och ingen av dem fanns installerad
+på den här maskinen.</p>
+
+<h3>Vad nvpack inte kan som de andra kan</h3>
+<ul>
+<li><b>Inte strömmande.</b> tar kan rapa rakt in i ssh eller på band. nvpack behöver en
+katalog och arbetsyta på disk — upp till flera GB när PNG-utvecklingen är igång.</li>
+<li><b>Oberoende block kostar korsredundans.</b> Därför förlorar nvpack mot
+<code>tar.zst -19</code> på PNG-korpusen när dedup och omvandlingar är avstängda:
+256,4 mot 252,7 MiB. zstd ser en enda 431 MB-ström genom ett 2 GB-fönster; nvpack
+klipper vid 192 MB och packar varje bit för sig. Oberoendet köper parallellitet och
+delvis uppackning, och det kostar det här.</li>
+<li><b>Inget standardformat.</b> En <code>tar.gz</code> går att läsa år 2050. En
+<code>.nv</code> går att läsa så länge <code>~/nvpack</code> finns.</li>
+<li><b>Ingen kryptering, ingen felkorrigering, inga inkrementella snapshots.</b> Där är
+restic rätt verktyg.</li>
+<li><b>Hårda länkar blir fristående kopior</b>, och rör, uttag och enheter hoppas över
+med varning. <b>Progressiv JPEG</b> och <b>PNG ur okända deflate-motorer</b> lagras rå.</li>
+<li><b>nvcm är långsam i båda riktningarna</b> — 207 s att packa upp det blandade trädet,
+mot 8 s för läget <code>normal</code>.</li>
+</ul>
+
+<div class="ruta varning">
+  <p class="slutsats">Och så verkligheten: ditt eget arkiv</p>
+  <p>Korpusarna i den här rapporten är rena. Ett riktigt projektträd är blandat, och
+  blandningen avgör vad man faktiskt tjänar. På hela <code>~/lostconnection</code>
+  (2,9 GB, 2 009 filer) är vinsten <b>−0,09 %</b>: 2 869,25 → 2 866,74 MiB.
+  Utan <code>data/klipp</code> (25 MB, 432 filer) är den <b>−3,8 %</b>: 17,17 → 16,52 MiB.</p>
+  <p>Det är det ärliga svaret för just det arkivet — <b>ingenting hjälper, för det ÄR
+  517 filmer.</b> Film är redan packad av en videokodare, och där finns inget
+  motsvarande entropilager att byta ut. Byt alltså inte ut
+  <code>scripts/arkivera.sh</code> för storlekens skull.</p>
+</div><div class="fot"><span>nvpack · mätrapport</span><span>sida 7 av 9</span></div></div>
+<div class="sida">
+<span class="etikett">Bilaga</span>
+<h2>Alla mätvärden</h2>
+<hr class="regel">
+<p class="lead">Varje rad är en hel rundgång: packa, packa upp, och <code>diff -rq</code>
+mot originalträdet. Kolumnen längst till höger är utfallet av den jämförelsen, inte en
+förhoppning. Korpusarna byggs av <code>korpus/bygg-korpus.py</code> ur riktiga projekt
+på maskinen, som hårdlänkar — noll extra diskutrymme, exakt samma bytes.</p>
+<div class="figrubrik" style="margin-top:3mm"><div class="namn">Programkod — 55,3 MiB i 5 962 filer</div></div><table class="mät"><thead><tr><th>packare</th><th>MiB</th><th>kvot</th><th>mot dagens</th><th>packning</th><th>uppackning</th><th>bit-exakt</th></tr></thead><tbody>
+<tr class="ra plus"><td>tar (okomprimerad)</td><td>60,83</td><td>0,91×</td><td>+430,8 %</td><td>0,1 s</td><td>0,1 s</td><td class="ja">ja</td></tr>
+<tr class=" plus"><td>tar.gz -6</td><td>12,32</td><td>4,49×</td><td>+7,5 %</td><td>2,2 s</td><td>0,3 s</td><td class="ja">ja</td></tr>
+<tr class=" plus"><td>tar.gz -9 (pigz)</td><td>12,18</td><td>4,54×</td><td>+6,3 %</td><td>0,5 s</td><td>0,3 s</td><td class="ja">ja</td></tr>
+<tr class=""><td>tar.bz2 -9</td><td>9,51</td><td>5,81×</td><td>−17,0 %</td><td>7,5 s</td><td>2,3 s</td><td class="ja">ja</td></tr>
+<tr class="idag"><td>tar.zst -3 (dagens)</td><td>11,46</td><td>4,82×</td><td>—</td><td>0,2 s</td><td>0,1 s</td><td class="ja">ja</td></tr>
+<tr class=""><td>tar.zst -19 --long</td><td>8,53</td><td>6,48×</td><td>−25,6 %</td><td>34,7 s</td><td>0,1 s</td><td class="ja">ja</td></tr>
+<tr class=""><td>tar.zst -22 --ultra</td><td>8,45</td><td>6,54×</td><td>−26,2 %</td><td>56,4 s</td><td>0,1 s</td><td class="ja">ja</td></tr>
+<tr class=""><td>tar.xz -9e</td><td>8,23</td><td>6,72×</td><td>−28,2 %</td><td>46,8 s</td><td>0,6 s</td><td class="ja">ja</td></tr>
+<tr class="nv"><td>nvpack snabb</td><td>11,32</td><td>4,88×</td><td>−1,2 %</td><td>2,7 s</td><td>0,8 s</td><td class="ja">ja</td></tr>
+<tr class="nv"><td>nvpack utan knep</td><td>8,19</td><td>6,75×</td><td>−28,5 %</td><td>42,6 s</td><td>1,2 s</td><td class="ja">ja</td></tr>
+<tr class="nv"><td>nvpack normal</td><td>8,19</td><td>6,75×</td><td>−28,6 %</td><td>43,2 s</td><td>1,2 s</td><td class="ja">ja</td></tr>
+<tr class="nv"><td>nvpack liten</td><td>7,19</td><td>7,69×</td><td>−37,2 %</td><td>71,3 s</td><td>67,9 s</td><td class="ja">ja</td></tr>
+</tbody></table><div class="figrubrik" style="margin-top:3mm"><div class="namn">Bilder (PNG) — 431,0 MiB i 4 617 filer</div></div><table class="mät"><thead><tr><th>packare</th><th>MiB</th><th>kvot</th><th>mot dagens</th><th>packning</th><th>uppackning</th><th>bit-exakt</th></tr></thead><tbody>
+<tr class="ra plus"><td>tar (okomprimerad)</td><td>438,41</td><td>0,98×</td><td>+20,8 %</td><td>2,8 s</td><td>0,3 s</td><td class="ja">ja</td></tr>
+<tr class=" plus"><td>tar.gz -6</td><td>401,67</td><td>1,07×</td><td>+10,7 %</td><td>20,1 s</td><td>2,5 s</td><td class="ja">ja</td></tr>
+<tr class=" plus"><td>tar.gz -9 (pigz)</td><td>401,89</td><td>1,07×</td><td>+10,8 %</td><td>1,8 s</td><td>2,6 s</td><td class="ja">ja</td></tr>
+<tr class=" plus"><td>tar.bz2 -9</td><td>385,38</td><td>1,12×</td><td>+6,2 %</td><td>73,9 s</td><td>44,0 s</td><td class="ja">ja</td></tr>
+<tr class="idag"><td>tar.zst -3 (dagens)</td><td>362,85</td><td>1,19×</td><td>—</td><td>0,6 s</td><td>0,3 s</td><td class="ja">ja</td></tr>
+<tr class=""><td>tar.zst -19 --long</td><td>252,73</td><td>1,71×</td><td>−30,3 %</td><td>39,8 s</td><td>0,5 s</td><td class="ja">ja</td></tr>
+<tr class=""><td>tar.zst -22 --ultra</td><td>245,22</td><td>1,76×</td><td>−32,4 %</td><td>156,2 s</td><td>0,8 s</td><td class="ja">ja</td></tr>
+<tr class=""><td>tar.xz -9e</td><td>266,41</td><td>1,62×</td><td>−26,6 %</td><td>128,4 s</td><td>4,9 s</td><td class="ja">ja</td></tr>
+<tr class="nv"><td>nvpack snabb</td><td>279,28</td><td>1,54×</td><td>−23,0 %</td><td>2,8 s</td><td>0,8 s</td><td class="ja">ja</td></tr>
+<tr class="nv"><td>nvpack utan knep</td><td>256,42</td><td>1,68×</td><td>−29,3 %</td><td>44,6 s</td><td>1,7 s</td><td class="ja">ja</td></tr>
+<tr class="nv"><td>nvpack normal</td><td>208,88</td><td>2,06×</td><td>−42,4 %</td><td>254,0 s</td><td>9,5 s</td><td class="ja">ja</td></tr>
+<tr class="nv"><td>nvpack liten</td><td>208,88</td><td>2,06×</td><td>−42,4 %</td><td>250,8 s</td><td>9,3 s</td><td class="ja">ja</td></tr>
+</tbody></table><div class="fot"><span>nvpack · mätrapport</span><span>sida 8 av 9</span></div></div>
+<div class="sida"><div class="figrubrik" style="margin-top:3mm"><div class="namn">Foton (JPEG) — 408,5 MiB i 1 143 filer</div></div><table class="mät"><thead><tr><th>packare</th><th>MiB</th><th>kvot</th><th>mot dagens</th><th>packning</th><th>uppackning</th><th>bit-exakt</th></tr></thead><tbody>
+<tr class="ra plus"><td>tar (okomprimerad)</td><td>409,37</td><td>1,00×</td><td>+0,8 %</td><td>2,1 s</td><td>0,2 s</td><td class="ja">ja</td></tr>
+<tr class=""><td>tar.gz -6</td><td>405,81</td><td>1,01×</td><td>−0,1 %</td><td>19,1 s</td><td>2,0 s</td><td class="ja">ja</td></tr>
+<tr class=""><td>tar.gz -9 (pigz)</td><td>406,04</td><td>1,01×</td><td>−0,1 %</td><td>1,3 s</td><td>1,6 s</td><td class="ja">ja</td></tr>
+<tr class=""><td>tar.bz2 -9</td><td>404,94</td><td>1,01×</td><td>−0,3 %</td><td>56,8 s</td><td>40,9 s</td><td class="ja">ja</td></tr>
+<tr class="idag"><td>tar.zst -3 (dagens)</td><td>406,30</td><td>1,01×</td><td>—</td><td>0,5 s</td><td>0,2 s</td><td class="ja">ja</td></tr>
+<tr class=""><td>tar.zst -19 --long</td><td>405,09</td><td>1,01×</td><td>−0,3 %</td><td>53,1 s</td><td>0,4 s</td><td class="ja">ja</td></tr>
+<tr class=""><td>tar.zst -22 --ultra</td><td>405,09</td><td>1,01×</td><td>−0,3 %</td><td>225,4 s</td><td>0,4 s</td><td class="ja">ja</td></tr>
+<tr class=""><td>tar.xz -9e</td><td>405,43</td><td>1,01×</td><td>−0,2 %</td><td>157,3 s</td><td>3,5 s</td><td class="ja">ja</td></tr>
+<tr class="nv plus"><td>nvpack snabb</td><td>408,50</td><td>1,00×</td><td>+0,5 %</td><td>1,1 s</td><td>0,4 s</td><td class="ja">ja</td></tr>
+<tr class="nv plus"><td>nvpack utan knep</td><td>406,35</td><td>1,01×</td><td>+0,0 %</td><td>12,6 s</td><td>0,6 s</td><td class="ja">ja</td></tr>
+<tr class="nv"><td>nvpack normal</td><td>345,07</td><td>1,18×</td><td>−15,1 %</td><td>21,5 s</td><td>7,8 s</td><td class="ja">ja</td></tr>
+<tr class="nv"><td>nvpack liten</td><td>345,07</td><td>1,18×</td><td>−15,1 %</td><td>27,9 s</td><td>7,9 s</td><td class="ja">ja</td></tr>
+</tbody></table><div class="figrubrik" style="margin-top:3mm"><div class="namn">Blandat projektträd — 1 814,4 MiB i 15 139 filer</div></div><table class="mät"><thead><tr><th>packare</th><th>MiB</th><th>kvot</th><th>mot dagens</th><th>packning</th><th>uppackning</th><th>bit-exakt</th></tr></thead><tbody>
+<tr class="ra plus"><td>tar (okomprimerad)</td><td>1 804,14</td><td>1,01×</td><td>+298,4 %</td><td>6,6 s</td><td>1,5 s</td><td class="ja">ja</td></tr>
+<tr class=" plus"><td>tar.gz -6</td><td>494,04</td><td>3,67×</td><td>+9,1 %</td><td>98,9 s</td><td>10,0 s</td><td class="ja">ja</td></tr>
+<tr class=" plus"><td>tar.gz -9 (pigz)</td><td>489,62</td><td>3,71×</td><td>+8,1 %</td><td>19,1 s</td><td>9,4 s</td><td class="ja">ja</td></tr>
+<tr class=""><td>tar.bz2 -9</td><td>442,88</td><td>4,10×</td><td>−2,2 %</td><td>207,6 s</td><td>82,1 s</td><td class="ja">ja</td></tr>
+<tr class="idag"><td>tar.zst -3 (dagens)</td><td>452,83</td><td>4,01×</td><td>—</td><td>2,1 s</td><td>3,1 s</td><td class="ja">ja</td></tr>
+<tr class=""><td>tar.zst -19 --long</td><td>319,30</td><td>5,68×</td><td>−29,5 %</td><td>148,9 s</td><td>4,3 s</td><td class="ja">ja</td></tr>
+<tr class=""><td>tar.zst -22 --ultra</td><td>301,21</td><td>6,02×</td><td>−33,5 %</td><td>622,9 s</td><td>4,1 s</td><td class="ja">ja</td></tr>
+<tr class=""><td>tar.xz -9e</td><td>297,54</td><td>6,10×</td><td>−34,3 %</td><td>289,3 s</td><td>5,3 s</td><td class="ja">ja</td></tr>
+<tr class="nv"><td>nvpack snabb</td><td>407,37</td><td>4,45×</td><td>−10,0 %</td><td>14,2 s</td><td>3,8 s</td><td class="ja">ja</td></tr>
+<tr class="nv"><td>nvpack normal</td><td>282,25</td><td>6,43×</td><td>−37,7 %</td><td>315,4 s</td><td>8,3 s</td><td class="ja">ja</td></tr>
+<tr class="nv"><td>nvpack liten</td><td>279,10</td><td>6,50×</td><td>−38,4 %</td><td>325,4 s</td><td>207,4 s</td><td class="ja">ja</td></tr>
+</tbody></table>
+<h3>Så kör du det</h3>
+<pre>cd ~/nvpack &amp;&amp; make                         <span style="color:#8b9a94"># bygger C-delarna</span>
+bash prov/prova-allt.sh                      <span style="color:#8b9a94"># provsviten, alla kantfall</span>
+
+./src/nvpack packa ~/projekt ark.nv --läge normal
+./src/nvpack packa-upp ark.nv /tmp/åter
+./src/nvpack lista ark.nv                    <span style="color:#8b9a94"># block, kodek och kvot</span>
+./src/nvpack prova ~/projekt                 <span style="color:#8b9a94"># packa, packa upp, jämför</span>
+
+python3 matning/matning.py kod               <span style="color:#8b9a94"># mät om en korpus</span>
+python3 matning/rapport.py --in-i-readme     <span style="color:#8b9a94"># bygg om tabellerna</span>
+python3 rapport/bygg-tryck.py                <span style="color:#8b9a94"># bygg om den här PDF:en</span></pre>
+<p style="font-size:7.8pt;color:#717f7a">Tre lägen: <code>snabb</code> motsvarar dagens
+arkivskript (zstd −3, inga omvandlingar), <code>normal</code> är standard, och
+<code>liten</code> släpper dessutom in nvcm på de textblock där provet visar att den
+vinner.</p><div class="fot"><span>nvpack · mätrapport</span><span>sida 9 av 9</span></div></div><div id="kontroll" style="display:none"></div>
+<script>
+(function () {
+  const fel = [];
+  document.querySelectorAll('.sida').forEach((s, i) => {
+    const fot = s.querySelector('.fot').getBoundingClientRect().top;
+    const barn = [...s.children].filter(e => !e.classList.contains('fot'));
+    const botten = Math.max(...barn.map(e => e.getBoundingClientRect().bottom));
+    if (botten > fot - 2) fel.push(`sida ${i + 1} (+${Math.ceil(botten - fot + 2)}px)`);
+  });
+  document.getElementById('kontroll').textContent =
+    fel.length ? 'OVERFYLLD: ' + fel.join(', ') : 'ALLA-SIDOR-RYMS';
+})();
+</script>

@@ -1,0 +1,9 @@
+4422 filer i urvalet
+4141 filer gick inte att utveckla (okänd deflate-motor)
+
+uppblåsning    filer   original  utvecklat  zstd19 orig  zstd19 utv    vinst
+2–4x              13      17.5M      50.6M       17.48M      13.92M    20.4%
+4–8x              14      32.1M     219.6M       26.51M      18.45M    30.4%
+8–16x             40      61.5M     625.5M       49.93M      40.95M    18.0%
+16–32x            26      17.7M     373.8M       12.24M       9.88M    19.3%
+32x+             188      13.4M    1132.0M        7.31M       4.35M    40.4%

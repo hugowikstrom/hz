@@ -1,0 +1,11 @@
+kod: 55.3 MiB i 5962 filer
+  nvpack snabb               11.32 MiB  x 4.88  pack     2.7s  upp    0.8s  exakt
+  nvpack utan knep            8.19 MiB  x 6.75  pack    42.6s  upp    1.2s  exakt
+  nvpack normal               8.19 MiB  x 6.75  pack    43.2s  upp    1.2s  exakt
+  nvpack liten                7.19 MiB  x 7.69  pack    71.3s  upp   67.9s  exakt
+foto: 408.5 MiB i 1143 filer
+  nvpack snabb              408.50 MiB  x 1.00  pack     2.1s  upp    0.5s  exakt
+  nvpack utan knep          408.54 MiB  x 1.00  pack     1.2s  upp    0.4s  exakt
+  nvpack normal             345.07 MiB  x 1.18  pack    21.8s  upp    7.9s  exakt
+  nvpack liten              345.07 MiB  x 1.18  pack    28.0s  upp    7.9s  exakt
+Terminated                 python3 matning/matning.py $k "nvpack snabb" "nvpack utan knep" "nvpack normal" "nvpack liten"

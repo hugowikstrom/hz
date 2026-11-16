@@ -1,0 +1,84 @@
+{
+ "korpus": "symbios3d",
+ "rabyte": 1902532322,
+ "filer": 15139,
+ "matningar": {
+  "tar (okomprimerad)": {
+   "packare": "tar (okomprimerad)",
+   "byte": 1891778560,
+   "packsek": 6.59,
+   "uppacksek": 1.53,
+   "identisk": true
+  },
+  "tar.zst -3 (dagens)": {
+   "packare": "tar.zst -3 (dagens)",
+   "byte": 474825083,
+   "packsek": 2.09,
+   "uppacksek": 3.07,
+   "identisk": true
+  },
+  "nvz snabb": {
+   "packare": "nvz snabb",
+   "byte": 427153267,
+   "packsek": 14.23,
+   "uppacksek": 3.83,
+   "identisk": true
+  },
+  "tar.zst -19 --long": {
+   "packare": "tar.zst -19 --long",
+   "byte": 334813365,
+   "packsek": 148.95,
+   "uppacksek": 4.34,
+   "identisk": true
+  },
+  "nvz normal": {
+   "packare": "nvz normal",
+   "byte": 295955926,
+   "packsek": 315.4,
+   "uppacksek": 8.29,
+   "identisk": true
+  },
+  "nvz liten": {
+   "packare": "nvz liten",
+   "byte": 292661113,
+   "packsek": 325.42,
+   "uppacksek": 207.38,
+   "identisk": true
+  },
+  "tar.xz -9e": {
+   "packare": "tar.xz -9e",
+   "byte": 311988220,
+   "packsek": 289.3,
+   "uppacksek": 5.29,
+   "identisk": true
+  },
+  "tar.zst -22 --ultra": {
+   "packare": "tar.zst -22 --ultra",
+   "byte": 315837126,
+   "packsek": 622.93,
+   "uppacksek": 4.14,
+   "identisk": true
+  },
+  "tar.gz -6": {
+   "packare": "tar.gz -6",
+   "byte": 518034486,
+   "packsek": 98.86,
+   "uppacksek": 9.96,
+   "identisk": true
+  },
+  "tar.gz -9 (pigz)": {
+   "packare": "tar.gz -9 (pigz)",
+   "byte": 513402076,
+   "packsek": 19.12,
+   "uppacksek": 9.44,
+   "identisk": true
+  },
+  "tar.bz2 -9": {
+   "packare": "tar.bz2 -9",
+   "byte": 464396889,
+   "packsek": 207.64,
+   "uppacksek": 82.14,
+   "identisk": true
+  }
+ }
+}

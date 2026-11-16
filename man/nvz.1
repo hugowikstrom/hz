@@ -1,0 +1,134 @@
+.TH NVZ 1 "2026-11-16" "nvz 1" "Användarkommandon"
+.SH NAMN
+nvz \- innehållsmedveten arkivpackare
+.SH SYNOPSIS
+.B nvz packa
+.I katalog arkiv.nv
+.RI [ flaggor ]
+.br
+.B nvz packa\-upp
+.I arkiv.nv målkatalog
+.RI [ flaggor ]
+.br
+.B nvz lista
+.I arkiv.nv
+.br
+.B nvz prova
+.I katalog
+.SH BESKRIVNING
+.B nvz
+packar ett katalogträd till ett arkiv. Till skillnad från
+.BR tar (1)
+i rör med en komprimerare vet nvz vad den packar, och gör fem saker som
+röret inte kan göra:
+.TP
+.B 1. Identiska filer lagras en gång.
+Innehållet hashas med blake2b och dubbletter blir pekare. Uppackningen ger
+tillbaka fristående filer, inte hårda länkar.
+.TP
+.B 2. Lika filer läggs bredvid varandra.
+Posterna sorteras på klass och ändelse före packning, så att likheter som i
+katalogordning låg hundratals megabyte isär hamnar inom komprimerarens
+fönster.
+.TP
+.B 3. PNG vecklas ut och packas om.
+IDAT\-strömmen vecklas ut till råa filterrader, och det
+.I recept
+som återskapar exakt samma deflate\-ström sparas. Hittas inget recept
+lagras filen rå.
+.TP
+.B 4. JPEG kodas om utan att en pixel rörs.
+Huffman\-lagret byts mot en aritmetisk kodare med grannskapsmodeller; se
+.BR nvjpg (1).
+.TP
+.B 5. Ingenting antas \(em allt provas.
+Varje block provpackas med varje tillgänglig kodek på åtta stickprov, och
+den som vinner får blocket. Film och ljud lagras rått av sig självt, därför
+att provet säger det och inte därför att en tabell gissat det.
+.PP
+Varje omvandling bevisas vid packning: resultatet sys ihop igen och jämförs
+med originalet innan det godtas. Går det inte ihop lagras filen rå. Arkivet
+är därmed bit\-exakt, rättigheter och tidsstämplar inräknade.
+.SH FLAGGOR
+.SS packa
+.TP
+.BI \-\-läge " snabb|normal|liten|gpu"
+.B snabb
+motsvarar dagens arkivskript: zstd \-3 och inga omvandlingar.
+.B normal
+slår på omvandlingarna och väljer zstd \-19 eller xz efter prov.
+.B liten
+låter dessutom
+.BR nvz (1)
+tävla om textblocken.
+.B gpu
+låter kodeken nvlz tävla; se ANMÄRKNINGAR.
+.TP
+.BI \-\-kodek " zstd3|zstd19|zstd22|xz9e|nvcm|nvlz"
+Tvinga en kodek i stället för att prova fram en. Finns för mätningar.
+.TP
+.B \-\-utan\-dedup
+Lagra varje kopia för sig. Finns för att kunna mäta vad dedupen är värd.
+.TP
+.B \-\-utan\-omvandling
+Stäng av PNG\- och JPEG\-omvandlingarna.
+.TP
+.BI \-j " antal" "\fR, \fP" \-\-jobb " antal"
+Antal parallella jobb. Standard är antalet trådar, högst 24.
+.TP
+.BR \-q ", " \-\-tyst
+Säg ingenting.
+.SS packa-upp
+.TP
+.BI \-j " antal" "\fR, \fP" \-\-jobb " antal"
+Antal parallella jobb.
+.TP
+.BR \-q ", " \-\-tyst
+Säg ingenting.
+.SH EXEMPEL
+.RS
+.EX
+nvz packa ~/projekt projekt.nv \-\-läge normal
+nvz lista projekt.nv
+nvz packa\-upp projekt.nv /tmp/åter
+nvz prova ~/projekt        # packa, packa upp, jämför bit för bit
+.EE
+.RE
+.SH ARKIVFORMATET
+.RS
+.EX
+"NVPACK\\x01" | block 0 | block 1 | ... | register (zstd) | <u64 offset, u64 längd>
+.EE
+.RE
+.PP
+Varje block är en oberoende packad följd av objektkroppar med sin egen
+kodek. Oberoendet är med flit: blocken packas parallellt, och en uppackning
+som bara vill ha en fil behöver bara röra ett block. Registret ligger i
+parallella listor, och objektens platser i blocken räknas fram ur längderna
+i stället för att lagras.
+.SH ANMÄRKNINGAR
+.TP
+.B Inga specialfiler.
+Rör, uttag och enheter hoppas över med varning. Hårda länkar återskapas som
+fristående filer.
+.TP
+.B Ingen kryptering och ingen redundans.
+En bit som vänder sig i ett block förstör blocket. Arkivet vägrar då packa
+upp i stället för att lämna fel data.
+.TP
+.B Blockstorleken är en kompressionsgräns.
+Block är högst 192 MiB och fönstret inuti dem 128 MiB. Två nästan\-identiska
+filer som hamnar i olika block kan inte matcha varandra, och på arkiv av
+arkiv (zip, tar.gz) förlorar nvz därför mot ett rakt
+.BR tar " | " zstd " \-19."
+.TP
+.B GPU\-läget är ett mätinstrument.
+Kodeken nvlz lägger LZ77\-matchningen på grafikkortet. Den vinner 2,5 gånger
+på just den delen, men entropikodningen är seriell och hela packningen blir
+inte snabbare. Läget finns för att resultatet ska gå att räkna om.
+.SH SE ÄVEN
+.BR nvcm (1),
+.BR nvjpg (1),
+.BR tar (1),
+.BR zstd (1),
+.BR xz (1)

@@ -1,0 +1,5 @@
+kod: 55.3 MiB i 5962 filer
+  nvpack snabb               11.41 MiB  x 4.85  pack     2.9s  upp    0.8s  exakt
+  nvpack utan knep            8.58 MiB  x 6.44  pack    39.3s  upp    0.8s  exakt
+  nvpack normal               8.58 MiB  x 6.44  pack    39.3s  upp    0.8s  exakt
+  nvpack liten                7.28 MiB  x 7.59  pack    64.7s  upp   68.9s  exakt

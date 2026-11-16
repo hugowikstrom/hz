@@ -1,0 +1,230 @@
+{
+ "korpusar": {
+  "gif": {
+   "korpus": "gif",
+   "läge": "normal",
+   "filer": 105,
+   "rabyte": 28726715,
+   "arkivbyte": 14864647,
+   "packsek": 8.19,
+   "uppacksek": 0.18,
+   "avvikelser": [],
+   "identisk": true,
+   "poster": 228,
+   "listade_poster": 228,
+   "packutdata": [
+    "228 poster, 27.4 MiB, läge normal",
+    "dedup: 46 dubbletter, 13.0 MiB",
+    "png: 0/1 omvandlade",
+    "2 block",
+    "klart: 14.18 MiB (x1.93) på 8.0s"
+   ],
+   "listning": [
+    "nvpack v1  rot=gif  skapad 2026-11-16T18:02:04",
+    "228 poster, 59 objekt, 2 block",
+    "  block   0  opak        zstd19      14.41 ->    14.15 MiB  x1.02",
+    "  block   1  png         zstd19       0.03 ->     0.03 MiB  x1.02"
+   ]
+  },
+  "arkiv": {
+   "korpus": "arkiv",
+   "läge": "normal",
+   "filer": 133,
+   "rabyte": 410833681,
+   "arkivbyte": 305398872,
+   "packsek": 45.84,
+   "uppacksek": 0.71,
+   "avvikelser": [],
+   "identisk": true,
+   "poster": 172,
+   "listade_poster": 172,
+   "packutdata": [
+    "172 poster, 391.8 MiB, läge normal",
+    "dedup: 3 dubbletter, 62.8 MiB",
+    "2 block",
+    "klart: 291.25 MiB (x1.35) på 45.7s"
+   ],
+   "listning": [
+    "nvpack v1  rot=arkiv  skapad 2026-11-16T18:02:51",
+    "172 poster, 130 objekt, 2 block",
+    "  block   0  opak        zstd19     192.46 ->   154.68 MiB  x1.24",
+    "  block   1  opak        ra         136.57 ->   136.57 MiB  x1.00"
+   ]
+  },
+  "logg": {
+   "korpus": "logg",
+   "läge": "normal",
+   "filer": 76,
+   "rabyte": 249896132,
+   "arkivbyte": 12551345,
+   "packsek": 876.15,
+   "uppacksek": 1.27,
+   "avvikelser": [],
+   "identisk": true,
+   "poster": 95,
+   "listade_poster": 95,
+   "packutdata": [
+    "95 poster, 238.3 MiB, läge normal",
+    "2 block",
+    "klart: 11.97 MiB (x19.91) på 876.0s"
+   ],
+   "listning": [
+    "nvpack v1  rot=logg  skapad 2026-11-16T18:17:29",
+    "95 poster, 74 objekt, 2 block",
+    "  block   0  text        xz9e       192.03 ->    10.57 MiB  x18.16",
+    "  block   1  text        xz9e        46.29 ->     1.39 MiB  x33.25"
+   ]
+  },
+  "film": {
+   "korpus": "film",
+   "läge": "normal",
+   "filer": 67,
+   "rabyte": 562820616,
+   "arkivbyte": 558105178,
+   "packsek": 42.45,
+   "uppacksek": 0.76,
+   "avvikelser": [],
+   "identisk": true,
+   "poster": 74,
+   "listade_poster": 74,
+   "packutdata": [
+    "74 poster, 536.7 MiB, läge normal",
+    "3 block",
+    "klart: 532.25 MiB (x1.01) på 42.3s"
+   ],
+   "listning": [
+    "nvpack v1  rot=film  skapad 2026-11-16T18:18:14",
+    "74 poster, 67 objekt, 3 block",
+    "  block   0  opak        zstd3      196.47 ->   196.20 MiB  x1.00",
+    "  block   1  opak        zstd3      193.85 ->   193.46 MiB  x1.00",
+    "  block   2  opak        zstd19     146.43 ->   142.59 MiB  x1.03"
+   ]
+  },
+  "png": {
+   "korpus": "png",
+   "läge": "normal",
+   "filer": 4618,
+   "rabyte": 452014330,
+   "arkivbyte": 219065645,
+   "packsek": 253.83,
+   "uppacksek": 9.35,
+   "avvikelser": [],
+   "identisk": true,
+   "poster": 7396,
+   "listade_poster": 7396,
+   "packutdata": [
+    "7396 poster, 431.1 MiB, läge normal",
+    "dedup: 2655 dubbletter, 123.8 MiB",
+    "png: 354/1963 omvandlade",
+    "16 block",
+    "klart: 208.92 MiB (x2.06) på 252.9s"
+   ],
+   "listning": [
+    "nvpack v1  rot=png  skapad 2026-11-16T18:22:29",
+    "7396 poster, 1963 objekt, 16 block, omvandlade: {'png': 354}",
+    "  block   0  png-rest    zstd19       0.14 ->     0.03 MiB  x5.44",
+    "  block   1  png-ra      xz9e       205.68 ->    10.85 MiB  x18.96",
+    "  block   2  png-ra      xz9e       205.68 ->    11.19 MiB  x18.38",
+    "  block   3  png-ra      xz9e       205.68 ->    10.76 MiB  x19.12",
+    "  block   4  png-ra      xz9e       205.68 ->     5.38 MiB  x38.25",
+    "  block   5  png-ra      xz9e       205.68 ->     8.01 MiB  x25.68",
+    "  block   6  png-ra      xz9e       195.74 ->     1.99 MiB  x98.38",
+    "  block   7  png-ra      xz9e       202.94 ->     6.54 MiB  x31.04",
+    "  block   8  png-ra      xz9e       205.68 ->    10.71 MiB  x19.20",
+    "  block   9  png-ra      xz9e       196.98 ->     3.56 MiB  x55.26",
+    "  block  10  png-ra      xz9e       195.06 ->    30.95 MiB  x6.30",
+    "  block  11  png-ra      xz9e       192.85 ->    17.14 MiB  x11.25",
+    "  block  12  png         zstd19     120.51 ->    90.16 MiB  x1.34",
+    "  block  13  png-ra      xz9e       192.85 ->     0.40 MiB  x481.37",
+    "  block  14  png-ra      xz9e       192.85 ->     0.70 MiB  x276.93",
+    "  block  15  png-ra      xz9e       122.39 ->     0.49 MiB  x252.16"
+   ]
+  },
+  "foto": {
+   "korpus": "foto",
+   "läge": "normal",
+   "filer": 1143,
+   "rabyte": 428360423,
+   "arkivbyte": 361834728,
+   "packsek": 21.37,
+   "uppacksek": 7.9,
+   "avvikelser": [],
+   "identisk": true,
+   "poster": 1147,
+   "listade_poster": 1147,
+   "packutdata": [
+    "1147 poster, 408.5 MiB, läge normal",
+    "dedup: 1 dubbletter, 0.0 MiB",
+    "jpeg: 1141/1142 omvandlade",
+    "4 block",
+    "klart: 345.07 MiB (x1.18) på 21.2s"
+   ],
+   "listning": [
+    "nvpack v1  rot=foto  skapad 2026-11-16T18:23:05",
+    "1147 poster, 1142 objekt, 4 block, omvandlade: {'jpeg': 1141}",
+    "  block   0  jpeg-rest   zstd19       3.63 ->     1.56 MiB  x2.33",
+    "  block   1  jpeg-kropp  ra         192.14 ->   192.14 MiB  x1.00",
+    "  block   2  jpeg-kropp  ra         151.33 ->   151.33 MiB  x1.00",
+    "  block   3  jpeg        zstd19       0.02 ->     0.01 MiB  x1.19"
+   ]
+  },
+  "kod": {
+   "korpus": "kod",
+   "läge": "normal",
+   "filer": 5974,
+   "rabyte": 58017251,
+   "arkivbyte": 8597875,
+   "packsek": 42.66,
+   "uppacksek": 1.27,
+   "avvikelser": [],
+   "identisk": true,
+   "poster": 6809,
+   "listade_poster": 6809,
+   "packutdata": [
+    "6809 poster, 55.3 MiB, läge normal",
+    "dedup: 76 dubbletter, 0.4 MiB",
+    "1 block",
+    "klart: 8.20 MiB (x6.75) på 42.5s"
+   ],
+   "listning": [
+    "nvpack v1  rot=kod  skapad 2026-11-16T18:24:08",
+    "6809 poster, 5898 objekt, 1 block",
+    "  block   0  text        xz9e        54.96 ->     8.05 MiB  x6.83"
+   ]
+  }
+ },
+ "skada": {
+  "gif": [
+   {
+    "skada": "magin bytt",
+    "utfall": "vägrade",
+    "godkänt": true,
+    "felkod": 1
+   },
+   {
+    "skada": "byte i blockkropp",
+    "utfall": "vägrade",
+    "godkänt": true,
+    "felkod": 1
+   },
+   {
+    "skada": "sista kilobyten bort",
+    "utfall": "vägrade",
+    "godkänt": true,
+    "felkod": 1
+   },
+   {
+    "skada": "registerpekaren noll",
+    "utfall": "vägrade",
+    "godkänt": true,
+    "felkod": 1
+   },
+   {
+    "skada": "en byte i registret",
+    "utfall": "vägrade",
+    "godkänt": true,
+    "felkod": 1
+   }
+  ]
+ }
+}

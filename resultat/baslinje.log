@@ -1,0 +1,24 @@
+kod: 55.5 MiB i 5962 filer
+  tar (okomprimerad)         60.83 MiB  x 0.91  pack     0.1s  upp    0.1s  exakt
+  tar.gz -6                  12.32 MiB  x 4.50  pack     2.2s  upp    0.3s  exakt
+  tar.gz -9 (pigz)           12.18 MiB  x 4.56  pack     0.5s  upp    0.3s  exakt
+  tar.zst -3 (dagens)        11.46 MiB  x 4.84  pack     0.2s  upp    0.1s  exakt
+  tar.zst -19 --long          8.53 MiB  x 6.50  pack    34.7s  upp    0.1s  exakt
+  tar.zst -22 --ultra         8.45 MiB  x 6.56  pack    56.4s  upp    0.1s  exakt
+  tar.xz -9e                  8.23 MiB  x 6.74  pack    46.8s  upp    0.6s  exakt
+png: 431.0 MiB i 4617 filer
+  tar (okomprimerad)        438.41 MiB  x 0.98  pack     2.8s  upp    0.3s  exakt
+  tar.gz -6                 401.67 MiB  x 1.07  pack    20.1s  upp    2.5s  exakt
+  tar.gz -9 (pigz)          401.89 MiB  x 1.07  pack     1.8s  upp    2.6s  exakt
+  tar.zst -3 (dagens)       362.85 MiB  x 1.19  pack     0.6s  upp    0.3s  exakt
+  tar.zst -19 --long        252.73 MiB  x 1.71  pack    39.8s  upp    0.5s  exakt
+  tar.zst -22 --ultra       245.22 MiB  x 1.76  pack   156.2s  upp    0.8s  exakt
+  tar.xz -9e                266.41 MiB  x 1.62  pack   128.4s  upp    4.9s  exakt
+foto: 408.5 MiB i 1143 filer
+  tar (okomprimerad)        409.37 MiB  x 1.00  pack     2.1s  upp    0.2s  exakt
+  tar.gz -6                 405.81 MiB  x 1.01  pack    19.1s  upp    2.0s  exakt
+  tar.gz -9 (pigz)          406.04 MiB  x 1.01  pack     1.3s  upp    1.6s  exakt
+  tar.zst -3 (dagens)       406.30 MiB  x 1.01  pack     0.5s  upp    0.2s  exakt
+  tar.zst -19 --long        405.09 MiB  x 1.01  pack    53.1s  upp    0.4s  exakt
+  tar.zst -22 --ultra       405.09 MiB  x 1.01  pack   225.4s  upp    0.4s  exakt
+  tar.xz -9e                405.43 MiB  x 1.01  pack   157.3s  upp    3.5s  exakt

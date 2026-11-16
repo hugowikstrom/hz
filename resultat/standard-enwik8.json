@@ -1,0 +1,143 @@
+{
+ "korpus": "enwik8",
+ "rabyte": 100000000,
+ "filer": {
+  "enwik8": {
+   "gzip -9": {
+    "kodek": "gzip -9",
+    "byte": 36445248,
+    "packsek": 9.34,
+    "uppacksek": 0.69,
+    "kvot": 2.744,
+    "bpb": 2.9156,
+    "packmibs": 10.2,
+    "uppackmibs": 138.5,
+    "exakt": true
+   },
+   "bzip2 -9": {
+    "kodek": "bzip2 -9",
+    "byte": 29008758,
+    "packsek": 10.93,
+    "uppacksek": 5.78,
+    "kvot": 3.447,
+    "bpb": 2.3207,
+    "packmibs": 8.7,
+    "uppackmibs": 16.5,
+    "exakt": true
+   },
+   "zstd -19": {
+    "kodek": "zstd -19",
+    "byte": 26944227,
+    "packsek": 87.03,
+    "uppacksek": 0.28,
+    "kvot": 3.711,
+    "bpb": 2.1555,
+    "packmibs": 1.1,
+    "uppackmibs": 343.0,
+    "exakt": true
+   },
+   "zstd -22 --ultra": {
+    "kodek": "zstd -22 --ultra",
+    "byte": 25272471,
+    "packsek": 115.67,
+    "uppacksek": 0.25,
+    "kvot": 3.957,
+    "bpb": 2.0218,
+    "packmibs": 0.8,
+    "uppackmibs": 379.4,
+    "exakt": true
+   },
+   "brotli -q 11": {
+    "kodek": "brotli -q 11",
+    "byte": 25742001,
+    "packsek": 305.38,
+    "uppacksek": 0.46,
+    "kvot": 3.885,
+    "bpb": 2.0594,
+    "packmibs": 0.3,
+    "uppackmibs": 207.5,
+    "exakt": true
+   },
+   "xz -9e": {
+    "kodek": "xz -9e",
+    "byte": 24831648,
+    "packsek": 118.09,
+    "uppacksek": 1.37,
+    "kvot": 4.027,
+    "bpb": 1.9865,
+    "packmibs": 0.8,
+    "uppackmibs": 69.4,
+    "exakt": true
+   },
+   "nvz": {
+    "kodek": "nvz",
+    "byte": 21417184,
+    "packsek": 120.01,
+    "uppacksek": 134.28,
+    "kvot": 4.669,
+    "bpb": 1.7134,
+    "packmibs": 0.8,
+    "uppackmibs": 0.7,
+    "exakt": true
+   }
+  }
+ },
+ "summor": {
+  "gzip -9": {
+   "byte": 36445248,
+   "packsek": 9.34,
+   "uppacksek": 0.69,
+   "kvot": 2.744,
+   "bpb": 2.9156,
+   "exakt": true
+  },
+  "bzip2 -9": {
+   "byte": 29008758,
+   "packsek": 10.93,
+   "uppacksek": 5.78,
+   "kvot": 3.447,
+   "bpb": 2.3207,
+   "exakt": true
+  },
+  "zstd -19": {
+   "byte": 26944227,
+   "packsek": 87.03,
+   "uppacksek": 0.28,
+   "kvot": 3.711,
+   "bpb": 2.1555,
+   "exakt": true
+  },
+  "zstd -22 --ultra": {
+   "byte": 25272471,
+   "packsek": 115.67,
+   "uppacksek": 0.25,
+   "kvot": 3.957,
+   "bpb": 2.0218,
+   "exakt": true
+  },
+  "brotli -q 11": {
+   "byte": 25742001,
+   "packsek": 305.38,
+   "uppacksek": 0.46,
+   "kvot": 3.885,
+   "bpb": 2.0594,
+   "exakt": true
+  },
+  "xz -9e": {
+   "byte": 24831648,
+   "packsek": 118.09,
+   "uppacksek": 1.37,
+   "kvot": 4.027,
+   "bpb": 1.9865,
+   "exakt": true
+  },
+  "nvz": {
+   "byte": 21417184,
+   "packsek": 120.01,
+   "uppacksek": 134.28,
+   "kvot": 4.669,
+   "bpb": 1.7134,
+   "exakt": true
+  }
+ }
+}

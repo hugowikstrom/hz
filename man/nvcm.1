@@ -1,0 +1,140 @@
+.TH NVCM 1 "2026-11-16" "nvcm 1.0" "Användarkommandon"
+.SH NAMN
+nvcm \- kontextblandande komprimering av text och källkod
+.SH SYNOPSIS
+.B nvcm
+.RI [ flaggor ]
+.RI [ fil ...]
+.br
+.B nvcm \-d
+.RI [ flaggor ]
+.RI [ fil.nvcm ...]
+.SH BESKRIVNING
+.B nvcm
+komprimerar filer med kontextblandning i stället för med en ordbok. Där
+.BR gzip (1),
+.BR zstd (1)
+och
+.BR xz (1)
+letar upp en tidigare förekomst av samma byte-följd och skriver en
+hänvisning till den, gissar nvcm i stället nästa
+.IR bit ,
+med åtta modeller samtidigt: ordning 0 till 8, en ordmodell som fångar vad
+som brukar följa på ett påbörjat ord, och en matchmodell som gör
+ordbokspackarens trick som en röst bland andra. Rösterna vägs ihop av en
+blandare som lär sig under tiden vilken modell som brukar ha rätt i just den
+här sortens data.
+.PP
+Priset är hastighet: nvcm packar omkring en mebibyte i sekunden, och packar
+upp lika långsamt \(em avkodningen kör samma modeller i samma ordning.
+Vinsten är storleken. På standardkorpusen Silesia är nvcm 8,3 % mindre än
+.B xz \-9e
+och på enwik8 13,8 % mindre.
+.PP
+Utan filargument läses stdin och skrivs stdout. Med filargument ersätts
+varje fil av en packad fil med ändelsen
+.IR .nvcm ,
+och rättigheter och tidsstämplar följer med. Originalet tas bort om inte
+.B \-k
+eller
+.B \-c
+anges \(em som i
+.BR gzip (1).
+.SH FLAGGOR
+.TP
+.BR \-d ", " \-\-decompress ", " \-\-uncompress
+Packa upp i stället för att packa.
+.TP
+.BR \-c ", " \-\-stdout ", " \-\-to\-stdout
+Skriv resultatet till stdout och låt indatafilen vara.
+.TP
+.BR \-k ", " \-\-keep
+Behåll indatafilen i stället för att ta bort den.
+.TP
+.BR \-f ", " \-\-force
+Skriv över en fil som redan finns, och tillåt packad data till en terminal.
+.TP
+.BR \-t ", " \-\-test
+Prova att det packade går att packa upp. Skriver
+.I namn: OK
+och ger returkod 0 om strömmen håller.
+.TP
+.BR \-l ", " \-\-list
+Visa packad storlek, opackad storlek och kvot utan att packa upp. Den
+opackade längden står i strömmens huvud, så flaggan är gratis.
+.TP
+.BR \-v ", " \-\-verbose
+Berätta vad som hände med varje fil.
+.TP
+.BR \-1 " .. " \-9 ", " \-\-fast ", " \-\-best
+Tas emot och ignoreras. nvcm har inga nivåer; modellerna anpassar sig efter
+datat i stället. Flaggorna finns för att skript som redan talar
+.BR gzip (1)
+ska fungera utan ändring.
+.TP
+.BR \-h ", " \-\-help
+Kort hjälptext.
+.TP
+.BR \-V ", " \-\-version
+Versionen.
+.SH EXEMPEL
+Packa en loggfil och behåll originalet:
+.PP
+.RS
+.EX
+nvcm \-kv stor.log
+stor.log:\t95.8% \-\- skrev stor.log.nvcm
+.EE
+.RE
+.PP
+Packa upp till stdout utan att röra filen:
+.PP
+.RS
+.EX
+nvcm \-dc stor.log.nvcm | grep FEL
+.EE
+.RE
+.PP
+I ett rör, utan filer inblandade:
+.PP
+.RS
+.EX
+tar \-cf \- katalog | nvcm > katalog.tar.nvcm
+.EE
+.RE
+.SH RETURKODER
+0 om allt gick bra, 1 vid fel. En skadad ström ger fel \(em nvcm lämnar
+aldrig tillbaka data den inte kunnat kontrollera.
+.SH FILER
+.TP
+.I fil.nvcm
+Packad fil. Strömmen inleds med magin
+.B NVZ1
+följd av den opackade längden som 64 bitar.
+.SH ANMÄRKNINGAR
+nvcm hette
+.B nvcm
+under några timmar den 16 november 2026, och den magin
+.B NVZ01
+läses fortfarande. De odokumenterade underkommandona
+.B packa
+och
+.B packaupp
+läser stdin och skriver stdout; de finns kvar därför att
+.BR nvpack (1)
+anropar dem.
+.PP
+nvcm är inte bättre på allt. På en talkolumn
+.RB ( "seq 1 50000" )
+är den 4,7 gånger sämre än
+.BR xz (1):
+en modell som gissar nästa bit ur de föregående byten ser inte att ett tal
+ökar med ett, medan ordbokspackarens matchningslängd gör det. Därför väljer
+.BR nvpack (1)
+nvcm per block, efter prov, i stället för efter filtyp.
+.SH SE ÄVEN
+.BR nvpack (1),
+.BR nvjpg (1),
+.BR gzip (1),
+.BR xz (1),
+.BR zstd (1)

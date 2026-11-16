@@ -1,0 +1,1012 @@
+{
+ "korpus": "silesia",
+ "rabyte": 211938580,
+ "filer": {
+  "dickens": {
+   "gzip -9": {
+    "kodek": "gzip -9",
+    "byte": 3851823,
+    "packsek": 1.46,
+    "uppacksek": 0.08,
+    "kvot": 2.646,
+    "bpb": 3.0233,
+    "packmibs": 6.7,
+    "uppackmibs": 121.1,
+    "exakt": true
+   },
+   "bzip2 -9": {
+    "kodek": "bzip2 -9",
+    "byte": 2799520,
+    "packsek": 1.18,
+    "uppacksek": 0.61,
+    "kvot": 3.641,
+    "bpb": 2.1973,
+    "packmibs": 8.2,
+    "uppackmibs": 15.9,
+    "exakt": true
+   },
+   "zstd -19": {
+    "kodek": "zstd -19",
+    "byte": 2849945,
+    "packsek": 8.0,
+    "uppacksek": 0.04,
+    "kvot": 3.576,
+    "bpb": 2.2369,
+    "packmibs": 1.2,
+    "uppackmibs": 245.8,
+    "exakt": true
+   },
+   "zstd -22 --ultra": {
+    "kodek": "zstd -22 --ultra",
+    "byte": 2849068,
+    "packsek": 8.03,
+    "uppacksek": 0.03,
+    "kvot": 3.577,
+    "bpb": 2.2362,
+    "packmibs": 1.2,
+    "uppackmibs": 308.0,
+    "exakt": true
+   },
+   "brotli -q 11": {
+    "kodek": "brotli -q 11",
+    "byte": 2827777,
+    "packsek": 27.01,
+    "uppacksek": 0.06,
+    "kvot": 3.604,
+    "bpb": 2.2195,
+    "packmibs": 0.4,
+    "uppackmibs": 167.7,
+    "exakt": true
+   },
+   "xz -9e": {
+    "kodek": "xz -9e",
+    "byte": 2831212,
+    "packsek": 8.91,
+    "uppacksek": 0.13,
+    "kvot": 3.6,
+    "bpb": 2.2222,
+    "packmibs": 1.1,
+    "uppackmibs": 75.5,
+    "exakt": true
+   },
+   "nvz": {
+    "kodek": "nvz",
+    "byte": 2234894,
+    "packsek": 12.2,
+    "uppacksek": 13.48,
+    "kvot": 4.561,
+    "bpb": 1.7542,
+    "packmibs": 0.8,
+    "uppackmibs": 0.7,
+    "exakt": true
+   }
+  },
+  "mozilla": {
+   "gzip -9": {
+    "kodek": "gzip -9",
+    "byte": 18994142,
+    "packsek": 11.62,
+    "uppacksek": 0.33,
+    "kvot": 2.697,
+    "bpb": 2.9666,
+    "packmibs": 4.2,
+    "uppackmibs": 146.3,
+    "exakt": true
+   },
+   "bzip2 -9": {
+    "kodek": "bzip2 -9",
+    "byte": 17914392,
+    "packsek": 5.34,
+    "uppacksek": 2.81,
+    "kvot": 2.859,
+    "bpb": 2.798,
+    "packmibs": 9.1,
+    "uppackmibs": 17.4,
+    "exakt": true
+   },
+   "zstd -19": {
+    "kodek": "zstd -19",
+    "byte": 15071672,
+    "packsek": 26.15,
+    "uppacksek": 0.13,
+    "kvot": 3.398,
+    "bpb": 2.354,
+    "packmibs": 1.9,
+    "uppackmibs": 371.3,
+    "exakt": true
+   },
+   "zstd -22 --ultra": {
+    "kodek": "zstd -22 --ultra",
+    "byte": 14914120,
+    "packsek": 29.7,
+    "uppacksek": 0.15,
+    "kvot": 3.434,
+    "bpb": 2.3294,
+    "packmibs": 1.6,
+    "uppackmibs": 326.3,
+    "exakt": true
+   },
+   "brotli -q 11": {
+    "kodek": "brotli -q 11",
+    "byte": 13872265,
+    "packsek": 185.43,
+    "uppacksek": 0.32,
+    "kvot": 3.692,
+    "bpb": 2.1667,
+    "packmibs": 0.3,
+    "uppackmibs": 153.6,
+    "exakt": true
+   },
+   "xz -9e": {
+    "kodek": "xz -9e",
+    "byte": 13376240,
+    "packsek": 33.73,
+    "uppacksek": 0.87,
+    "kvot": 3.829,
+    "bpb": 2.0892,
+    "packmibs": 1.4,
+    "uppackmibs": 56.3,
+    "exakt": true
+   },
+   "nvz": {
+    "kodek": "nvz",
+    "byte": 14366242,
+    "packsek": 61.35,
+    "uppacksek": 67.73,
+    "kvot": 3.565,
+    "bpb": 2.2438,
+    "packmibs": 0.8,
+    "uppackmibs": 0.7,
+    "exakt": true
+   }
+  },
+  "mr": {
+   "gzip -9": {
+    "kodek": "gzip -9",
+    "byte": 3673940,
+    "packsek": 2.35,
+    "uppacksek": 0.08,
+    "kvot": 2.714,
+    "bpb": 2.9478,
+    "packmibs": 4.0,
+    "uppackmibs": 119.0,
+    "exakt": true
+   },
+   "bzip2 -9": {
+    "kodek": "bzip2 -9",
+    "byte": 2441280,
+    "packsek": 0.78,
+    "uppacksek": 0.46,
+    "kvot": 4.084,
+    "bpb": 1.9588,
+    "packmibs": 12.1,
+    "uppackmibs": 20.9,
+    "exakt": true
+   },
+   "zstd -19": {
+    "kodek": "zstd -19",
+    "byte": 3106737,
+    "packsek": 4.53,
+    "uppacksek": 0.03,
+    "kvot": 3.209,
+    "bpb": 2.4927,
+    "packmibs": 2.1,
+    "uppackmibs": 326.6,
+    "exakt": true
+   },
+   "zstd -22 --ultra": {
+    "kodek": "zstd -22 --ultra",
+    "byte": 3102402,
+    "packsek": 6.51,
+    "uppacksek": 0.04,
+    "kvot": 3.214,
+    "bpb": 2.4892,
+    "packmibs": 1.5,
+    "uppackmibs": 260.0,
+    "exakt": true
+   },
+   "brotli -q 11": {
+    "kodek": "brotli -q 11",
+    "byte": 2823136,
+    "packsek": 26.83,
+    "uppacksek": 0.09,
+    "kvot": 3.532,
+    "bpb": 2.2652,
+    "packmibs": 0.4,
+    "uppackmibs": 111.0,
+    "exakt": true
+   },
+   "xz -9e": {
+    "kodek": "xz -9e",
+    "byte": 2751892,
+    "packsek": 8.7,
+    "uppacksek": 0.2,
+    "kvot": 3.623,
+    "bpb": 2.208,
+    "packmibs": 1.1,
+    "uppackmibs": 47.8,
+    "exakt": true
+   },
+   "nvz": {
+    "kodek": "nvz",
+    "byte": 2205358,
+    "packsek": 10.55,
+    "uppacksek": 11.53,
+    "kvot": 4.521,
+    "bpb": 1.7695,
+    "packmibs": 0.9,
+    "uppackmibs": 0.8,
+    "exakt": true
+   }
+  },
+  "nci": {
+   "gzip -9": {
+    "kodek": "gzip -9",
+    "byte": 2987533,
+    "packsek": 3.29,
+    "uppacksek": 0.07,
+    "kvot": 11.231,
+    "bpb": 0.7123,
+    "packmibs": 9.7,
+    "uppackmibs": 437.7,
+    "exakt": true
+   },
+   "bzip2 -9": {
+    "kodek": "bzip2 -9",
+    "byte": 1812734,
+    "packsek": 5.43,
+    "uppacksek": 1.02,
+    "kvot": 18.51,
+    "bpb": 0.4322,
+    "packmibs": 5.9,
+    "uppackmibs": 31.5,
+    "exakt": true
+   },
+   "zstd -19": {
+    "kodek": "zstd -19",
+    "byte": 1664988,
+    "packsek": 23.22,
+    "uppacksek": 0.05,
+    "kvot": 20.152,
+    "bpb": 0.397,
+    "packmibs": 1.4,
+    "uppackmibs": 657.6,
+    "exakt": true
+   },
+   "zstd -22 --ultra": {
+    "kodek": "zstd -22 --ultra",
+    "byte": 1579587,
+    "packsek": 38.72,
+    "uppacksek": 0.05,
+    "kvot": 21.242,
+    "bpb": 0.3766,
+    "packmibs": 0.8,
+    "uppackmibs": 621.6,
+    "exakt": true
+   },
+   "brotli -q 11": {
+    "kodek": "brotli -q 11",
+    "byte": 1519768,
+    "packsek": 78.03,
+    "uppacksek": 0.06,
+    "kvot": 22.078,
+    "bpb": 0.3624,
+    "packmibs": 0.4,
+    "uppackmibs": 532.7,
+    "exakt": true
+   },
+   "xz -9e": {
+    "kodek": "xz -9e",
+    "byte": 1449272,
+    "packsek": 27.71,
+    "uppacksek": 0.15,
+    "kvot": 23.152,
+    "bpb": 0.3455,
+    "packmibs": 1.2,
+    "uppackmibs": 216.9,
+    "exakt": true
+   },
+   "nvz": {
+    "kodek": "nvz",
+    "byte": 1505038,
+    "packsek": 25.45,
+    "uppacksek": 28.01,
+    "kvot": 22.294,
+    "bpb": 0.3588,
+    "packmibs": 1.3,
+    "uppackmibs": 1.1,
+    "exakt": true
+   }
+  },
+  "ooffice": {
+   "gzip -9": {
+    "kodek": "gzip -9",
+    "byte": 3090442,
+    "packsek": 0.86,
+    "uppacksek": 0.06,
+    "kvot": 1.991,
+    "bpb": 4.0187,
+    "packmibs": 6.8,
+    "uppackmibs": 95.0,
+    "exakt": true
+   },
+   "bzip2 -9": {
+    "kodek": "bzip2 -9",
+    "byte": 2862526,
+    "packsek": 0.65,
+    "uppacksek": 0.46,
+    "kvot": 2.149,
+    "bpb": 3.7223,
+    "packmibs": 9.0,
+    "uppackmibs": 12.8,
+    "exakt": true
+   },
+   "zstd -19": {
+    "kodek": "zstd -19",
+    "byte": 2595377,
+    "packsek": 2.69,
+    "uppacksek": 0.03,
+    "kvot": 2.37,
+    "bpb": 3.3749,
+    "packmibs": 2.2,
+    "uppackmibs": 187.7,
+    "exakt": true
+   },
+   "zstd -22 --ultra": {
+    "kodek": "zstd -22 --ultra",
+    "byte": 2595256,
+    "packsek": 2.86,
+    "uppacksek": 0.03,
+    "kvot": 2.371,
+    "bpb": 3.3747,
+    "packmibs": 2.1,
+    "uppackmibs": 178.3,
+    "exakt": true
+   },
+   "brotli -q 11": {
+    "kodek": "brotli -q 11",
+    "byte": 2478855,
+    "packsek": 21.93,
+    "uppacksek": 0.06,
+    "kvot": 2.482,
+    "bpb": 3.2234,
+    "packmibs": 0.3,
+    "uppackmibs": 97.6,
+    "exakt": true
+   },
+   "xz -9e": {
+    "kodek": "xz -9e",
+    "byte": 2427224,
+    "packsek": 3.39,
+    "uppacksek": 0.17,
+    "kvot": 2.535,
+    "bpb": 3.1562,
+    "packmibs": 1.7,
+    "uppackmibs": 35.4,
+    "exakt": true
+   },
+   "nvz": {
+    "kodek": "nvz",
+    "byte": 2379789,
+    "packsek": 8.3,
+    "uppacksek": 9.16,
+    "kvot": 2.585,
+    "bpb": 3.0946,
+    "packmibs": 0.7,
+    "uppackmibs": 0.6,
+    "exakt": true
+   }
+  },
+  "osdb": {
+   "gzip -9": {
+    "kodek": "gzip -9",
+    "byte": 3716342,
+    "packsek": 0.74,
+    "uppacksek": 0.08,
+    "kvot": 2.714,
+    "bpb": 2.9478,
+    "packmibs": 13.1,
+    "uppackmibs": 123.8,
+    "exakt": true
+   },
+   "bzip2 -9": {
+    "kodek": "bzip2 -9",
+    "byte": 2802792,
+    "packsek": 1.04,
+    "uppacksek": 0.6,
+    "kvot": 3.598,
+    "bpb": 2.2232,
+    "packmibs": 9.3,
+    "uppackmibs": 15.9,
+    "exakt": true
+   },
+   "zstd -19": {
+    "kodek": "zstd -19",
+    "byte": 3100177,
+    "packsek": 5.46,
+    "uppacksek": 0.03,
+    "kvot": 3.253,
+    "bpb": 2.4591,
+    "packmibs": 1.8,
+    "uppackmibs": 328.0,
+    "exakt": true
+   },
+   "zstd -22 --ultra": {
+    "kodek": "zstd -22 --ultra",
+    "byte": 3100124,
+    "packsek": 5.73,
+    "uppacksek": 0.03,
+    "kvot": 3.253,
+    "bpb": 2.459,
+    "packmibs": 1.7,
+    "uppackmibs": 283.8,
+    "exakt": true
+   },
+   "brotli -q 11": {
+    "kodek": "brotli -q 11",
+    "byte": 2816278,
+    "packsek": 23.88,
+    "uppacksek": 0.06,
+    "kvot": 3.581,
+    "bpb": 2.2339,
+    "packmibs": 0.4,
+    "uppackmibs": 153.6,
+    "exakt": true
+   },
+   "xz -9e": {
+    "kodek": "xz -9e",
+    "byte": 2844556,
+    "packsek": 6.09,
+    "uppacksek": 0.17,
+    "kvot": 3.546,
+    "bpb": 2.2563,
+    "packmibs": 1.6,
+    "uppackmibs": 57.6,
+    "exakt": true
+   },
+   "nvz": {
+    "kodek": "nvz",
+    "byte": 2395972,
+    "packsek": 12.68,
+    "uppacksek": 14.04,
+    "kvot": 4.209,
+    "bpb": 1.9005,
+    "packmibs": 0.8,
+    "uppackmibs": 0.7,
+    "exakt": true
+   }
+  },
+  "reymont": {
+   "gzip -9": {
+    "kodek": "gzip -9",
+    "byte": 1820834,
+    "packsek": 1.8,
+    "uppacksek": 0.04,
+    "kvot": 3.64,
+    "bpb": 2.198,
+    "packmibs": 3.5,
+    "uppackmibs": 157.5,
+    "exakt": true
+   },
+   "bzip2 -9": {
+    "kodek": "bzip2 -9",
+    "byte": 1246230,
+    "packsek": 0.72,
+    "uppacksek": 0.32,
+    "kvot": 5.318,
+    "bpb": 1.5044,
+    "packmibs": 8.8,
+    "uppackmibs": 19.5,
+    "exakt": true
+   },
+   "zstd -19": {
+    "kodek": "zstd -19",
+    "byte": 1348462,
+    "packsek": 4.98,
+    "uppacksek": 0.03,
+    "kvot": 4.915,
+    "bpb": 1.6278,
+    "packmibs": 1.3,
+    "uppackmibs": 241.2,
+    "exakt": true
+   },
+   "zstd -22 --ultra": {
+    "kodek": "zstd -22 --ultra",
+    "byte": 1348522,
+    "packsek": 5.25,
+    "uppacksek": 0.02,
+    "kvot": 4.914,
+    "bpb": 1.6279,
+    "packmibs": 1.2,
+    "uppackmibs": 263.0,
+    "exakt": true
+   },
+   "brotli -q 11": {
+    "kodek": "brotli -q 11",
+    "byte": 1332158,
+    "packsek": 15.8,
+    "uppacksek": 0.03,
+    "kvot": 4.975,
+    "bpb": 1.6081,
+    "packmibs": 0.4,
+    "uppackmibs": 185.4,
+    "exakt": true
+   },
+   "xz -9e": {
+    "kodek": "xz -9e",
+    "byte": 1315592,
+    "packsek": 5.52,
+    "uppacksek": 0.08,
+    "kvot": 5.037,
+    "bpb": 1.5881,
+    "packmibs": 1.1,
+    "uppackmibs": 82.3,
+    "exakt": true
+   },
+   "nvz": {
+    "kodek": "nvz",
+    "byte": 1053488,
+    "packsek": 7.35,
+    "uppacksek": 7.94,
+    "kvot": 6.291,
+    "bpb": 1.2717,
+    "packmibs": 0.9,
+    "uppackmibs": 0.8,
+    "exakt": true
+   }
+  },
+  "samba": {
+   "gzip -9": {
+    "kodek": "gzip -9",
+    "byte": 5408272,
+    "packsek": 1.62,
+    "uppacksek": 0.1,
+    "kvot": 3.995,
+    "bpb": 2.0025,
+    "packmibs": 12.7,
+    "uppackmibs": 208.1,
+    "exakt": true
+   },
+   "bzip2 -9": {
+    "kodek": "bzip2 -9",
+    "byte": 4549759,
+    "packsek": 2.15,
+    "uppacksek": 0.84,
+    "kvot": 4.749,
+    "bpb": 1.6846,
+    "packmibs": 9.6,
+    "uppackmibs": 24.7,
+    "exakt": true
+   },
+   "zstd -19": {
+    "kodek": "zstd -19",
+    "byte": 3894675,
+    "packsek": 10.14,
+    "uppacksek": 0.04,
+    "kvot": 5.548,
+    "bpb": 1.442,
+    "packmibs": 2.0,
+    "uppackmibs": 532.9,
+    "exakt": true
+   },
+   "zstd -22 --ultra": {
+    "kodek": "zstd -22 --ultra",
+    "byte": 3866386,
+    "packsek": 16.99,
+    "uppacksek": 0.05,
+    "kvot": 5.588,
+    "bpb": 1.4316,
+    "packmibs": 1.2,
+    "uppackmibs": 402.9,
+    "exakt": true
+   },
+   "brotli -q 11": {
+    "kodek": "brotli -q 11",
+    "byte": 3766340,
+    "packsek": 45.49,
+    "uppacksek": 0.11,
+    "kvot": 5.737,
+    "bpb": 1.3945,
+    "packmibs": 0.5,
+    "uppackmibs": 184.2,
+    "exakt": true
+   },
+   "xz -9e": {
+    "kodek": "xz -9e",
+    "byte": 3739524,
+    "packsek": 14.44,
+    "uppacksek": 0.23,
+    "kvot": 5.778,
+    "bpb": 1.3846,
+    "packmibs": 1.4,
+    "uppackmibs": 89.7,
+    "exakt": true
+   },
+   "nvz": {
+    "kodek": "nvz",
+    "byte": 3377043,
+    "packsek": 22.34,
+    "uppacksek": 24.74,
+    "kvot": 6.398,
+    "bpb": 1.2504,
+    "packmibs": 0.9,
+    "uppackmibs": 0.8,
+    "exakt": true
+   }
+  },
+  "sao": {
+   "gzip -9": {
+    "kodek": "gzip -9",
+    "byte": 5327041,
+    "packsek": 0.89,
+    "uppacksek": 0.07,
+    "kvot": 1.361,
+    "bpb": 5.8765,
+    "packmibs": 7.8,
+    "uppackmibs": 96.7,
+    "exakt": true
+   },
+   "bzip2 -9": {
+    "kodek": "bzip2 -9",
+    "byte": 4940524,
+    "packsek": 0.88,
+    "uppacksek": 0.61,
+    "kvot": 1.468,
+    "bpb": 5.4502,
+    "packmibs": 7.8,
+    "uppackmibs": 11.4,
+    "exakt": true
+   },
+   "zstd -19": {
+    "kodek": "zstd -19",
+    "byte": 5000576,
+    "packsek": 3.18,
+    "uppacksek": 0.03,
+    "kvot": 1.45,
+    "bpb": 5.5164,
+    "packmibs": 2.2,
+    "uppackmibs": 206.1,
+    "exakt": true
+   },
+   "zstd -22 --ultra": {
+    "kodek": "zstd -22 --ultra",
+    "byte": 5000576,
+    "packsek": 2.84,
+    "uppacksek": 0.03,
+    "kvot": 1.45,
+    "bpb": 5.5164,
+    "packmibs": 2.4,
+    "uppackmibs": 269.0,
+    "exakt": true
+   },
+   "brotli -q 11": {
+    "kodek": "brotli -q 11",
+    "byte": 4586092,
+    "packsek": 21.21,
+    "uppacksek": 0.08,
+    "kvot": 1.581,
+    "bpb": 5.0592,
+    "packmibs": 0.3,
+    "uppackmibs": 86.7,
+    "exakt": true
+   },
+   "xz -9e": {
+    "kodek": "xz -9e",
+    "byte": 4425664,
+    "packsek": 3.93,
+    "uppacksek": 0.23,
+    "kvot": 1.639,
+    "bpb": 4.8822,
+    "packmibs": 1.8,
+    "uppackmibs": 29.7,
+    "exakt": true
+   },
+   "nvz": {
+    "kodek": "nvz",
+    "byte": 4509261,
+    "packsek": 10.72,
+    "uppacksek": 11.86,
+    "kvot": 1.608,
+    "bpb": 4.9744,
+    "packmibs": 0.6,
+    "uppackmibs": 0.6,
+    "exakt": true
+   }
+  },
+  "webster": {
+   "gzip -9": {
+    "kodek": "gzip -9",
+    "byte": 12061624,
+    "packsek": 4.38,
+    "uppacksek": 0.25,
+    "kvot": 3.437,
+    "bpb": 2.3274,
+    "packmibs": 9.0,
+    "uppackmibs": 161.1,
+    "exakt": true
+   },
+   "bzip2 -9": {
+    "kodek": "bzip2 -9",
+    "byte": 8644714,
+    "packsek": 5.17,
+    "uppacksek": 2.05,
+    "kvot": 4.796,
+    "bpb": 1.6681,
+    "packmibs": 7.6,
+    "uppackmibs": 19.3,
+    "exakt": true
+   },
+   "zstd -19": {
+    "kodek": "zstd -19",
+    "byte": 8679705,
+    "packsek": 35.43,
+    "uppacksek": 0.08,
+    "kvot": 4.777,
+    "bpb": 1.6749,
+    "packmibs": 1.1,
+    "uppackmibs": 492.9,
+    "exakt": true
+   },
+   "zstd -22 --ultra": {
+    "kodek": "zstd -22 --ultra",
+    "byte": 8431645,
+    "packsek": 40.26,
+    "uppacksek": 0.09,
+    "kvot": 4.917,
+    "bpb": 1.627,
+    "packmibs": 1.0,
+    "uppackmibs": 426.5,
+    "exakt": true
+   },
+   "brotli -q 11": {
+    "kodek": "brotli -q 11",
+    "byte": 8428575,
+    "packsek": 108.42,
+    "uppacksek": 0.16,
+    "kvot": 4.919,
+    "bpb": 1.6264,
+    "packmibs": 0.4,
+    "uppackmibs": 250.6,
+    "exakt": true
+   },
+   "xz -9e": {
+    "kodek": "xz -9e",
+    "byte": 8368672,
+    "packsek": 41.77,
+    "uppacksek": 0.47,
+    "kvot": 4.954,
+    "bpb": 1.6148,
+    "packmibs": 0.9,
+    "uppackmibs": 84.8,
+    "exakt": true
+   },
+   "nvz": {
+    "kodek": "nvz",
+    "byte": 6317041,
+    "packsek": 46.62,
+    "uppacksek": 50.71,
+    "kvot": 6.563,
+    "bpb": 1.219,
+    "packmibs": 0.8,
+    "uppackmibs": 0.8,
+    "exakt": true
+   }
+  },
+  "x-ray": {
+   "gzip -9": {
+    "kodek": "gzip -9",
+    "byte": 6037713,
+    "packsek": 0.57,
+    "uppacksek": 0.1,
+    "kvot": 1.404,
+    "bpb": 5.6998,
+    "packmibs": 14.2,
+    "uppackmibs": 79.6,
+    "exakt": true
+   },
+   "bzip2 -9": {
+    "kodek": "bzip2 -9",
+    "byte": 4051112,
+    "packsek": 0.82,
+    "uppacksek": 0.56,
+    "kvot": 2.092,
+    "bpb": 3.8244,
+    "packmibs": 9.9,
+    "uppackmibs": 14.5,
+    "exakt": true
+   },
+   "zstd -19": {
+    "kodek": "zstd -19",
+    "byte": 5129827,
+    "packsek": 3.96,
+    "uppacksek": 0.04,
+    "kvot": 1.652,
+    "bpb": 4.8427,
+    "packmibs": 2.0,
+    "uppackmibs": 229.1,
+    "exakt": true
+   },
+   "zstd -22 --ultra": {
+    "kodek": "zstd -22 --ultra",
+    "byte": 5129828,
+    "packsek": 4.28,
+    "uppacksek": 0.03,
+    "kvot": 1.652,
+    "bpb": 4.8427,
+    "packmibs": 1.9,
+    "uppackmibs": 238.9,
+    "exakt": true
+   },
+   "brotli -q 11": {
+    "kodek": "brotli -q 11",
+    "byte": 4682753,
+    "packsek": 29.51,
+    "uppacksek": 0.1,
+    "kvot": 1.81,
+    "bpb": 4.4207,
+    "packmibs": 0.3,
+    "uppackmibs": 83.4,
+    "exakt": true
+   },
+   "xz -9e": {
+    "kodek": "xz -9e",
+    "byte": 4491264,
+    "packsek": 4.64,
+    "uppacksek": 0.3,
+    "kvot": 1.887,
+    "bpb": 4.2399,
+    "packmibs": 1.7,
+    "uppackmibs": 26.7,
+    "exakt": true
+   },
+   "nvz": {
+    "kodek": "nvz",
+    "byte": 3742075,
+    "packsek": 11.86,
+    "uppacksek": 12.83,
+    "kvot": 2.265,
+    "bpb": 3.5327,
+    "packmibs": 0.7,
+    "uppackmibs": 0.6,
+    "exakt": true
+   }
+  },
+  "xml": {
+   "gzip -9": {
+    "kodek": "gzip -9",
+    "byte": 662284,
+    "packsek": 0.32,
+    "uppacksek": 0.02,
+    "kvot": 8.071,
+    "bpb": 0.9912,
+    "packmibs": 16.0,
+    "uppackmibs": 216.2,
+    "exakt": true
+   },
+   "bzip2 -9": {
+    "kodek": "bzip2 -9",
+    "byte": 441186,
+    "packsek": 0.78,
+    "uppacksek": 0.17,
+    "kvot": 12.116,
+    "bpb": 0.6603,
+    "packmibs": 6.5,
+    "uppackmibs": 30.3,
+    "exakt": true
+   },
+   "zstd -19": {
+    "kodek": "zstd -19",
+    "byte": 453209,
+    "packsek": 2.46,
+    "uppacksek": 0.01,
+    "kvot": 11.794,
+    "bpb": 0.6783,
+    "packmibs": 2.1,
+    "uppackmibs": 345.5,
+    "exakt": true
+   },
+   "zstd -22 --ultra": {
+    "kodek": "zstd -22 --ultra",
+    "byte": 451664,
+    "packsek": 4.44,
+    "uppacksek": 0.01,
+    "kvot": 11.835,
+    "bpb": 0.676,
+    "packmibs": 1.1,
+    "uppackmibs": 357.6,
+    "exakt": true
+   },
+   "brotli -q 11": {
+    "kodek": "brotli -q 11",
+    "byte": 430566,
+    "packsek": 9.3,
+    "uppacksek": 0.02,
+    "kvot": 12.415,
+    "bpb": 0.6444,
+    "packmibs": 0.5,
+    "uppackmibs": 250.3,
+    "exakt": true
+   },
+   "xz -9e": {
+    "kodek": "xz -9e",
+    "byte": 434892,
+    "packsek": 2.42,
+    "uppacksek": 0.04,
+    "kvot": 12.291,
+    "bpb": 0.6509,
+    "packmibs": 2.1,
+    "uppackmibs": 115.0,
+    "exakt": true
+   },
+   "nvz": {
+    "kodek": "nvz",
+    "byte": 353039,
+    "packsek": 5.19,
+    "uppacksek": 5.62,
+    "kvot": 15.141,
+    "bpb": 0.5284,
+    "packmibs": 1.0,
+    "uppackmibs": 0.9,
+    "exakt": true
+   }
+  }
+ },
+ "summor": {
+  "gzip -9": {
+   "byte": 67631990,
+   "packsek": 29.9,
+   "uppacksek": 1.28,
+   "kvot": 3.134,
+   "bpb": 2.5529,
+   "exakt": true
+  },
+  "bzip2 -9": {
+   "byte": 54506769,
+   "packsek": 24.94,
+   "uppacksek": 10.51,
+   "kvot": 3.888,
+   "bpb": 2.0575,
+   "exakt": true
+  },
+  "zstd -19": {
+   "byte": 52895350,
+   "packsek": 130.2,
+   "uppacksek": 0.54,
+   "kvot": 4.007,
+   "bpb": 1.9966,
+   "exakt": true
+  },
+  "zstd -22 --ultra": {
+   "byte": 52369178,
+   "packsek": 165.61,
+   "uppacksek": 0.56,
+   "kvot": 4.047,
+   "bpb": 1.9768,
+   "exakt": true
+  },
+  "brotli -q 11": {
+   "byte": 49564563,
+   "packsek": 592.84,
+   "uppacksek": 1.15,
+   "kvot": 4.276,
+   "bpb": 1.8709,
+   "exakt": true
+  },
+  "xz -9e": {
+   "byte": 48456004,
+   "packsek": 161.25,
+   "uppacksek": 3.04,
+   "kvot": 4.374,
+   "bpb": 1.8291,
+   "exakt": true
+  },
+  "nvz": {
+   "byte": 44439240,
+   "packsek": 234.61,
+   "uppacksek": 257.65,
+   "kvot": 4.769,
+   "bpb": 1.6774,
+   "exakt": true
+  }
+ }
+}

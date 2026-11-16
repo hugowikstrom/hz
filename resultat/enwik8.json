@@ -1,0 +1,91 @@
+{
+ "korpus": "enwik8",
+ "rabyte": 100000000,
+ "filer": 1,
+ "matningar": {
+  "tar (okomprimerad)": {
+   "packare": "tar (okomprimerad)",
+   "byte": 100003840,
+   "packsek": 0.07,
+   "uppacksek": 0.07,
+   "identisk": true
+  },
+  "tar.gz -6": {
+   "packare": "tar.gz -6",
+   "byte": 36518463,
+   "packsek": 7.31,
+   "uppacksek": 0.67,
+   "identisk": true
+  },
+  "tar.gz -9 (pigz)": {
+   "packare": "tar.gz -9 (pigz)",
+   "byte": 36489856,
+   "packsek": 0.6,
+   "uppacksek": 0.69,
+   "identisk": true
+  },
+  "tar.bz2 -9": {
+   "packare": "tar.bz2 -9",
+   "byte": 29007139,
+   "packsek": 10.76,
+   "uppacksek": 5.74,
+   "identisk": true
+  },
+  "tar.zst -3 (dagens)": {
+   "packare": "tar.zst -3 (dagens)",
+   "byte": 35444668,
+   "packsek": 0.19,
+   "uppacksek": 0.19,
+   "identisk": true
+  },
+  "tar.zst -19 --long": {
+   "packare": "tar.zst -19 --long",
+   "byte": 26398232,
+   "packsek": 61.14,
+   "uppacksek": 0.26,
+   "identisk": true
+  },
+  "tar.zst -22 --ultra": {
+   "packare": "tar.zst -22 --ultra",
+   "byte": 25277987,
+   "packsek": 118.06,
+   "uppacksek": 0.31,
+   "identisk": true
+  },
+  "tar.xz -9e": {
+   "packare": "tar.xz -9e",
+   "byte": 24831492,
+   "packsek": 120.66,
+   "uppacksek": 1.41,
+   "identisk": true
+  },
+  "nvz snabb": {
+   "packare": "nvz snabb",
+   "byte": 35445631,
+   "packsek": 0.97,
+   "uppacksek": 0.42,
+   "identisk": true
+  },
+  "nvz normal": {
+   "packare": "nvz normal",
+   "byte": 24831950,
+   "packsek": 125.87,
+   "uppacksek": 1.63,
+   "identisk": true
+  },
+  "nvz liten": {
+   "packare": "nvz liten",
+   "byte": 21417478,
+   "packsek": 133.24,
+   "uppacksek": 134.57,
+   "identisk": true
+  },
+  "nvz utan knep": {
+   "packare": "nvz utan knep",
+   "byte": 24831950,
+   "packsek": 124.31,
+   "uppacksek": 1.64,
+   "identisk": true
+  }
+ }
+}

@@ -1,0 +1,6 @@
+kod: 55.3 MiB i 5962 filer
+  tar.bz2 -9                  9.51 MiB  x 5.81  pack     7.5s  upp    2.3s  exakt
+foto: 408.5 MiB i 1143 filer
+  tar.bz2 -9                404.94 MiB  x 1.01  pack    56.8s  upp   40.9s  exakt
+png: 431.0 MiB i 4617 filer
+  tar.bz2 -9                385.38 MiB  x 1.12  pack    73.9s  upp   44.0s  exakt

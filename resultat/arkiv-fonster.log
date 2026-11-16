@@ -1,0 +1,16 @@
+arkivkorpus: 391 MiB rå
+
+  zstd -19 (standardfönster)           365,3 MiB    17,8 s
+  zstd -19 --long=27 (nvpacks)          261,4 MiB    47,3 s
+  zstd -19 --long=31                    260,2 MiB    49,5 s
+  zstd -22 --ultra --long=31            242,8 MiB   154,7 s
+  nvpack --kodek zstd19                 260,2 MiB    45,5 s
+
+    nvpack v1  rot=arkiv  skapad 2026-11-16T20:19:12
+    172 poster, 130 objekt, 2 block
+      block   0  opak        zstd19     192.46 ->   154.68 MiB  x1.24
+      block   1  opak        zstd19     136.57 ->   105.51 MiB  x1.29
+
+  nvpack --kodek zstd22                 244,6 MiB   107,2 s
+
+experiment/arkiv-fonster.sh: line 60: /home/hugo/nvpack/src/nvpack: No such file or directory
