@@ -253,6 +253,62 @@ def tider() -> str:
     return '\n'.join(ut) + '\n\n*MiB per sekund, rådata genom väggklockan.*'
 
 
+def till_engelska(block: str) -> str:
+    """Gör ett genererat tabellblock engelskt: decimalpunkt, kommatecken som
+    tusenavskiljare, och de kända svenska rubrikorden översatta. Säkert på
+    blocken — de innehåller tal, packarnamn och ett avgränsat ordförråd."""
+    import re
+    t = re.sub(r'(\d),(\d)', r'\1.\2', block)
+    t = re.sub(r'(?<=\d) (?=\d\d\d\b)', ',', t)
+    ORD = [('| ja |', '| yes |'), ('| NEJ |', '| NO |'), (' inga |', ' none |'),
+        ('exakta dubbletter', 'exact duplicates'), ('unika filer', 'unique files'),
+        ('| korpus |', '| corpus |'), ('| packare |', '| compressor |'),
+        ('| kodek |', '| codec |'), ('filer |', 'files |'), ('rå MiB', 'raw MiB'),
+        ('storlek MiB', 'size MiB'), ('storlek byte', 'size bytes'),
+        ('mot dagens', 'vs. current'), ('mot bästa', 'vs. best'), ('mot best', 'vs. best'), ('dagens MiB', 'current MiB'),
+        ('bästa klassiska', 'best classical'), ('bästa nvz', 'best nvz'),
+        ('packtid nvz/klassisk', 'pack time nvz/classical'),
+        ('packtid', 'pack time'), ('uppacktid', 'unpack time'),
+        ('exakt |', 'exact |'), ('andel |', 'share |'),
+        ('Arkivstorlek', 'Archive size'), ('Packtid', 'Pack time'),
+        ('Uppacktid', 'Unpack time'), ('MiB per korpus', 'MiB per corpus'),
+        ('minsta värde per kolumn i fet', 'column minimum in bold'),
+        ('s per korpus', 's per corpus'), ('Råstorlekar', 'Raw sizes'),
+        ('(standardkorpus)', '(standard corpus)'), ('(arkivnivå)', '(archive level)'),
+        ('Programkod', 'Source code'), ('Bilder (PNG)', 'Images (PNG)'),
+        ('Foton (JPEG)', 'Photos (JPEG)'), ('Bilder (GIF)', 'Images (GIF)'),
+        ('Film (h264 och VP9)', 'Video (h264 and VP9)'),
+        ('Arkiv (zip och tar.gz)', 'Archives (zip and tar.gz)'),
+        ('Loggfiler', 'Log files'), ('poster i registret', 'register entries'),
+        ('SHA-256 lika', 'SHA-256 equal'), ('läge och tider lika', 'mode and times equal'),
+        ('hårda länkar kvar', 'hard links left'), ('avvikelser |', 'deviations |'),
+        (' nej |', ' no |'), ('rådata genom väggklockan', 'raw data through the wall clock'),
+        ('MiB per sekund', 'MiB per second'),
+        ('Skadeprov på arkivet från korpusen', 'Damage tests on the archive from corpus'),
+        ('| skada |', '| damage |'), ('utfall |', 'outcome |'),
+        ('godkänt |', 'passed |'), ('vägrade', 'rejected'),
+        ('nvz normal upp', 'nvz normal unpack'),
+        ('Vår egen mätning', 'Our own measurement'),
+        ('nvcm gör enwik8 på', 'nvcm compresses enwik8 to'),
+        (' byte, ', ' bytes, '), ('mindre än', 'smaller than'),
+        ('större än', 'larger than'), ('på samma maskin', 'on the same machine'),
+        ('engelsk litteratur, text', 'English literature, text'),
+        ('körbara filer (tar)', 'executables (tar)'),
+        ('medicinsk 3D-bild', 'medical 3D image'),
+        ('kemiska strukturer, text', 'chemical structures, text'),
+        ('körbar DLL', 'executable DLL'), ('databasdump, binär', 'database dump, binary'),
+        ('polsk litteratur, PDF-källa', 'Polish literature, PDF source'),
+        ('källkod (tar)', 'source code (tar)'),
+        ('stjärnkatalog, binär', 'star catalogue, binary'),
+        ('ordbok, text', 'dictionary, text'), ('röntgenbild, 16-bitars', 'X-ray, 16-bit'),
+        ('| fil |', '| file |'), ('innehåll |', 'contents |'),
+        ('rå byte', 'raw bytes'), ('nvcm mot bäst', 'nvcm vs. best'),
+        ('upp MiB/s', 'unpack MiB/s')]
+    for a, b in ORD:
+        t = t.replace(a, b)
+    return t
+
+
 def main():
     md = ROT / 'rapport' / 'bred-provning.md'
     r.infoga(md, oversikt(), 'ÖVERSIKT')
@@ -265,6 +321,18 @@ def main():
     r.infoga(md, silesia_per_fil(), 'SILESIA-PER-FIL')
     r.infoga(md, enwik8_plats(), 'ENWIK8-PLATS')
     print(f'{md} uppdaterad')
+    en = ROT / 'rapport' / 'broad-evaluation.md'
+    if en.exists():
+        r.infoga(en, till_engelska(oversikt()), 'ÖVERSIKT')
+        r.infoga(en, till_engelska(jattetabell()), 'MATRIS')
+        r.infoga(en, till_engelska(mattabeller()), 'TABELLER')
+        r.infoga(en, till_engelska(aterskapning()), 'ÅTERSKAPNING')
+        r.infoga(en, till_engelska(tider()), 'TIDER')
+        r.infoga(en, till_engelska(dubbletter()), 'DUBBLETTER')
+        r.infoga(en, till_engelska(standard()), 'STANDARD')
+        r.infoga(en, till_engelska(silesia_per_fil()), 'SILESIA-PER-FIL')
+        r.infoga(en, till_engelska(enwik8_plats()), 'ENWIK8-PLATS')
+        print(f'{en} uppdaterad')
 
 
 if __name__ == '__main__':

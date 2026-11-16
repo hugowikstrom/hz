@@ -445,7 +445,9 @@ En **bred provning** från 2026-11-16 täcker åtta datasorter till — GIF, fil
 arkiv av arkiv, loggfiler — plus standardkorpusarna Silesia och enwik8, och
 ett återskapningsprov som kräver tillbaka varje byte, rättighet och
 tidsstämpel: [`rapport/bred-provning.md`](rapport/bred-provning.md), även som
-[PDF](rapport/bred-provning.pdf). Kortversionen: loggar packas 23,8×, nvcm
+[PDF](rapport/bred-provning.pdf); in English:
+[`broad-evaluation.md`](rapport/broad-evaluation.md) /
+[PDF](rapport/broad-evaluation.pdf). Kortversionen: loggar packas 23,8×, nvcm
 slår varje klassiskt verktyg på båda standardkorpusarna, film går inte att
 packa (och det är rätt svar), och på arkiv av arkiv förlorar nvz på ett
 kodekprov som ser för lite av blocket.
