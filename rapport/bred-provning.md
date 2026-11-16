@@ -4,6 +4,7 @@
 tidsåtgång och korrekthet över åtta datatyper och två standardkorpusar.**
 
 *2026-11-16 · Ryzen AI 9 HX 470 (24 trådar), 28 GiB RAM, NVMe ·
+källkod, mätdata och denna rapport: <https://github.com/hugowikstrom/nvz> ·
 alla tal genereras ur `resultat/*.json` och kan reproduceras enligt appendix A*
 
 ## Sammanfattning
@@ -144,10 +145,79 @@ klassiska verktyget per korpus. Negativa värden anger mindre arkiv.
 | Film (h264 och VP9) | 537 | 533,9 | 532,0 (zst -19) | 532,3 (normal) | −0,3 % | +0,0 % | 43 / 57 s |
 | Arkiv (zip och tar.gz) | 392 | 381,8 | 242,8 (zst -22) | 291,3 (normal) | −23,7 % | +20,0 % | 44 / 154 s |
 | Loggfiler | 238 | 22,4 | 11,8 (xz -9e) | 10,0 (liten) | −55,2 % | −15,4 % | 247 / 897 s |
+| Silesia (arkivnivå) | 202 | 63,1 | 46,2 (xz -9e) | 43,5 (liten) | −31,0 % | −5,7 % | 102 / 158 s |
+| enwik8 (arkivnivå) | 95 | 33,8 | 23,7 (xz -9e) | 20,4 (liten) | −39,6 % | −13,7 % | 133 / 121 s |
 
 <!-- SLUT ÖVERSIKT -->
 
-### 3.2 Per korpus
+### 3.2 Hela matrisen
+
+Samtliga packare över samtliga korpusar, i tre paneler: storlek, packtid,
+uppacktid. Kolumnerna silesia och enwik8 avser arkivnivån (hela korpusen
+genom tar-ekvivalent väg), inte kodeknivån i 3.4.
+
+<!-- MATRIS -->
+
+**Arkivstorlek**
+
+| packare | kod | png | foto | gif | film | arkiv | logg | silesia | enwik8 |
+|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| tar (okomprimerad) | 60,8 | 438,4 | 409,4 | 27,6 | 536,8 | 391,9 | 238,4 | 202,1 | 95,4 |
+| tar.gz -6 | 12,3 | 401,7 | 405,8 | 27,2 | 532,4 | 380,0 | 30,5 | 65,1 | 34,8 |
+| tar.gz -9 (pigz) | 12,2 | 401,9 | 406,0 | 27,2 | 532,5 | 380,1 | 29,0 | 64,5 | 34,8 |
+| tar.bz2 -9 | 9,5 | 385,4 | 404,9 | 27,3 | 535,5 | 384,5 | 18,9 | 52,0 | 27,7 |
+| tar.zst -3 (dagens) | 11,5 | 362,9 | 406,3 | 27,0 | 533,9 | 381,8 | 22,4 | 63,1 | 33,8 |
+| tar.zst -19 --long | 8,5 | 252,7 | 405,1 | 14,2 | **532,0** | 261,4 | 13,1 | 50,2 | 25,2 |
+| tar.zst -22 --ultra | 8,5 | 245,2 | 405,1 | 14,2 | 532,0 | **242,8** | 12,9 | 49,8 | 24,1 |
+| tar.xz -9e | 8,2 | 266,4 | 405,4 | 14,2 | 532,9 | 251,7 | 11,8 | 46,2 | 23,7 |
+| **nvz snabb** | 11,4 | 279,3 | 408,5 | 14,4 | 536,8 | 329,0 | 22,4 | 63,2 | 33,8 |
+| **nvz utan knep** | 8,3 | 256,4 | 406,4 | 14,2 | 532,3 | 350,7 | 12,0 | 46,2 | 23,7 |
+| **nvz normal** | 8,3 | 208,9 | **345,1** | **14,2** | 532,3 | 291,3 | 12,0 | 46,2 | 23,7 |
+| **nvz liten** | **7,3** | **208,9** | **345,1** | **14,2** | 532,3 | 291,3 | **10,0** | **43,5** | **20,4** |
+
+*MiB per korpus; minsta värde per kolumn i fet. Råstorlekar: kod 55, png 431, foto 409, gif 27, film 537, arkiv 392, logg 238, silesia 202, enwik8 95 MiB.*
+
+**Packtid**
+
+| packare | kod | png | foto | gif | film | arkiv | logg | silesia | enwik8 |
+|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| tar (okomprimerad) | **0** | 3 | 2 | 0 | 1 | 1 | 0 | **0** | **0** |
+| tar.gz -6 | 2 | 20 | 19 | 1 | 24 | 18 | 4 | 12 | 7 |
+| tar.gz -9 (pigz) | 0 | 2 | 1 | 0 | 2 | 1 | 1 | 2 | 1 |
+| tar.bz2 -9 | 7 | 74 | 57 | 4 | 78 | 56 | 32 | 24 | 11 |
+| tar.zst -3 (dagens) | 0 | **1** | **0** | **0** | **0** | **0** | **0** | 0 | 0 |
+| tar.zst -19 --long | 35 | 40 | 53 | 4 | 57 | 47 | 113 | 63 | 61 |
+| tar.zst -22 --ultra | 56 | 156 | 225 | 5 | 266 | 154 | 986 | 179 | 118 |
+| tar.xz -9e | 47 | 128 | 157 | 8 | 154 | 144 | 897 | 158 | 121 |
+| **nvz snabb** | 1 | 3 | 1 | 0 | 2 | 2 | 2 | 1 | 1 |
+| **nvz utan knep** | 41 | 45 | 12 | 6 | 45 | 44 | 940 | 94 | 124 |
+| **nvz normal** | 41 | 254 | 49 | 7 | 43 | 44 | 938 | 94 | 126 |
+| **nvz liten** | 70 | 251 | 55 | 7 | 43 | 44 | 247 | 102 | 133 |
+
+*s per korpus; minsta värde per kolumn i fet. Råstorlekar: kod 55, png 431, foto 409, gif 27, film 537, arkiv 392, logg 238, silesia 202, enwik8 95 MiB.*
+
+**Uppacktid**
+
+| packare | kod | png | foto | gif | film | arkiv | logg | silesia | enwik8 |
+|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| tar (okomprimerad) | **0** | **0** | **0** | **0** | **0** | **0** | **0** | **0** | **0** |
+| tar.gz -6 | 0 | 3 | 2 | 0 | 2 | 2 | 1 | 1 | 1 |
+| tar.gz -9 (pigz) | 0 | 3 | 2 | 0 | 2 | 2 | 1 | 1 | 1 |
+| tar.bz2 -9 | 2 | 44 | 41 | 3 | 54 | 39 | 6 | 10 | 6 |
+| tar.zst -3 (dagens) | 0 | 0 | **0** | **0** | 0 | 1 | 0 | 0 | 0 |
+| tar.zst -19 --long | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| tar.zst -22 --ultra | 0 | 1 | 0 | 0 | 1 | 1 | 0 | 0 | 0 |
+| tar.xz -9e | 1 | 5 | 4 | 0 | 5 | 7 | 1 | 3 | 1 |
+| **nvz snabb** | 0 | 1 | 1 | 0 | 1 | 1 | 1 | 0 | 0 |
+| **nvz utan knep** | 1 | 2 | 1 | 0 | 1 | 1 | 2 | 2 | 2 |
+| **nvz normal** | 1 | 9 | 17 | 0 | 1 | 1 | 2 | 2 | 2 |
+| **nvz liten** | 68 | 9 | 17 | 0 | 1 | 1 | 221 | 100 | 135 |
+
+*s per korpus; minsta värde per kolumn i fet. Råstorlekar: kod 55, png 431, foto 409, gif 27, film 537, arkiv 392, logg 238, silesia 202, enwik8 95 MiB.*
+
+<!-- SLUT MATRIS -->
+
+### 3.3 Per korpus
 
 Fullständiga serier per korpus. *Mot dagens* anger storleksförändring
 relativt `tar.zst −3`.
@@ -224,11 +294,11 @@ relativt `tar.zst −3`.
 
 <!-- SLUT TABELLER -->
 
-### 3.3 Standardkorpusar, kodeknivå
+### 3.4 Standardkorpusar, kodeknivå
 
 Jämförelsen avser kompressorn nvcm isolerad — en fil i taget, en tråd —
 eftersom publicerade tal för dessa korpusar är definierade så. nvz som
-arkivpackare ingår i 3.1–3.2.
+arkivpackare ingår i 3.1–3.3.
 
 <!-- STANDARD -->
 
@@ -301,7 +371,7 @@ Med 1,71 bits/byte hamnar nvcm mellan ordbokspackarna och de tunga kontextblanda
 
 <!-- SLUT ENWIK8-PLATS -->
 
-### 3.4 Genomströmning
+### 3.5 Genomströmning
 
 Sekunder är inte jämförbara mellan korpusar av olika storlek; tabellen anger
 därför MiB/s rådata genom väggklockan.
@@ -317,6 +387,8 @@ därför MiB/s rådata genom väggklockan.
 | Film (h264 och VP9) | 13 | 801 | 1 220 | 9 | 3 |
 | Arkiv (zip och tar.gz) | 9 | 396 | 1 059 | 8 | 3 |
 | Loggfiler | 0 | 153 | 1 254 | 2 | 0 |
+| Silesia (arkivnivå) | 2 | 86 | 612 | 3 | 1 |
+| enwik8 (arkivnivå) | 1 | 59 | 502 | 2 | 1 |
 
 *MiB per sekund, rådata genom väggklockan.*
 
@@ -511,7 +583,13 @@ helheten (Amdahl; se README).
 
 ## Appendix A: Reproduktion
 
+Källkod och samtliga mätdata är publicerade på
+<https://github.com/hugowikstrom/nvz>. Beroenden: g++ (C++17), libzstd-dev,
+liblzma-dev, zlib1g-dev; för jämförelsemätningarna därtill gzip, pigz,
+bzip2, zstd och xz.
+
 ```bash
+git clone https://github.com/hugowikstrom/nvz && cd nvz
 make                                                  # bygger nvz, nvcm, nvjpg
 python3 korpus/bygg-korpus.py gif film arkiv logg     # lokala korpusar
 export NVPACK_SKRAP=$PWD/.skrap

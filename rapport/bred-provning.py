@@ -17,7 +17,48 @@ from rapport import tal
 MIB = 1048576
 NYA = {'gif': 'Bilder (GIF)', 'film': 'Film (h264 och VP9)',
        'arkiv': 'Arkiv (zip och tar.gz)', 'logg': 'Loggfiler'}
-ALLA = {'kod': 'Programkod', 'png': 'Bilder (PNG)', 'foto': 'Foton (JPEG)', **NYA}
+ALLA = {'kod': 'Programkod', 'png': 'Bilder (PNG)', 'foto': 'Foton (JPEG)', **NYA,
+        'silesia': 'Silesia (arkivnivå)', 'enwik8': 'enwik8 (arkivnivå)'}
+
+
+def jattetabell() -> str:
+    """Hela mätmatrisen i en tabell: packare som rader, korpusar som
+    kolumner. Två paneler — storlek och packtid — eftersom en cell som bär
+    båda blir oläslig. Minsta storlek och kortaste tid per kolumn i fet."""
+    korpusar = [(k, r.läs(k)) for k in ALLA]
+    korpusar = [(k, d) for k, d in korpusar if d]
+    namnrad = {'kod': 'kod', 'png': 'png', 'foto': 'foto', 'gif': 'gif',
+               'film': 'film', 'arkiv': 'arkiv', 'logg': 'logg',
+               'silesia': 'silesia', 'enwik8': 'enwik8'}
+
+    def panel(varde, fetast, enhet, rubrik):
+        ut = [f'**{rubrik}**', '',
+              '| packare | ' + ' | '.join(namnrad.get(k, k) for k, _ in korpusar) + ' |',
+              '|:--|' + '--:|' * len(korpusar)]
+        bast = {k: fetast([varde(m) for m in d['matningar'].values() if varde(m) is not None])
+                for k, d in korpusar}
+        for namn in r.ORDNING:
+            celler = []
+            for k, d in korpusar:
+                m = d['matningar'].get(namn)
+                if not m: celler.append('—'); continue
+                v = varde(m)
+                c = tal(v, 1) if enhet == 'MiB' else f'{v:.0f}'
+                if v == bast[k]: c = f'**{c}**'
+                celler.append(c)
+            fet = namn.startswith('nvz')
+            rad = f'**{namn}**' if fet else namn
+            ut.append(f'| {rad} | ' + ' | '.join(celler) + ' |')
+        ut.append('')
+        ut.append(f'*{enhet} per korpus; minsta värde per kolumn i fet. '
+                  f'Råstorlekar: ' + ', '.join(
+                      f'{namnrad.get(k, k)} {tal(d["rabyte"]/MIB, 0)}'
+                      for k, d in korpusar) + ' MiB.*')
+        return '\n'.join(ut)
+
+    return (panel(lambda m: m['byte']/MIB, min, 'MiB', 'Arkivstorlek') + '\n\n' +
+            panel(lambda m: m['packsek'], min, 's', 'Packtid') + '\n\n' +
+            panel(lambda m: m['uppacksek'], min, 's', 'Uppacktid'))
 
 
 def mattabeller() -> str:
@@ -215,6 +256,7 @@ def tider() -> str:
 def main():
     md = ROT / 'rapport' / 'bred-provning.md'
     r.infoga(md, oversikt(), 'ÖVERSIKT')
+    r.infoga(md, jattetabell(), 'MATRIS')
     r.infoga(md, mattabeller(), 'TABELLER')
     r.infoga(md, aterskapning(), 'ÅTERSKAPNING')
     r.infoga(md, tider(), 'TIDER')
