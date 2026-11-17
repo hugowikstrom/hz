@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="sv"><head><meta charset="utf-8">
+<title>nvz — återskapningsprotokoll</title>
+<style>
+@page { size: A4; margin: 18mm 15mm 16mm 15mm; }
+* { box-sizing: border-box; }
+body { font-family: "Noto Serif", serif; font-size: 9.6pt; line-height: 1.5;
+       color: #15130f; margin: 0; }
+h1 { font-family: Archivo, sans-serif; font-size: 23pt; font-weight: 800;
+     letter-spacing: -0.02em; margin: 0 0 2mm; line-height: 1.1; }
+h2 { font-family: Archivo, sans-serif; font-size: 14pt; font-weight: 700;
+     margin: 9mm 0 2.5mm; padding-top: 2mm; border-top: 1.5pt solid #15130f;
+     break-after: avoid; letter-spacing: -0.01em; }
+h3 { font-family: Archivo, sans-serif; font-size: 11pt; font-weight: 650;
+     margin: 6mm 0 2mm; break-after: avoid; }
+h4 { font-family: Archivo, sans-serif; font-size: 9.8pt; margin: 4mm 0 1.5mm;
+     break-after: avoid; }
+p { margin: 0 0 2.6mm; text-align: justify; hyphens: auto; }
+strong { font-weight: 700; }
+code { font-family: "Liberation Mono", monospace; font-size: 0.86em;
+       background: #f1eee8; padding: 0.5pt 1.6pt; border-radius: 1.5pt; }
+pre { font-family: "Liberation Mono", monospace; font-size: 7.9pt;
+      background: #f6f4ef; border-left: 2pt solid #c9c2b4; padding: 2.5mm 3mm;
+      margin: 0 0 3mm; overflow-x: hidden; white-space: pre-wrap;
+      break-inside: avoid; line-height: 1.35; }
+pre code { background: none; padding: 0; font-size: 1em; }
+table { border-collapse: collapse; width: 100%; margin: 0 0 3.5mm;
+        font-size: 8.3pt; font-family: Archivo, sans-serif; }
+thead { display: table-header-group; }
+th { font-weight: 650; text-align: left; border-bottom: 1pt solid #15130f;
+     padding: 1.2mm 1.6mm; white-space: nowrap; }
+td { border-bottom: 0.4pt solid #ddd8cd; padding: 1.1mm 1.6mm;
+     vertical-align: top; }
+tr { break-inside: avoid; }
+tbody tr:nth-child(even) { background: #faf8f4; }
+ul, ol { margin: 0 0 3mm; padding-left: 5mm; }
+li { margin-bottom: 1.4mm; }
+a { color: #15130f; text-decoration: none; border-bottom: 0.4pt dotted #8a8578; }
+hr { border: none; border-top: 0.6pt solid #c9c2b4; margin: 6mm 0; }
+h2, h3 { break-inside: avoid; }
+</style></head>
+<body><h1 id="återskapningsprotokoll-nvz">Återskapningsprotokoll — nvz</h1>
+<p>**Varje fil md5-summerad före packning och efter uppackning, på 12,129 filer och 2,33 GiB över 9 korpusar. Utfall: samtliga manifest identiska, och <code>md5sum -c</code> bekräftar.**</p>
+<p>*2026-11-17 22:06 · Ryzen AI 9 HX 470, 24 trådar, NVMe · nvz 2.0 (c++) · läge <code>liten</code> (standard) · manifesten ligger i [<code>resultat/protokoll/</code>](../resultat/protokoll/) och protokollet genereras av [<code>prov/protokoll.py</code>](../prov/protokoll.py)*</p>
+<h2 id="metod">Metod</h2>
+<p>För varje korpus, i denna ordning:</p>
+<ol><li><strong>Manifest före:</strong> md5 beräknas för varje fil och skrivs i <code>md5sum</code>-format till <code>&lt;korpus&gt;-fore.md5</code>.</li><li><strong>Packning</strong> med <code>nvz packa</code> i standardläget <code>liten</code>; arkivets storlek och md5 bokförs.</li><li><strong>Uppackning</strong> med <code>nvz packa-upp</code> till en tom katalog.</li><li><strong>Manifest efter:</strong> samma beräkning på det uppackade trädet, till <code>&lt;korpus&gt;-efter.md5</code>.</li><li><strong>Jämförelse</strong> rad för rad — och därtill körs systemets <code>md5sum -c</code> med <em>före</em>-manifestet mot det <em>uppackade</em> trädet, så att kontrollen görs av ett oberoende verktyg och inte av samma kod som skrev manifesten.</li></ol>
+<p>Manifestens egen md5 (en summa över alla filsummor) är det som visas i tabellen: är den lika före och efter är varje enskild fil lika, eftersom en enda avvikande fil ändrar manifestsumman.</p>
+<h2 id="protokoll">Protokoll</h2>
+<table><thead><tr><th style="text-align:left">korpus</th><th style="text-align:right">filer</th><th style="text-align:right">rå MiB</th><th style="text-align:right">arkiv MiB</th><th style="text-align:left">manifest-md5 före</th><th style="text-align:left">manifest-md5 efter</th><th style="text-align:center">utfall</th><th style="text-align:center"><code>md5sum -c</code></th></tr></thead><tbody><tr><td style="text-align:left">Programkod</td><td style="text-align:right">5 974</td><td style="text-align:right">55 3</td><td style="text-align:right">7 3</td><td style="text-align:left"><code>b561ff3d28d8e5c9e95ec30b9e6dc989</code></td><td style="text-align:left"><code>b561ff3d28d8e5c9e95ec30b9e6dc989</code></td><td style="text-align:center"><strong>LIKA</strong></td><td style="text-align:center">ja</td></tr><tr><td style="text-align:left">Bilder (GIF)</td><td style="text-align:right">105</td><td style="text-align:right">27 4</td><td style="text-align:right">14 2</td><td style="text-align:left"><code>8e05472c70bc020586e3785a888b648b</code></td><td style="text-align:left"><code>8e05472c70bc020586e3785a888b648b</code></td><td style="text-align:center"><strong>LIKA</strong></td><td style="text-align:center">ja</td></tr><tr><td style="text-align:left">Foton (JPEG)</td><td style="text-align:right">1 143</td><td style="text-align:right">408 5</td><td style="text-align:right">345 1</td><td style="text-align:left"><code>8989c1473571a2413c01ddbe118f5779</code></td><td style="text-align:left"><code>8989c1473571a2413c01ddbe118f5779</code></td><td style="text-align:center"><strong>LIKA</strong></td><td style="text-align:center">ja</td></tr><tr><td style="text-align:left">Arkiv (zip/tar.gz)</td><td style="text-align:right">133</td><td style="text-align:right">391 8</td><td style="text-align:right">242 5</td><td style="text-align:left"><code>53081f8aa7bd04c35ca0f8b8fc5b2623</code></td><td style="text-align:left"><code>53081f8aa7bd04c35ca0f8b8fc5b2623</code></td><td style="text-align:center"><strong>LIKA</strong></td><td style="text-align:center">ja</td></tr><tr><td style="text-align:left">Loggfiler</td><td style="text-align:right">76</td><td style="text-align:right">238 3</td><td style="text-align:right">10 0</td><td style="text-align:left"><code>b057f895ed43459cedb48d3a6b774e64</code></td><td style="text-align:left"><code>b057f895ed43459cedb48d3a6b774e64</code></td><td style="text-align:center"><strong>LIKA</strong></td><td style="text-align:center">ja</td></tr><tr><td style="text-align:left">Bilder (PNG)</td><td style="text-align:right">4 618</td><td style="text-align:right">431 1</td><td style="text-align:right">208 8</td><td style="text-align:left"><code>4f99ac4f9efafab19af53eedf7dda478</code></td><td style="text-align:left"><code>4f99ac4f9efafab19af53eedf7dda478</code></td><td style="text-align:center"><strong>LIKA</strong></td><td style="text-align:center">ja</td></tr><tr><td style="text-align:left">Film</td><td style="text-align:right">67</td><td style="text-align:right">536 7</td><td style="text-align:right">532 0</td><td style="text-align:left"><code>c4b518236e6e6fd1afb28e80a406082f</code></td><td style="text-align:left"><code>c4b518236e6e6fd1afb28e80a406082f</code></td><td style="text-align:center"><strong>LIKA</strong></td><td style="text-align:center">ja</td></tr><tr><td style="text-align:left">Silesia</td><td style="text-align:right">12</td><td style="text-align:right">202 1</td><td style="text-align:right">43 5</td><td style="text-align:left"><code>04228513e32fe4be7f7fecda5972525d</code></td><td style="text-align:left"><code>04228513e32fe4be7f7fecda5972525d</code></td><td style="text-align:center"><strong>LIKA</strong></td><td style="text-align:center">ja</td></tr><tr><td style="text-align:left">enwik8</td><td style="text-align:right">1</td><td style="text-align:right">95 4</td><td style="text-align:right">20 4</td><td style="text-align:left"><code>376ef224b8fb40ef717dc7286ac96058</code></td><td style="text-align:left"><code>376ef224b8fb40ef717dc7286ac96058</code></td><td style="text-align:center"><strong>LIKA</strong></td><td style="text-align:center">ja</td></tr></tbody></table>
+<h2 id="stickprov-ur-manifesten">Stickprov ur manifesten</h2>
+<p>Manifesten är vanliga <code>md5sum</code>-filer — här är början av tre, ordagrant:</p>
+<p><strong>Programkod</strong> — tre första raderna ur [<code>kod-fore.md5</code>](../resultat/protokoll/kod-fore.md5):</p>
+<pre><code>3cf8271b88dcad0498e0bafe268b3bd7  aix-pro/hemsogrisen-crm/.claude/settings.local.json
+6a11b4fc03f849188fa66be3c736d3ea  aix-pro/hemsogrisen-crm/README.md
+ffaea4222d43e7f9b929c3c082cf0e4e  aix-pro/hemsogrisen-crm/data/46elks-vakt.json</code></pre>
+<p><strong>Foton (JPEG)</strong> — tre första raderna ur [<code>foto-fore.md5</code>](../resultat/protokoll/foto-fore.md5):</p>
+<pre><code>805dbf566034e9dd78b69d1193f73990  lc-klipp/tiktok-7186272001042943237.jpg
+cd950c480a6553183cbb8b3b79a0e99b  lc-klipp/tiktok-7194110055736806662.jpg
+f8b3ca51e93654772114c91a7fdb9e7d  lc-klipp/tiktok-7199292449720716549.jpg</code></pre>
+<p><strong>Loggfiler</strong> — tre första raderna ur [<code>logg-fore.md5</code>](../resultat/protokoll/logg-fore.md5):</p>
+<pre><code>2ef8ea5eaef6d8d171834f8521bf9d8a  app/chrome-native-host.log
+81d990cedd1e5ed127f942ac4669cbda  app/claude.ai-web.log
+a021ad2c4bb5d4ac68ed27921d4e9d5f  app/cowork_vm_node.log</code></pre>
+<h2 id="kontrollera-själv">Kontrollera själv</h2>
+<p>Hela kedjan går att köra om på egen maskin:</p>
+<pre><code>git clone https://github.com/hugowikstrom/nvz &amp;&amp; cd nvz &amp;&amp; make
+python3 korpus/bygg-korpus.py          # eller peka på egna kataloger
+python3 prov/protokoll.py</code></pre>
+<p>Eller granska bara ett befintligt manifest mot ett uppackat träd:</p>
+<pre><code>nvz packa min-katalog arkiv.nv
+nvz packa-upp arkiv.nv /tmp/ut
+cd /tmp/ut/min-katalog &amp;&amp; md5sum -c /sökväg/till/manifest-fore.md5</code></pre>
+<h2 id="noteringar">Noteringar</h2>
+<ul><li>md5 används här för att det är formatet folk känner igen och kan köra</li></ul>
+<p>med <code>md5sum -c</code>. Packarens egen uppackningskontroll jämför därutöver blake2b-128 mot arkivregistret för varje fil, och den tidigare rapporten verifierar även rättigheter, tidsstämplar på nanosekunden, symlänkar och katalogposter — se <a href="bred-provning.md">bred-provning</a>, avsnitt 5.</p>
+<ul><li>Arkiven i protokollet är temporära; deras md5 i <code>protokoll.json</code> finns</li></ul>
+<p>för spårbarhet men arkivstorleken är inte deterministisk mellan körningar (se bred-provning, avsnitt 2.2).</p></body></html>

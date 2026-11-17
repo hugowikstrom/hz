@@ -25,7 +25,9 @@ from pathlib import Path
 
 ROT = Path(__file__).resolve().parent.parent
 # Utan flagga byggs den svenska rapporten; `--en` bygger den engelska.
-BAS = 'broad-evaluation' if '--en' in sys.argv else 'bred-provning'
+BAS = ('broad-evaluation' if '--en' in sys.argv
+       else 'aterskapningsprotokoll' if '--protokoll' in sys.argv
+       else 'bred-provning')
 MD = ROT / 'rapport' / f'{BAS}.md'
 HTML = ROT / 'rapport' / f'{BAS}.html'
 PDF = ROT / 'rapport' / f'{BAS}.pdf'
@@ -173,7 +175,9 @@ def main():
     md = MD.read_text()
     kropp = till_html(md)
     sprak = 'en' if '--en' in sys.argv else 'sv'
-    titel = 'nvz — broad evaluation' if sprak == 'en' else 'nvz — bred provning'
+    titel = ('nvz — broad evaluation' if sprak == 'en'
+             else 'nvz — återskapningsprotokoll' if '--protokoll' in sys.argv
+             else 'nvz — bred provning')
     HTML.write_text(f"""<!doctype html>
 <html lang="{sprak}"><head><meta charset="utf-8">
 <title>{titel}</title>

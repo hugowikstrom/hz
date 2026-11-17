@@ -1,0 +1,84 @@
+{
+ "datum": "2026-11-17",
+ "maskin": "AMD Ryzen AI 9 HX 470, 24 trådar, NVMe",
+ "nvz": "nvz 2.0 (c++)",
+ "binar_byte": 375816,
+ "last_under_matning": "9,5 — andra körningar pågick på maskinen; STORLEKAR är lastoberoende, TIDER är inte",
+
+ "karna": {
+  "vad": "Stefan Alfredssons prov: hämta senaste kärnan, kontrollsumma, packa, jämför, packa upp, kontrollsumma igen",
+  "version": "linux-7.3.5",
+  "kalla": "cdn.kernel.org/pub/linux/kernel/v7.x/linux-7.3.5.tar.xz",
+  "sha256_publicerad": "8f293f83d54f0b7b9be56863ebc5e4ea79d73e530b4ae55c572be97ef39f0990",
+  "sha256_hamtad": "8f293f83d54f0b7b9be56863ebc5e4ea79d73e530b4ae55c572be97ef39f0990",
+  "publicerad_tarxz_byte": 162459524,
+  "tar_byte": 1719101440,
+  "tar_sha256": "78bf8b716fbd32214903e90c8f7a9ee830e6da811626af662b2e7f9a7a8ab20d",
+  "nvz_tar_byte": 153542332,
+  "nvz_tar_packsek": 223,
+  "nvz_tar_uppacksek": 24,
+  "nvz_tar_sha256_efter": "78bf8b716fbd32214903e90c8f7a9ee830e6da811626af662b2e7f9a7a8ab20d",
+  "egen_xz9e_byte": 153542132,
+  "egen_xz9e_packsek": 364,
+  "trad_rabyte": 1641934258,
+  "nvz_trad_byte": 155603855,
+  "nvz_trad_packsek": 232,
+  "trad_identiskt": true
+ },
+
+ "slumpprov": {
+  "rundor": 120,
+  "lyckade": 120,
+  "vad": "slumpade träd: storlekar, filtyper, dubbletter, rättigheter, tider, namn med nyrad och åäö, symlänkar (relativa, trasiga, kataloger), slumpat läge; varje runda packas, provas med -t, packas upp och jämförs byte för byte plus rättigheter och tider",
+  "skript": "prov/slumpprov.py"
+ },
+
+ "omkostnad": {
+  "vad": "enstaka liten fil — där nvz inte har något att deduplicera och registret ändå ska skrivas",
+  "rader": [
+   {"indata": "96 310 byte källkod", "gzip -9": 27906, "zstd -19": 25720, "xz -9e": 25176, "nvz snabb": 29977, "nvz normal": 25368, "nvz liten": 22980},
+   {"indata": "10 240 byte källkod", "gzip -9": null, "zstd -19": null, "xz -9e": 3312, "nvz snabb": null, "nvz normal": 3460, "nvz liten": null}
+  ],
+  "slutsats": "registret kostar 150–200 byte på en enfilspackning; under ~50 kB finns ingen vinst att hämta och xz är lika bra eller bättre i läge normal"
+ },
+
+ "brister": [
+  {
+   "nr": 1,
+   "rubrik": "PNG-receptet är inte portabelt mellan zlib-implementationer",
+   "rapporterad_av": "Ted Lyngmo",
+   "status": "BEKRÄFTAD I KODEN",
+   "allvar": "kritisk",
+   "vad_jag_gjorde": "läste omvandla.cpp och arkiv.cpp samt ldd på binären",
+   "fynd": "Receptet som lagras är fyra zlib-parametrar — \"nivå,wbits,mem,strategi\" — och inget avtryck av vilken deflate-motor som skapade strömmen. png_aterskapa() kör packa_om() mot den DYNAMISKT LÄNKADE libz.so.1 på uppackningsmaskinen. Packningens egen kontroll bevisar bara att den LOKALA zlib:en återskapar strömmen. Byts motorn (zlib-ng levereras som standard-libz på fler och fler distributioner) stämmer inte längre bytena, och PNG:en går inte att sy ihop — rådatan finns i arkivet men filen kan inte återskapas.",
+   "atgard": "antingen bädda in en låst deflate-implementation i nvz (vilket precomp och Lepton gör av exakt det här skälet), eller lagra ett avtryck av motorn i registret och lagra IDAT rått när avtrycket inte matchar"
+  },
+  {
+   "nr": 2,
+   "rubrik": "Skrivfel kontrolleras inte — slutstatus 0 på en full disk",
+   "rapporterad_av": "Ted Lyngmo",
+   "status": "REPRODUCERAD",
+   "allvar": "kritisk",
+   "vad_jag_gjorde": "nvz -c mot /dev/full, och packning under RLIMIT_FSIZE",
+   "fynd": "nvz -c fil > /dev/full ger slutstatus 0. gzip ger 1 på samma skrivfel. Ingen fwrite/fclose/fflush i skrivvägen läser sitt returvärde, så ett stympat arkiv rapporteras som lyckat — och i gzip-läget raderas originalet efter ett \"lyckat\" bygge. Under RLIMIT_FSIZE dog processen i stället av SIGXFSZ (slutstatus 153) och originalet låg kvar, men det är ingen tröst: felet är att returvärdena inte läses.",
+   "atgard": "kontrollera varje skrivning, och radera aldrig källan innan arkivet är skrivet OCH stängt utan fel"
+  },
+  {
+   "nr": 3,
+   "rubrik": "Oläsbar fil bland flera ger kärndump i stället för felkod",
+   "rapporterad_av": "Ted Lyngmo",
+   "status": "REPRODUCERAD",
+   "allvar": "hög",
+   "vad_jag_gjorde": "nvz a.txt b.txt c.txt med b.txt i läge 000",
+   "fynd": "Undantaget nvz::Fel passerar ut genom main, std::terminate kallas, processen dör med SIGABRT och slutstatus 134 (kärndump). c.txt packas aldrig. gzip skriver \"Permission denied\", packar c.txt och slutar med 1. Underkommandot nvz packa … har try/catch — det är den dokumenterade gzip-ytan som saknar det.",
+   "atgard": "fånga undantagen i operandloopen, varna, fortsätt med nästa fil och sätt slutstatus 1"
+  }
+ ],
+
+ "portabilitet": {
+  "sprak": "C++17",
+  "bibliotek": "libzstd, liblzma, libz, pthread",
+  "posix": "unistd.h, dirent.h, sys/stat.h, fcntl.h, sys/wait.h — plus symlänkar, utimensat och att binären startar sig själv för C-kodekarna",
+  "windows": "ingen native-byggnad i dag; WSL fungerar, MinGW kräver att trädvandringen, rättigheterna, symlänkarna och självstarten skrivs om"
+ }
+}

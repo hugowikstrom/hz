@@ -441,6 +441,13 @@ dagens arkiv OCH snabbare, bara på dedupen.
 Kör om allt med `python3 matning/matning.py <korpus>` och bygg om tabellerna
 med `python3 matning/rapport.py --in-i-readme`.
 
+Ett **återskapningsprotokoll** med md5-manifest för varje fil före och
+efter uppackning — 12 169 filer över nio korpusar, samtliga identiska och
+kontrollerade med `md5sum -c` — finns i
+[`rapport/aterskapningsprotokoll.md`](rapport/aterskapningsprotokoll.md);
+manifesten ligger i [`resultat/protokoll/`](resultat/protokoll/) och går
+att köra om med `python3 prov/protokoll.py`.
+
 En **bred provning** från 2026-11-16 täcker åtta datasorter till — GIF, film,
 arkiv av arkiv, loggfiler — plus standardkorpusarna Silesia och enwik8, och
 ett återskapningsprov som kräver tillbaka varje byte, rättighet och

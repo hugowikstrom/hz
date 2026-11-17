@@ -1,0 +1,176 @@
+{
+ "maskin": "Ryzen AI 9 HX 470, 24 trådar, NVMe",
+ "nvz": "nvz 2.0 (c++)",
+ "datum": "2026-11-17 22:06",
+ "korpusar": {
+  "kod": {
+   "korpus": "kod",
+   "filer": 5974,
+   "rabyte": 58017251,
+   "arkivbyte": 7631675,
+   "arkiv_md5": "ad96015126fee4959adb56f953c74dda",
+   "packsek": 72.0,
+   "uppacksek": 69.2,
+   "manifest_fore_md5": "b561ff3d28d8e5c9e95ec30b9e6dc989",
+   "manifest_efter_md5": "b561ff3d28d8e5c9e95ec30b9e6dc989",
+   "identiska": true,
+   "md5sum_c_ok": true,
+   "exempel": [
+    "3cf8271b88dcad0498e0bafe268b3bd7  aix-pro/hemsogrisen-crm/.claude/settings.local.json",
+    "6a11b4fc03f849188fa66be3c736d3ea  aix-pro/hemsogrisen-crm/README.md",
+    "ffaea4222d43e7f9b929c3c082cf0e4e  aix-pro/hemsogrisen-crm/data/46elks-vakt.json"
+   ],
+   "avvikelser": []
+  },
+  "gif": {
+   "korpus": "gif",
+   "filer": 105,
+   "rabyte": 28726715,
+   "arkivbyte": 14865502,
+   "arkiv_md5": "1aede09f2e90d1abe30518a8ce835836",
+   "packsek": 7.2,
+   "uppacksek": 0.1,
+   "manifest_fore_md5": "8e05472c70bc020586e3785a888b648b",
+   "manifest_efter_md5": "8e05472c70bc020586e3785a888b648b",
+   "identiska": true,
+   "md5sum_c_ok": true,
+   "exempel": [
+    "56398e76be6355ad5999b262208a17c9  bevarat/hugo/.config/google-chrome/Default/Extensions/clhhggbfdinjmjhajaheehoeibfljjno/0.5.7.1_0/img/blank.gif",
+    "56398e76be6355ad5999b262208a17c9  bevarat/hugo/.config/google-chrome/Default/Extensions/clhhggbfdinjmjhajaheehoeibfljjno/0.5.7.1_0/img/placeholders/PhotoThumbConversation.gif",
+    "56398e76be6355ad5999b262208a17c9  bevarat/hugo/.config/google-chrome/Default/Extensions/clhhggbfdinjmjhajaheehoeibfljjno/0.5.7.1_0/img/placeholders/PhotoThumbModal.gif"
+   ],
+   "avvikelser": []
+  },
+  "foto": {
+   "korpus": "foto",
+   "filer": 1143,
+   "rabyte": 428360423,
+   "arkivbyte": 361852044,
+   "arkiv_md5": "56a9b669ed22b6278befc89e1cc0d2c6",
+   "packsek": 56.0,
+   "uppacksek": 17.5,
+   "manifest_fore_md5": "8989c1473571a2413c01ddbe118f5779",
+   "manifest_efter_md5": "8989c1473571a2413c01ddbe118f5779",
+   "identiska": true,
+   "md5sum_c_ok": true,
+   "exempel": [
+    "805dbf566034e9dd78b69d1193f73990  lc-klipp/tiktok-7186272001042943237.jpg",
+    "cd950c480a6553183cbb8b3b79a0e99b  lc-klipp/tiktok-7194110055736806662.jpg",
+    "f8b3ca51e93654772114c91a7fdb9e7d  lc-klipp/tiktok-7199292449720716549.jpg"
+   ],
+   "avvikelser": []
+  },
+  "arkiv": {
+   "korpus": "arkiv",
+   "filer": 133,
+   "rabyte": 410833681,
+   "arkivbyte": 254310752,
+   "arkiv_md5": "58910672ba9fc67c47269558c60c5f8d",
+   "packsek": 201.4,
+   "uppacksek": 1.4,
+   "manifest_fore_md5": "53081f8aa7bd04c35ca0f8b8fc5b2623",
+   "manifest_efter_md5": "53081f8aa7bd04c35ca0f8b8fc5b2623",
+   "identiska": true,
+   "md5sum_c_ok": true,
+   "exempel": [
+    "80a76a68596eceb173b6a24981d5eff7  crm/hemsogrisen-crm/data/sakerhetskopior/hemsogrisen-2026-09-01.tar.gz",
+    "34c6cf744579d00efc4b949c8bb840a0  crm/hemsogrisen-crm/data/sakerhetskopior/hemsogrisen-2026-10-01.tar.gz",
+    "70be6321bd8756a995a3592abc4a0dbe  crm/hemsogrisen-crm/data/sakerhetskopior/hemsogrisen-2026-10-17.tar.gz"
+   ],
+   "avvikelser": []
+  },
+  "logg": {
+   "korpus": "logg",
+   "filer": 76,
+   "rabyte": 249896132,
+   "arkivbyte": 10513624,
+   "arkiv_md5": "9ccbed5da89f24730e1a9a58a36e39a3",
+   "packsek": 219.9,
+   "uppacksek": 213.8,
+   "manifest_fore_md5": "b057f895ed43459cedb48d3a6b774e64",
+   "manifest_efter_md5": "b057f895ed43459cedb48d3a6b774e64",
+   "identiska": true,
+   "md5sum_c_ok": true,
+   "exempel": [
+    "2ef8ea5eaef6d8d171834f8521bf9d8a  app/chrome-native-host.log",
+    "81d990cedd1e5ed127f942ac4669cbda  app/claude.ai-web.log",
+    "a021ad2c4bb5d4ac68ed27921d4e9d5f  app/cowork_vm_node.log"
+   ],
+   "avvikelser": []
+  },
+  "png": {
+   "korpus": "png",
+   "filer": 4618,
+   "rabyte": 452014330,
+   "arkivbyte": 218955645,
+   "arkiv_md5": "784cdbb742340bfe9fc7b60b34169141",
+   "packsek": 299.6,
+   "uppacksek": 13.9,
+   "manifest_fore_md5": "4f99ac4f9efafab19af53eedf7dda478",
+   "manifest_efter_md5": "4f99ac4f9efafab19af53eedf7dda478",
+   "identiska": true,
+   "md5sum_c_ok": true,
+   "exempel": [
+    "cae4ed65ccedbe0fbc81c1eea5837c57  hak/anlaggningsansvarig/bild/kort-slut.png",
+    "35ddc7bb073b9eee3cce5a5c8f9a4c8a  hak/anlaggningsansvarig/bild/kort-titel.png",
+    "f15c4d17be52da5bf519aa30234b5a54  hak/anlaggningsansvarig/bild/ram-02-start.png"
+   ],
+   "avvikelser": []
+  },
+  "film": {
+   "korpus": "film",
+   "filer": 67,
+   "rabyte": 562820616,
+   "arkivbyte": 557882170,
+   "arkiv_md5": "cd2a9a20fd721995aee0ae7798e138d9",
+   "packsek": 69.4,
+   "uppacksek": 1.9,
+   "manifest_fore_md5": "c4b518236e6e6fd1afb28e80a406082f",
+   "manifest_efter_md5": "c4b518236e6e6fd1afb28e80a406082f",
+   "identiska": true,
+   "md5sum_c_ok": true,
+   "exempel": [
+    "24df606c214215134e6fb9dee7d597be  hemsogrisen/20260419_7630491724795628822_Då var silon fraktad och monterad i nya hagen! #gladgris #hemsogrisen....mp4",
+    "5332e1fdb4ad40853aae50b317eaee05  hemsogrisen/20260509_7638032144765406486_Följ för att se mer av detta! #gladgris #hemsogrisen #100grisar .mp4",
+    "91d2e6aab1ec3aea8c131b3cdb07c126  hemsogrisen/20260621_7653811493774855446_Skulbygge i ösregn😍🥴 #hemsogrisen #egenföretagare #gladgris #fyp.mp4"
+   ],
+   "avvikelser": []
+  },
+  "silesia": {
+   "korpus": "silesia",
+   "filer": 12,
+   "rabyte": 211938580,
+   "arkivbyte": 45659868,
+   "arkiv_md5": "dd8358b9f2516ca8048b24f2afd968ba",
+   "packsek": 107.0,
+   "uppacksek": 103.9,
+   "manifest_fore_md5": "04228513e32fe4be7f7fecda5972525d",
+   "manifest_efter_md5": "04228513e32fe4be7f7fecda5972525d",
+   "identiska": true,
+   "md5sum_c_ok": true,
+   "exempel": [
+    "88334708559f6db57d79096bc0aca07e  dickens",
+    "c7789a2097f1ff944b0c737430a339b3  mozilla",
+    "38e623e3093b7bf2003ca4b1bbc19927  mr"
+   ],
+   "avvikelser": []
+  },
+  "enwik8": {
+   "korpus": "enwik8",
+   "filer": 1,
+   "rabyte": 100000000,
+   "arkivbyte": 21417368,
+   "arkiv_md5": "8137b045016d38c747ccc72e27b41726",
+   "packsek": 133.3,
+   "uppacksek": 134.9,
+   "manifest_fore_md5": "376ef224b8fb40ef717dc7286ac96058",
+   "manifest_efter_md5": "376ef224b8fb40ef717dc7286ac96058",
+   "identiska": true,
+   "md5sum_c_ok": true,
+   "exempel": [
+    "a1fa5ffddb56f4953e226637dabbb36a  enwik8"
+   ],
+   "avvikelser": []
+  }
+ }
+}

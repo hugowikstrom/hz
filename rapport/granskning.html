@@ -1,0 +1,288 @@
+<title>nvz under granskning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Noto+Serif:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --papper:#F5F7F3; --yta:#FFFFFF; --ink:#15181A; --dim:#5B6560; --linje:#DCE1D9;
+  --accent:#0E6245; --accent-svag:#E3EDE6; --neg:#8E2B20; --neg-svag:#F6E7E3;
+  --skugga:0 1px 0 rgba(21,24,26,.04);
+  --disp:"Archivo","DejaVu Sans Condensed",system-ui,sans-serif;
+  --brod:"Noto Serif","DejaVu Serif",Georgia,serif;
+  --data:"IBM Plex Mono","Liberation Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --papper:#0E1110; --yta:#151917; --ink:#E6EAE3; --dim:#97A199; --linje:#242A26;
+    --accent:#55B892; --accent-svag:#11201C; --neg:#DA8878; --neg-svag:#291A17;
+    --skugga:0 1px 0 rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --papper:#0E1110; --yta:#151917; --ink:#E6EAE3; --dim:#97A199; --linje:#242A26;
+  --accent:#55B892; --accent-svag:#11201C; --neg:#DA8878; --neg-svag:#291A17;
+  --skugga:0 1px 0 rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--papper); color:var(--ink);
+  font-family:var(--brod); font-size:17px; line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+.ark{max-width:1120px; margin:0 auto; padding:clamp(28px,5vw,72px) clamp(18px,4vw,56px) 96px}
+.prosa{max-width:66ch}
+p{margin:0 0 1.05em}
+a{color:var(--accent); text-decoration-thickness:1px; text-underline-offset:2px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+code{font-family:var(--data); font-size:.86em; background:var(--accent-svag); padding:.08em .34em; border-radius:2px}
+
+/* --- huvud ------------------------------------------------------------- */
+header.topp{border-bottom:2px solid var(--ink); padding-bottom:22px; margin-bottom:0}
+.ögonbryn{
+  font-family:var(--disp); font-weight:600; font-size:11.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--accent); margin:0 0 14px
+}
+h1{
+  font-family:var(--disp); font-weight:700; font-size:clamp(34px,6vw,58px); line-height:1.02;
+  letter-spacing:-.022em; margin:0 0 .45em; text-wrap:balance
+}
+.undertitel{font-size:19px; color:var(--dim); max-width:60ch; margin:0 0 20px}
+.stämpel{
+  font-family:var(--data); font-size:12px; color:var(--dim);
+  display:flex; flex-wrap:wrap; gap:6px 22px; font-variant-numeric:tabular-nums
+}
+.stämpel b{color:var(--ink); font-weight:500}
+
+/* --- nyckeltal --------------------------------------------------------- */
+.nyckelband{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  border-bottom:1px solid var(--linje); margin-bottom:56px
+}
+.nyckel{padding:24px 26px 22px; border-right:1px solid var(--linje); background:var(--yta)}
+.nyckel:last-child{border-right:0}
+.nv{
+  font-family:var(--data); font-weight:600; font-size:clamp(22px,3.4vw,30px);
+  letter-spacing:-.02em; color:var(--accent); font-variant-numeric:tabular-nums
+}
+.nl{font-family:var(--disp); font-weight:600; font-size:13.5px; margin-top:7px; line-height:1.3}
+.nf{font-size:13px; color:var(--dim); margin-top:3px; line-height:1.35}
+
+/* --- sektioner --------------------------------------------------------- */
+section{margin:0 0 60px}
+h2{
+  font-family:var(--disp); font-weight:700; font-size:clamp(22px,3vw,30px);
+  letter-spacing:-.015em; margin:0 0 6px; padding-top:18px; border-top:1px solid var(--linje);
+  text-wrap:balance
+}
+h2 .num{color:var(--accent); font-variant-numeric:tabular-nums; margin-right:.5em}
+h3{font-family:var(--disp); font-weight:600; font-size:19px; margin:0 0 4px; letter-spacing:-.01em}
+.ledtext{font-size:15px; color:var(--dim); margin:0 0 22px; max-width:66ch}
+
+/* --- tabeller ---------------------------------------------------------- */
+.rulla{overflow-x:auto; border:1px solid var(--linje); background:var(--yta); box-shadow:var(--skugga)}
+table{border-collapse:collapse; width:100%; font-family:var(--data); font-size:13px}
+thead th{
+  font-weight:600; text-align:left; padding:11px 14px; white-space:nowrap;
+  border-bottom:2px solid var(--accent); color:var(--ink);
+  font-size:11.5px; letter-spacing:.04em; text-transform:uppercase
+}
+thead th.t{text-align:right}
+tbody td{
+  padding:10px 14px; border-bottom:1px solid var(--linje); vertical-align:top;
+  font-variant-numeric:tabular-nums
+}
+tbody td.t{text-align:right; white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--accent-svag)}
+td strong{font-family:var(--disp); font-size:14px}
+.om{display:block; font-family:var(--brod); font-size:11.5px; color:var(--dim); font-style:italic; margin-top:2px; white-space:nowrap}
+.plus{color:var(--accent); font-weight:600}
+.minus{color:var(--neg); font-weight:600}
+.noll{color:var(--dim)}
+
+/* --- kärnprovets steg -------------------------------------------------- */
+ol.steg{list-style:none; counter-reset:s; margin:0; padding:0; border:1px solid var(--linje); background:var(--yta)}
+ol.steg li{
+  counter-increment:s; display:grid; grid-template-columns:minmax(150px,200px) minmax(150px,1fr) 2fr;
+  gap:4px 20px; padding:16px 20px 16px 58px; border-bottom:1px solid var(--linje); position:relative
+}
+ol.steg li:last-child{border-bottom:0}
+ol.steg li::before{
+  content:counter(s); position:absolute; left:20px; top:15px;
+  font-family:var(--data); font-weight:600; font-size:13px; color:var(--accent)
+}
+.sr{font-family:var(--disp); font-weight:600; font-size:14.5px}
+.sv{font-family:var(--data); font-size:13px; font-variant-numeric:tabular-nums}
+.sk{font-size:14px; color:var(--dim)}
+@media(max-width:760px){ol.steg li{grid-template-columns:1fr}.sk{color:var(--ink)}}
+
+/* --- brister ----------------------------------------------------------- */
+.brist{border:1px solid var(--linje); border-left:3px solid var(--neg); background:var(--yta); padding:20px 24px; margin:0 0 16px}
+.brist header{margin-bottom:12px}
+.chip{
+  display:inline-block; font-family:var(--data); font-size:11px; font-weight:600;
+  letter-spacing:.06em; padding:3px 8px; border-radius:2px; background:var(--neg-svag); color:var(--neg)
+}
+.allvar{font-family:var(--disp); font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); margin-left:10px}
+.brist h3{margin-top:11px}
+.brist .meta{font-size:13px; color:var(--dim); margin:0; font-style:italic}
+.brist p{font-size:15.5px; max-width:76ch}
+.atgard{border-top:1px solid var(--linje); padding-top:12px; margin:14px 0 0; font-size:15px}
+.atgard span{font-family:var(--disp); font-weight:600; font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); margin-right:10px}
+
+/* --- fakta-lista ------------------------------------------------------- */
+dl.fakta{display:grid; grid-template-columns:minmax(120px,170px) 1fr; gap:10px 24px; margin:0; font-size:15.5px}
+dl.fakta dt{font-family:var(--disp); font-weight:600; font-size:13px; letter-spacing:.03em; text-transform:uppercase; color:var(--dim); padding-top:3px}
+dl.fakta dd{margin:0}
+footer{border-top:2px solid var(--ink); padding-top:20px; font-size:14px; color:var(--dim); max-width:72ch}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="ark">
+<header class="topp">
+  <p class="ögonbryn">Granskningsprotokoll · arkivpackaren nvz</p>
+  <h1>nvz under granskning</h1>
+  <p class="undertitel">Vad som faktiskt går att mäta, vad som går sönder, och var vinsten
+  kommer ifrån. Varje tal på den här sidan kommer ur <code>resultat/*.json</code> i repot
+  och går att räkna om med <code>python3 rapport/granskning.py</code>.</p>
+  <p class="stämpel"><span>Datum <b>2026-11-17</b></span><span>Maskin <b>AMD Ryzen AI 9 HX 470, 24 trådar, NVMe</b></span>
+  <span>Binär <b>375 816 byte</b></span><span>Last under mätningen <b>9,5 — andra körningar pågick på maskinen; STORLEKAR är lastoberoende, TIDER är inte</b></span></p>
+</header>
+
+<div class="nyckelband"><div class="nyckel"><div class="nv">78bf8b71…</div><div class="nl">sha256 ut = sha256 in</div><div class="nf">linux-7.3.5, 1 639.5 MiB tar</div></div><div class="nyckel"><div class="nv">120/120</div><div class="nl">slumpade träd bit-exakta</div><div class="nf">innehåll, rättigheter och tider</div></div><div class="nyckel"><div class="nv">8</div><div class="nl">korpusar md5-protokollförda</div><div class="nf">kontrollerade med md5sum -c</div></div><div class="nyckel"><div class="nv">3</div><div class="nl">brister bekräftade</div><div class="nf">två reproducerade, en läst i koden</div></div></div>
+
+<section class="prosa">
+  <h2>Kort sagt</h2>
+  <p>Tre invändningar i tråden går att besvara med en mätning, och tre brister som en
+  utomstående granskare rapporterade går att reproducera. Båda sakerna står här.</p>
+  <p><strong>Rundgången håller.</strong> Linux-kärnan hämtad från kernel.org, packad, uppackad:
+  samma sha256. 120 slumpade träd: varje byte, varje rättighet och varje tidsstämpel tillbaka.
+  Fem korpusar md5-protokollförda med manifest som ligger i repot, kontrollerade av systemets
+  egen <code>md5sum -c</code> och inte av nvz själv.</p>
+  <p><strong>Men vinsten är inte jämnt fördelad, och det är den intressanta delen.</strong>
+  På en enda tar-ström är nvz i praktiken <em>xz</em>: 200 byte isär på 1,6 GB kärnkod. Vinsten
+  mot de bästa klassiska verktygen kommer nästan uteslutande från två ställen — bilder, där
+  entropilagret byts ut, och träd med dubbletter. På standardkorpusar i läge normal är nvz
+  och <code>xz -9e</code> jämnstora.</p>
+  <p><strong>Och tre riktiga fel.</strong> Ett skrivfel kan ge slutstatus 0, en oläsbar fil ger
+  kärndump, och PNG-receptet är inte portabelt mellan zlib-implementationer. Det sista är
+  allvarligast: det kan göra ett giltigt arkiv oläsbart på en annan maskin.</p>
+</section>
+
+<section>
+  <h2><span class="num">1</span>Arkivmatrisen</h2>
+  <p class="ledtext">Varje rad är en hel rundgång: packa, packa upp, <code>diff -rq</code> mot
+  originalträdet. &quot;Bästa klassiska&quot; är det minsta av gzip, bzip2, zstd −3/−19/−22 och
+  xz −9e på samma data. &quot;Dagens&quot; är <code>tar.zst -3</code>, alltså vad arkivskriptet
+  gjorde innan.</p>
+  <div class="rulla"><table class=""><thead><tr><th>korpus</th><th class="t">filer</th><th class="t">rå MiB</th><th class="t">bästa klassiska MiB</th><th class="t">nvz normal</th><th class="t">nvz liten</th><th class="t">liten mot bästa</th><th class="t">liten mot dagens</th><th class="t">uppacktid s: klassisk / normal / liten</th></tr></thead><tbody><tr><td class=""><strong>kod</strong><span class="om">källkodsträd ur riktiga projekt</span></td><td class="t">5 974</td><td class="t">55.3</td><td class="t">8.2<span class="om">tar.xz -9e</span></td><td class="t">8.3</td><td class="t">7.3</td><td class="t plus">+11.6 %</td><td class="t">+36.5 %</td><td class="t">0.6 / 0.6 / 68.0</td></tr><tr><td class=""><strong>logg</strong><span class="om">serverloggar, text</span></td><td class="t">76</td><td class="t">238.3</td><td class="t">11.8<span class="om">tar.xz -9e</span></td><td class="t">12.0</td><td class="t">10.0</td><td class="t plus">+15.3 %</td><td class="t">+55.2 %</td><td class="t">0.9 / 1.9 / 203.1</td></tr><tr><td class=""><strong>png</strong><span class="om">skärmbilder och diagram</span></td><td class="t">4 618</td><td class="t">431.1</td><td class="t">245.2<span class="om">tar.zst -22 --ultra</span></td><td class="t">208.8</td><td class="t">208.8</td><td class="t plus">+14.8 %</td><td class="t">+42.5 %</td><td class="t">0.8 / 9.6 / 9.4</td></tr><tr><td class=""><strong>foto</strong><span class="om">kamerabilder, baseline-JPEG</span></td><td class="t">1 143</td><td class="t">408.5</td><td class="t">404.9<span class="om">tar.bz2 -9</span></td><td class="t">345.1</td><td class="t">345.1</td><td class="t plus">+14.8 %</td><td class="t">+15.1 %</td><td class="t">40.9 / 17.4 / 16.9</td></tr><tr><td class=""><strong>gif</strong><span class="om">animeringar</span></td><td class="t">105</td><td class="t">27.4</td><td class="t">14.2<span class="om">tar.zst -22 --ultra</span></td><td class="t">14.2</td><td class="t">14.2</td><td class="t noll">+0.0 %</td><td class="t">+47.6 %</td><td class="t">0.0 / 0.1 / 0.1</td></tr><tr><td class=""><strong>arkiv</strong><span class="om">färdigpackade arkiv (zip, gz, xz)</span></td><td class="t">133</td><td class="t">391.8</td><td class="t">242.8<span class="om">tar.zst -22 --ultra</span></td><td class="t">242.5</td><td class="t">242.5</td><td class="t noll">+0.1 %</td><td class="t">+36.5 %</td><td class="t">0.7 / 1.1 / 1.1</td></tr><tr><td class=""><strong>film</strong><span class="om">mp4 från telefon</span></td><td class="t">67</td><td class="t">536.7</td><td class="t">532.0<span class="om">tar.zst -19 --long</span></td><td class="t">532.0</td><td class="t">532.0</td><td class="t noll">-0.0 %</td><td class="t">+0.3 %</td><td class="t">0.4 / 1.6 / 1.7</td></tr><tr><td class=""><strong>symbios3d</strong><span class="om">blandat projektträd</span></td><td class="t">15 139</td><td class="t">1 814.4</td><td class="t">297.5<span class="om">tar.xz -9e</span></td><td class="t">282.2</td><td class="t">279.1</td><td class="t plus">+6.2 %</td><td class="t">+38.4 %</td><td class="t">5.3 / 8.3 / 207.4</td></tr><tr><td class=""><strong>silesia</strong><span class="om">standardkorpus (12 filer)</span></td><td class="t">12</td><td class="t">202.1</td><td class="t">46.2<span class="om">tar.xz -9e</span></td><td class="t">46.2</td><td class="t">43.5</td><td class="t plus">+5.7 %</td><td class="t">+31.0 %</td><td class="t">2.7 / 2.4 / 100.9</td></tr><tr><td class=""><strong>enwik8</strong><span class="om">standardkorpus (wikipedia, 100 MB)</span></td><td class="t">1</td><td class="t">95.4</td><td class="t">23.7<span class="om">tar.xz -9e</span></td><td class="t">23.7</td><td class="t">20.4</td><td class="t plus">+13.7 %</td><td class="t">+39.6 %</td><td class="t">1.4 / 1.9 / 135.2</td></tr></tbody></table></div>
+</section>
+
+<section>
+  <h2><span class="num">2</span>Linux-kärnan, steg för steg</h2>
+  <p class="ledtext">Provet som efterfrågades i tråden: hämta senaste kärnan, kontrollsumma,
+  packa, jämför storleken mot det du laddade ner, packa upp, kontrollsumma igen.</p>
+  <ol class="steg"><li><div class="sr">Hämtad fil</div><div class="sv">linux-7.3.5.tar.xz, 162 459 524 byte</div><div class="sk">sha256 8f293f83d54f0b7b… — <strong>identisk med kernel.orgs egen</strong></div></li><li><div class="sr">Uppackad</div><div class="sv">1 719 101 440 byte tar</div><div class="sk">sha256 78bf8b716fbd3221… (utgångsvärdet)</div></li><li><div class="sr">Packad med nvz</div><div class="sv">153 542 332 byte på 223 s</div><div class="sk"><strong>5.5 % mindre</strong> än den publicerade tarbollen</div></li><li><div class="sr">xz -9e på samma maskin</div><div class="sv">153 542 132 byte på 364 s</div><div class="sk">nvz är 200 byte större men 1.63× snabbare</div></li><li><div class="sr">Uppackad igen</div><div class="sv">24 s</div><div class="sk">sha256 78bf8b716fbd3221… — <strong>bit-identisk</strong></div></li></ol>
+  <p class="prosa" style="margin-top:22px">Samma kärna som <strong>uppackat träd</strong>
+  (1 565.9 MiB i 90 000 filer) blir 148.4 MiB — alltså +1.3 % jämfört med
+  att packa tarfilen. Trädvägen är sämre här, och det är väntat: kärnkällkod har nästan inga
+  dubbletter, och nvz delar upp strömmen per filklass, vilket kostar sammanhang. Dedupen
+  betalar sig på riktiga projektträd, inte på en kärna.</p>
+</section>
+
+<section>
+  <h2><span class="num">3</span>Den egna kompressorn mot de klassiska</h2>
+  <p class="ledtext">nvcm är kontextblandning med aritmetisk kodning — ingen Huffman, ingen
+  ordbok, inga tränade vikter: modellerna börjar på noll för varje block. Här fil för fil mot
+  det bästa av gzip −9, bzip2 −9, zstd −19, zstd −22, brotli −q11 och xz −9e.
+  nvcm är minst på <strong>10 av 13</strong> filer — och förlorar på de övriga, vilket
+  också står i tabellen.</p>
+  <div class="rulla"><table class=""><thead><tr><th>fil</th><th class="t">nvcm byte</th><th class="t">bitar/byte</th><th>bästa klassiska</th><th class="t">dess byte</th><th class="t">dess b/b</th><th class="t">nvcm mot den</th></tr></thead><tbody><tr><td class="">dickens</td><td class="t">2 234 894</td><td class="t">1.754</td><td class="">bzip2 -9</td><td class="t">2 799 520</td><td class="t">2.197</td><td class="t plus">+20.2 %</td></tr><tr><td class="">mozilla</td><td class="t">14 366 242</td><td class="t">2.244</td><td class="">xz -9e</td><td class="t">13 376 240</td><td class="t">2.089</td><td class="t minus">-7.4 %</td></tr><tr><td class="">mr</td><td class="t">2 205 358</td><td class="t">1.770</td><td class="">bzip2 -9</td><td class="t">2 441 280</td><td class="t">1.959</td><td class="t plus">+9.7 %</td></tr><tr><td class="">nci</td><td class="t">1 505 038</td><td class="t">0.359</td><td class="">xz -9e</td><td class="t">1 449 272</td><td class="t">0.345</td><td class="t minus">-3.8 %</td></tr><tr><td class="">ooffice</td><td class="t">2 379 789</td><td class="t">3.095</td><td class="">xz -9e</td><td class="t">2 427 224</td><td class="t">3.156</td><td class="t plus">+2.0 %</td></tr><tr><td class="">osdb</td><td class="t">2 395 972</td><td class="t">1.901</td><td class="">bzip2 -9</td><td class="t">2 802 792</td><td class="t">2.223</td><td class="t plus">+14.5 %</td></tr><tr><td class="">reymont</td><td class="t">1 053 488</td><td class="t">1.272</td><td class="">bzip2 -9</td><td class="t">1 246 230</td><td class="t">1.504</td><td class="t plus">+15.5 %</td></tr><tr><td class="">samba</td><td class="t">3 377 043</td><td class="t">1.250</td><td class="">xz -9e</td><td class="t">3 739 524</td><td class="t">1.385</td><td class="t plus">+9.7 %</td></tr><tr><td class="">sao</td><td class="t">4 509 261</td><td class="t">4.974</td><td class="">xz -9e</td><td class="t">4 425 664</td><td class="t">4.882</td><td class="t minus">-1.9 %</td></tr><tr><td class="">webster</td><td class="t">6 317 041</td><td class="t">1.219</td><td class="">xz -9e</td><td class="t">8 368 672</td><td class="t">1.615</td><td class="t plus">+24.5 %</td></tr><tr><td class="">x-ray</td><td class="t">3 742 075</td><td class="t">3.533</td><td class="">bzip2 -9</td><td class="t">4 051 112</td><td class="t">3.824</td><td class="t plus">+7.6 %</td></tr><tr><td class="">xml</td><td class="t">353 039</td><td class="t">0.528</td><td class="">brotli -q 11</td><td class="t">430 566</td><td class="t">0.644</td><td class="t plus">+18.0 %</td></tr><tr><td class="">enwik8</td><td class="t">21 417 184</td><td class="t">1.713</td><td class="">xz -9e</td><td class="t">24 831 648</td><td class="t">1.986</td><td class="t plus">+13.8 %</td></tr></tbody></table></div>
+  <p class="prosa" style="margin-top:22px">Priset syns inte i tabellen men är avgörande:
+  nvcm packar och packar <em>upp</em> i ungefär samma takt, runt 1 MB/s. Det är därför den bara
+  väljs i läge <code>liten</code>, och bara för de block där provet visar att hon vinner.</p>
+</section>
+
+<section>
+  <h2><span class="num">4</span>Tre bekräftade brister</h2>
+  <p class="ledtext">Rapporterade av Ted Lyngmo efter en genomgång av källkoden. Jag har
+  reproducerat två av dem själv och bekräftat den tredje genom att läsa koden. Ingen av dem är
+  avfärdad.</p>
+  <article class="brist">
+  <header><span class="chip kod">BEKRÄFTAD I KODEN</span>
+    <span class="allvar">kritisk</span>
+    <h3>PNG-receptet är inte portabelt mellan zlib-implementationer</h3>
+    <p class="meta">rapporterad av Ted Lyngmo · läste omvandla.cpp och arkiv.cpp samt ldd på binären</p></header>
+  <p>Receptet som lagras är fyra zlib-parametrar — &quot;nivå,wbits,mem,strategi&quot; — och inget avtryck av vilken deflate-motor som skapade strömmen. png_aterskapa() kör packa_om() mot den DYNAMISKT LÄNKADE libz.so.1 på uppackningsmaskinen. Packningens egen kontroll bevisar bara att den LOKALA zlib:en återskapar strömmen. Byts motorn (zlib-ng levereras som standard-libz på fler och fler distributioner) stämmer inte längre bytena, och PNG:en går inte att sy ihop — rådatan finns i arkivet men filen kan inte återskapas.</p>
+  <p class="atgard"><span>Åtgärd</span> antingen bädda in en låst deflate-implementation i nvz (vilket precomp och Lepton gör av exakt det här skälet), eller lagra ett avtryck av motorn i registret och lagra IDAT rått när avtrycket inte matchar</p>
+</article><article class="brist">
+  <header><span class="chip repr">REPRODUCERAD</span>
+    <span class="allvar">kritisk</span>
+    <h3>Skrivfel kontrolleras inte — slutstatus 0 på en full disk</h3>
+    <p class="meta">rapporterad av Ted Lyngmo · nvz -c mot /dev/full, och packning under RLIMIT_FSIZE</p></header>
+  <p>nvz -c fil &gt; /dev/full ger slutstatus 0. gzip ger 1 på samma skrivfel. Ingen fwrite/fclose/fflush i skrivvägen läser sitt returvärde, så ett stympat arkiv rapporteras som lyckat — och i gzip-läget raderas originalet efter ett &quot;lyckat&quot; bygge. Under RLIMIT_FSIZE dog processen i stället av SIGXFSZ (slutstatus 153) och originalet låg kvar, men det är ingen tröst: felet är att returvärdena inte läses.</p>
+  <p class="atgard"><span>Åtgärd</span> kontrollera varje skrivning, och radera aldrig källan innan arkivet är skrivet OCH stängt utan fel</p>
+</article><article class="brist">
+  <header><span class="chip repr">REPRODUCERAD</span>
+    <span class="allvar">hög</span>
+    <h3>Oläsbar fil bland flera ger kärndump i stället för felkod</h3>
+    <p class="meta">rapporterad av Ted Lyngmo · nvz a.txt b.txt c.txt med b.txt i läge 000</p></header>
+  <p>Undantaget nvz::Fel passerar ut genom main, std::terminate kallas, processen dör med SIGABRT och slutstatus 134 (kärndump). c.txt packas aldrig. gzip skriver &quot;Permission denied&quot;, packar c.txt och slutar med 1. Underkommandot nvz packa … har try/catch — det är den dokumenterade gzip-ytan som saknar det.</p>
+  <p class="atgard"><span>Åtgärd</span> fånga undantagen i operandloopen, varna, fortsätt med nästa fil och sätt slutstatus 1</p>
+</article>
+</section>
+
+<section>
+  <h2><span class="num">5</span>Rundgången, protokollförd</h2>
+  <p class="ledtext">md5-manifest före och efter, per fil. Manifesten ligger i repot under
+  <code>resultat/protokoll/</code>, så vem som helst kan köra
+  <code>md5sum -c</code> mot ett uppackat träd själv. Kontrollen görs av systemets md5sum —
+  inte av koden som skrev manifestet.</p>
+  <div class="rulla"><table class=""><thead><tr><th>korpus</th><th class="t">filer</th><th class="t">rå byte</th><th class="t">arkiv byte</th><th>manifest före</th><th>manifest efter</th><th>md5sum -c</th></tr></thead><tbody><tr><td class="">kod</td><td class="t">5 974</td><td class="t">58 017 251</td><td class="t">7 631 675</td><td class=""><code>b561ff3d28d8…</code></td><td class=""><code>b561ff3d28d8…</code></td><td class="plus">ok</td></tr><tr><td class="">gif</td><td class="t">105</td><td class="t">28 726 715</td><td class="t">14 865 502</td><td class=""><code>8e05472c70bc…</code></td><td class=""><code>8e05472c70bc…</code></td><td class="plus">ok</td></tr><tr><td class="">foto</td><td class="t">1 143</td><td class="t">428 360 423</td><td class="t">361 852 044</td><td class=""><code>8989c1473571…</code></td><td class=""><code>8989c1473571…</code></td><td class="plus">ok</td></tr><tr><td class="">arkiv</td><td class="t">133</td><td class="t">410 833 681</td><td class="t">254 310 752</td><td class=""><code>53081f8aa7bd…</code></td><td class=""><code>53081f8aa7bd…</code></td><td class="plus">ok</td></tr><tr><td class="">logg</td><td class="t">76</td><td class="t">249 896 132</td><td class="t">10 513 624</td><td class=""><code>b057f895ed43…</code></td><td class=""><code>b057f895ed43…</code></td><td class="plus">ok</td></tr><tr><td class="">png</td><td class="t">4 618</td><td class="t">452 014 330</td><td class="t">218 955 645</td><td class=""><code>4f99ac4f9efa…</code></td><td class=""><code>4f99ac4f9efa…</code></td><td class="plus">ok</td></tr><tr><td class="">film</td><td class="t">67</td><td class="t">562 820 616</td><td class="t">557 882 170</td><td class=""><code>c4b518236e6e…</code></td><td class=""><code>c4b518236e6e…</code></td><td class="plus">ok</td></tr><tr><td class="">silesia</td><td class="t">12</td><td class="t">211 938 580</td><td class="t">45 659 868</td><td class=""><code>04228513e32f…</code></td><td class=""><code>04228513e32f…</code></td><td class="plus">ok</td></tr></tbody></table></div>
+  <p class="prosa" style="margin-top:22px"><strong>Slumpprovet.</strong> slumpade träd: storlekar, filtyper, dubbletter, rättigheter, tider, namn med nyrad och åäö, symlänkar (relativa, trasiga, kataloger), slumpat läge; varje runda packas, provas med -t, packas upp och jämförs byte för byte plus rättigheter och tider
+  Resultat: alla 120 rundor bit-exakta. Skriptet är <code>prov/slumpprov.py</code> och ett
+  misslyckat frö skrivs ut, så felet går att återskapa exakt.</p>
+</section>
+
+<section>
+  <h2><span class="num">6</span>Omkostnaden på små filer</h2>
+  <p class="ledtext">En arkivpackare som bär ett register betalar för det. Här en enstaka liten
+  fil, där det inte finns några dubbletter och inget sammanhang mellan filer att hämta.</p>
+  <div class="rulla"><table class=""><thead><tr><th>indata</th><th class="t">gzip -9</th><th class="t">zstd -19</th><th class="t">xz -9e</th><th class="t">nvz snabb</th><th class="t">nvz normal</th><th class="t">nvz liten</th></tr></thead><tbody><tr><td class="">96 310 byte källkod</td><td class="t">27 906</td><td class="t">25 720</td><td class="t">25 176</td><td class="t">29 977</td><td class="t">25 368</td><td class="t">22 980</td></tr><tr><td class="">10 240 byte källkod</td><td class="t">–</td><td class="t">–</td><td class="t">3 312</td><td class="t">–</td><td class="t">3 460</td><td class="t">–</td></tr></tbody></table></div>
+  <p class="prosa" style="margin-top:22px">registret kostar 150–200 byte på en enfilspackning; under ~50 kB finns ingen vinst att hämta och xz är lika bra eller bättre i läge normal</p>
+</section>
+
+<section>
+  <h2><span class="num">7</span>Vad den är byggd av, och var den går</h2>
+  <dl class="fakta">
+    <dt>Språk</dt><dd>C++17</dd>
+    <dt>Bibliotek</dt><dd>libzstd, liblzma, libz, pthread</dd>
+    <dt>POSIX-beroenden</dt><dd>unistd.h, dirent.h, sys/stat.h, fcntl.h, sys/wait.h — plus symlänkar, utimensat och att binären startar sig själv för C-kodekarna</dd>
+    <dt>Windows</dt><dd>ingen native-byggnad i dag; WSL fungerar, MinGW kräver att trädvandringen, rättigheterna, symlänkarna och självstarten skrivs om</dd>
+    <dt>Binärens storlek</dt><dd>375 816 byte, dynamiskt länkad mot samma bibliotek som
+    <code>tar.zst</code> och <code>tar.xz</code> redan behöver — ingen inbäddad ordbok och
+    ingen modell tränad på testdatan</dd>
+  </dl>
+</section>
+
+<section class="prosa">
+  <h2><span class="num">8</span>Vad nvz inte är</h2>
+  <p>Ingen av de tre omvandlingarna är ett nytt påfund, och det ska stå tydligt. Förlustfri
+  JPEG-ompackning är samma idé som <em>packJPG</em> (2007) och <em>Lepton</em> (Dropbox, 2016):
+  kasta Huffman-lagret, behåll koefficienterna exakt, koda om dem med en aritmetisk kodare.
+  Att leta upp de zlib-parametrar som återskapar en befintlig deflate-ström är samma idé som
+  <em>precomp</em>. Kontextblandning är PAQ-familjens, från 2002 och framåt.</p>
+  <p>Det som är gjort här är att sätta ihop dem i en arkivpackare där varje block får den kodek
+  som ett prov visar är bäst, och att mäta hela saken på riktiga träd med rundgång och
+  kontrollsummor. Entropiarbetet görs av zstd, xz och nvcm. Gränsen Shannon satte är inte
+  utmanad någonstans — det som ändras är <em>modellen</em>: en deflate-ström ser slumpmässig ut
+  för zstd, men vecklas den ut är raderna under starkt mönstrade, och ett JPEG-entropilager
+  från 1992 är mätbart sämre än en modern aritmetisk kodare på exakt samma koefficienter.</p>
+</section>
+
+<footer>
+  <p>Rapporten är genererad ur mätfilerna i repot: <code>python3 rapport/granskning.py</code>.
+  Källkod och mätdata: <code>github.com/hugowikstrom/nvz</code>. Tiderna är mätta på en
+  maskin med annan last; storlekarna är lastoberoende och går att reproducera exakt.</p>
+</footer>
+</div>
