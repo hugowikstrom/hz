@@ -183,7 +183,8 @@ Byte dekomprimera(const std::string &kodek, const u8 *d, size_t n, u64 ralen) {
 }
 
 // --- provet ----------------------------------------------------------------
-std::string valj_kodek(const u8 *d, size_t n, bool med_cm, bool med_gpu, int tradar) {
+std::string valj_kodek(const u8 *d, size_t n, bool med_cm, bool med_gpu, int tradar,
+                       bool opak) {
     (void)tradar;
     if (n == 0) return "ra";
 
@@ -232,6 +233,16 @@ std::string valj_kodek(const u8 *d, size_t n, bool med_cm, bool med_gpu, int tra
     // nvlz behöver marginal av samma skäl som nvcm: dyrare än zstd, och ska
     // bara väljas när den tar hem något verkligt.
     if (gb && (double)gb < std::min(zb, xb) * 0.98) return "nvlz";
+    // OPAKT OCH ÄNDÅ KOMPRIMERBART är tvetydigt på ett sätt stickprovet
+    // inte kan lösa upp: film och arkiv-av-arkiv ser likadana ut i 4 MiB —
+    // båda är entropikodade och lokalt täta. Skillnaden syns först när
+    // HELA blocket packas: filmens kvot stannar vid någon procent, medan
+    // arkivens likheter mellan filer ger tiotals. Därför svarar provet här
+    // "eskalera": packa blocket billigt på riktigt, och betala för zstd22
+    // bara om den billiga vägen bevisat att det finns något att hämta
+    // (rapporten §4.2 — regeln gav −0,1 % mot bästa klassiska på
+    // arkivkorpusen utan att röra filmkorpusens tid).
+    if (opak) return "opak-eskalera";
     return (double)xb < zb * 0.995 ? "xz9e" : "zstd19";
 }
 

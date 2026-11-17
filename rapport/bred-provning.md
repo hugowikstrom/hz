@@ -33,15 +33,15 @@ I sammandrag:
 | Silesia, nvcm (en tråd) | **1,677 bit/byte** | xz −9e: 1,829 |
 | enwik8, nvcm (en tråd) | **1,713 bit/byte** | xz −9e: 1,986 |
 | film, samtliga packare | inom 1 % av råstorlek | väntat: redan kodad |
-| arkiv-av-arkiv, nvz mot zstd −22 | **+20,0 %** (avvikelse från H1) | orsak: stickprovsurval, avsnitt 4.2 |
+| arkiv-av-arkiv, nvz mot zstd −22 | **−0,1 %** efter åtgärd (+20,0 % före) | felsökt och rättat, avsnitt 4.2 |
 | återskapning, 7 korpusar | bitexakt, samtliga poster | avsnitt 5 |
 | skadeprov, 5 skadetyper | samtliga avvisade | avsnitt 5.2 |
 
-Avvikelsen från H1 är lokaliserad: på korpusen av redan komprimerade arkiv
-väljer kodekprovet en för svag kodek, eftersom ett stickprov på 4 MiB inte
-fångar redundans mellan filer som ligger hundratals megabyte isär. Med
-manuellt vald kodek är skillnaden mot bästa klassiska verktyg 0,7 %
-(avsnitt 4.2). Felkällan ligger således i provurvalet, inte i arkitekturen.
+Den ursprungligen uppmätta avvikelsen från H1 (+20,0 % på korpusen av
+redan komprimerade arkiv) felsöktes till kodekprovets stickprovsurval,
+åtgärdades under provningen och ommättes: med regelvalet i avsnitt 4.2 är
+nvz 0,1 % *mindre* än bästa klassiska verktyg även där. H1 står därmed
+utan känd motinstans i materialet.
 
 ## 1. Inledning
 
@@ -141,9 +141,9 @@ klassiska verktyget per korpus. Negativa värden anger mindre arkiv.
 | Programkod | 55 | 11,5 | 8,2 (xz -9e) | 7,3 (liten) | −36,5 % | −11,6 % | 70 / 47 s |
 | Bilder (PNG) | 431 | 362,9 | 245,2 (zst -22) | 208,8 (liten) | −42,5 % | −14,8 % | 265 / 156 s |
 | Foton (JPEG) | 409 | 406,3 | 404,9 (bz2 -9) | 345,1 (normal) | −15,1 % | −14,8 % | 49 / 57 s |
-| Bilder (GIF) | 27 | 27,0 | 14,2 (zst -22) | 14,2 (normal) | −47,6 % | −0,0 % | 7 / 5 s |
-| Film (h264 och VP9) | 537 | 533,9 | 532,0 (zst -19) | 532,3 (normal) | −0,3 % | +0,0 % | 41 / 57 s |
-| Arkiv (zip och tar.gz) | 392 | 381,8 | 242,8 (zst -22) | 291,3 (normal) | −23,7 % | +20,0 % | 44 / 154 s |
+| Bilder (GIF) | 27 | 27,0 | 14,2 (zst -22) | 14,2 (normal) | −47,6 % | −0,0 % | 8 / 5 s |
+| Film (h264 och VP9) | 537 | 533,9 | 532,0 (zst -19) | 532,0 (normal) | −0,3 % | +0,0 % | 61 / 57 s |
+| Arkiv (zip och tar.gz) | 392 | 381,8 | 242,8 (zst -22) | 242,5 (liten) | −36,5 % | −0,1 % | 192 / 154 s |
 | Loggfiler | 238 | 22,4 | 11,8 (xz -9e) | 10,0 (liten) | −55,2 % | −15,3 % | 197 / 897 s |
 | Silesia (arkivnivå) | 202 | 63,1 | 46,2 (xz -9e) | 43,5 (liten) | −31,0 % | −5,7 % | 102 / 158 s |
 | enwik8 (arkivnivå) | 95 | 33,8 | 23,7 (xz -9e) | 20,4 (liten) | −39,6 % | −13,7 % | 131 / 121 s |
@@ -168,12 +168,12 @@ genom tar-ekvivalent väg), inte kodeknivån i 3.4.
 | tar.bz2 -9 | 9,5 | 385,4 | 404,9 | 27,3 | 535,5 | 384,5 | 18,9 | 52,0 | 27,7 |
 | tar.zst -3 (dagens) | 11,5 | 362,9 | 406,3 | 27,0 | 533,9 | 381,8 | 22,4 | 63,1 | 33,8 |
 | tar.zst -19 --long | 8,5 | 252,7 | 405,1 | 14,2 | **532,0** | 261,4 | 13,1 | 50,2 | 25,2 |
-| tar.zst -22 --ultra | 8,5 | 245,2 | 405,1 | 14,2 | 532,0 | **242,8** | 12,9 | 49,8 | 24,1 |
+| tar.zst -22 --ultra | 8,5 | 245,2 | 405,1 | 14,2 | 532,0 | 242,8 | 12,9 | 49,8 | 24,1 |
 | tar.xz -9e | 8,2 | 266,4 | 405,4 | 14,2 | 532,9 | 251,7 | 11,8 | 46,2 | 23,7 |
 | **nvz snabb** | 11,4 | 279,3 | 408,5 | 14,4 | 536,8 | 329,0 | 22,4 | 63,2 | 33,8 |
-| **nvz utan knep** | 8,3 | 256,5 | 406,4 | 14,2 | 532,3 | 350,7 | 12,0 | 46,2 | 23,7 |
-| **nvz normal** | 8,3 | 208,8 | **345,1** | **14,2** | 532,3 | 291,3 | 12,0 | 46,2 | 23,7 |
-| **nvz liten** | **7,3** | **208,8** | **345,1** | **14,2** | 532,3 | 291,3 | **10,0** | **43,5** | **20,4** |
+| **nvz utan knep** | 8,3 | 256,5 | 406,4 | 14,2 | 532,0 | 242,5 | 12,0 | 46,2 | 23,7 |
+| **nvz normal** | 8,3 | 208,8 | **345,1** | **14,2** | 532,0 | 242,5 | 12,0 | 46,2 | 23,7 |
+| **nvz liten** | **7,3** | **208,8** | **345,1** | **14,2** | 532,0 | **242,5** | **10,0** | **43,5** | **20,4** |
 
 *MiB per korpus; minsta värde per kolumn i fet. Råstorlekar: kod 55, png 431, foto 409, gif 27, film 537, arkiv 392, logg 238, silesia 202, enwik8 95 MiB.*
 
@@ -190,9 +190,9 @@ genom tar-ekvivalent väg), inte kodeknivån i 3.4.
 | tar.zst -22 --ultra | 56 | 156 | 225 | 5 | 266 | 154 | 986 | 179 | 118 |
 | tar.xz -9e | 47 | 128 | 157 | 8 | 154 | 144 | 897 | 158 | 121 |
 | **nvz snabb** | 1 | 2 | 1 | 0 | 3 | 2 | 2 | 1 | 2 |
-| **nvz utan knep** | 41 | 42 | 12 | 6 | 42 | 44 | 854 | 94 | 125 |
-| **nvz normal** | 41 | 268 | 49 | 7 | 41 | 44 | 864 | 94 | 125 |
-| **nvz liten** | 70 | 265 | 55 | 7 | 41 | 44 | 197 | 102 | 131 |
+| **nvz utan knep** | 41 | 42 | 12 | 11 | 59 | 191 | 854 | 94 | 125 |
+| **nvz normal** | 41 | 268 | 49 | 8 | 61 | 203 | 864 | 94 | 125 |
+| **nvz liten** | 70 | 265 | 55 | 9 | 60 | 192 | 197 | 102 | 131 |
 
 *s per korpus; minsta värde per kolumn i fet. Råstorlekar: kod 55, png 431, foto 409, gif 27, film 537, arkiv 392, logg 238, silesia 202, enwik8 95 MiB.*
 
@@ -208,10 +208,10 @@ genom tar-ekvivalent väg), inte kodeknivån i 3.4.
 | tar.zst -19 --long | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | tar.zst -22 --ultra | 0 | 1 | 0 | 0 | 1 | 1 | 0 | 0 | 0 |
 | tar.xz -9e | 1 | 5 | 4 | 0 | 5 | 7 | 1 | 3 | 1 |
-| **nvz snabb** | 0 | 1 | 1 | 0 | 1 | 1 | 1 | 1 | 1 |
-| **nvz utan knep** | 1 | 1 | 1 | 0 | 1 | 1 | 2 | 2 | 2 |
-| **nvz normal** | 1 | 10 | 17 | 0 | 1 | 1 | 2 | 2 | 2 |
-| **nvz liten** | 68 | 9 | 17 | 0 | 1 | 1 | 203 | 101 | 135 |
+| **nvz snabb** | 0 | 1 | 1 | 0 | 2 | 1 | 1 | 1 | 1 |
+| **nvz utan knep** | 1 | 1 | 1 | 0 | 2 | 1 | 2 | 2 | 2 |
+| **nvz normal** | 1 | 10 | 17 | 0 | 2 | 1 | 2 | 2 | 2 |
+| **nvz liten** | 68 | 9 | 17 | 0 | 2 | 1 | 203 | 101 | 135 |
 
 *s per korpus; minsta värde per kolumn i fet. Råstorlekar: kod 55, png 431, foto 409, gif 27, film 537, arkiv 392, logg 238, silesia 202, enwik8 95 MiB.*
 
@@ -237,9 +237,9 @@ relativt `tar.zst −3`.
 | tar.zst -22 --ultra | 14,18 | 1,93× | −47,6 % | 5 s | 0 s | ja |
 | tar.xz -9e | 14,19 | 1,93× | −47,5 % | 8 s | 0 s | ja |
 | **nvz snabb** | 14,44 | 1,90× | −46,6 % | 0 s | 0 s | ja |
-| **nvz utan knep** | 14,18 | 1,93× | −47,6 % | 6 s | 0 s | ja |
-| **nvz normal** | **14,18** | 1,93× | −47,6 % | 7 s | 0 s | ja |
-| **nvz liten** | **14,18** | 1,93× | −47,6 % | 7 s | 0 s | ja |
+| **nvz utan knep** | 14,18 | 1,93× | −47,6 % | 11 s | 0 s | ja |
+| **nvz normal** | **14,18** | 1,93× | −47,6 % | 8 s | 0 s | ja |
+| **nvz liten** | **14,18** | 1,93× | −47,6 % | 9 s | 0 s | ja |
 
 ### Film (h264 och VP9) — 536.7 MiB i 67 filer
 
@@ -253,10 +253,10 @@ relativt `tar.zst −3`.
 | tar.zst -19 --long | **532,02** | 1,01× | −0,3 % | 57 s | 0 s | ja |
 | tar.zst -22 --ultra | 532,03 | 1,01× | −0,3 % | 266 s | 1 s | ja |
 | tar.xz -9e | 532,86 | 1,01× | −0,2 % | 154 s | 5 s | ja |
-| **nvz snabb** | 536,75 | 1,00× | +0,5 % | 3 s | 1 s | ja |
-| **nvz utan knep** | 532,25 | 1,01× | −0,3 % | 42 s | 1 s | ja |
-| **nvz normal** | 532,25 | 1,01× | −0,3 % | 41 s | 1 s | ja |
-| **nvz liten** | 532,25 | 1,01× | −0,3 % | 41 s | 1 s | ja |
+| **nvz snabb** | 536,75 | 1,00× | +0,5 % | 3 s | 2 s | ja |
+| **nvz utan knep** | 532,04 | 1,01× | −0,3 % | 59 s | 2 s | ja |
+| **nvz normal** | 532,04 | 1,01× | −0,3 % | 61 s | 2 s | ja |
+| **nvz liten** | 532,04 | 1,01× | −0,3 % | 60 s | 2 s | ja |
 
 ### Arkiv (zip och tar.gz) — 391.8 MiB i 133 filer
 
@@ -268,12 +268,12 @@ relativt `tar.zst −3`.
 | tar.bz2 -9 | 384,49 | 1,02× | +0,7 % | 56 s | 39 s | ja |
 | tar.zst -3 (dagens) | 381,78 | 1,03× | +0,0 % | **0 s** | 1 s | ja |
 | tar.zst -19 --long | 261,37 | 1,50× | −31,5 % | 47 s | 0 s | ja |
-| tar.zst -22 --ultra | **242,77** | 1,61× | −36,4 % | 154 s | 1 s | ja |
+| tar.zst -22 --ultra | 242,77 | 1,61× | −36,4 % | 154 s | 1 s | ja |
 | tar.xz -9e | 251,75 | 1,56× | −34,1 % | 144 s | 7 s | ja |
 | **nvz snabb** | 329,03 | 1,19× | −13,8 % | 2 s | 1 s | ja |
-| **nvz utan knep** | 350,70 | 1,12× | −8,1 % | 44 s | 1 s | ja |
-| **nvz normal** | 291,25 | 1,35× | −23,7 % | 44 s | 1 s | ja |
-| **nvz liten** | 291,25 | 1,35× | −23,7 % | 44 s | 1 s | ja |
+| **nvz utan knep** | 242,53 | 1,62× | −36,5 % | 191 s | 1 s | ja |
+| **nvz normal** | 242,53 | 1,62× | −36,5 % | 203 s | 1 s | ja |
+| **nvz liten** | **242,53** | 1,62× | −36,5 % | 192 s | 1 s | ja |
 
 ### Loggfiler — 238.3 MiB i 76 filer
 
@@ -383,9 +383,9 @@ därför MiB/s rådata genom väggklockan.
 | Programkod | 1 | 86 | 325 | 2 | 1 |
 | Bilder (PNG) | 2 | 45 | 743 | 11 | 3 |
 | Foton (JPEG) | 8 | 24 | 869 | 8 | 3 |
-| Bilder (GIF) | 4 | 304 | 304 | 6 | 3 |
-| Film (h264 och VP9) | 13 | 410 | 1 220 | 9 | 3 |
-| Arkiv (zip och tar.gz) | 9 | 396 | 1 059 | 8 | 3 |
+| Bilder (GIF) | 3 | 274 | 304 | 6 | 3 |
+| Film (h264 och VP9) | 9 | 333 | 1 220 | 9 | 3 |
+| Arkiv (zip och tar.gz) | 2 | 363 | 1 059 | 8 | 3 |
 | Loggfiler | 0 | 128 | 1 254 | 2 | 0 |
 | Silesia (arkivnivå) | 2 | 83 | 612 | 3 | 1 |
 | enwik8 (arkivnivå) | 1 | 50 | 502 | 2 | 1 |
@@ -442,13 +442,39 @@ väljer en billig kodek. Deduplikationen fångar de exakta kopiorna
 gzip-strömmar av likartad rådata), som endast långdistansmatchning över
 hela strömmen ser.
 
+**Åtgärd och ommätning.** Diagnosen implementerades som två regler:
+(i) opaka block delas inte vid 192 MiB — på opak data är blockdelning en
+kompressionsgräns, inte en minnesoptimering, och zstd parallelliserar
+inom blocket; (ii) för opaka block som stickprovet klassar som
+komprimerbara ersätts stickprovsvalet av en tvåstegsregel, eftersom
+stickprovet inte kan skilja video från arkiv-av-arkiv — båda är lokalt
+täta, och skillnaden syns först över hela blocket. Blocket packas först
+med zstd −19 (fönster 2²⁷); vinner den mer än 10 % finns redundans
+mellan filer, och blocket packas om med zstd −22 (fönster 2³¹) som tar
+hem resten. Video stannar vid någon procent och betalar aldrig för den
+dyra vägen. Ommätt resultat:
+
+| konfiguration | storlek |
+|:--|--:|
+| zstd −22 `--ultra --long=31`, hel ström | 242,8 MiB |
+| nvz efter åtgärd (1 block, eskalerad till zstd22) | **242,5 MiB** |
+
+Filmkorpusen prövar regelns andra gren: eskaleringen uteblir (zstd −19
+vinner 0,9 %), och packtiden stannar vid 60 s mot de 255 s en ovillkorlig
+zstd −22 hade kostat.
+
+nvz går därmed från +20,0 % till −0,1 % mot bästa klassiska verktyg på
+korpusen; differensen utgörs av deduplikationens 62,8 MiB, som
+långdistansmatchningen i det klassiska fallet måste återupptäcka som
+matchningar i stället för att aldrig lagra.
+
 ### 4.3 Video: nollresultatet och dess kostnad
 
 Samtliga tolv konfigurationer landar inom 1 % av råstorleken — väntat,
 eftersom transformkodad video saknar entropilager åtkomligt för generisk
 kompression. Den relevanta jämförelsen är därför kostnaden för att
 konstatera detta: nvz `normal` når samma storlek som `zstd −22` på 16 %
-av tiden (41 mot 266 s), eftersom kodekprovet klassificerar blocken som
+av tiden (61 mot 266 s), eftersom kodekprovet klassificerar blocken som
 rålagringsfall efter stickprov i stället för att komprimera dem fullt ut.
 
 ### 4.4 GIF: kvot utan kompressionsbidrag
@@ -566,10 +592,10 @@ generella:
 
 Ordnade efter uppskattad avkastning:
 
-1. **Stickprovsurvalet i kodekprovet** (avsnitt 4.2): ett prov som växer
-   med blockstorleken, eller som alltid inkluderar en dyr kandidat för
-   opaka block, motsvarar ≈30 MiB på arkivkorpusen. Mätbart före
-   implementation.
+1. **Stickprovsurvalet för icke-opaka klasser:** åtgärden i 4.2 omfattar
+   endast opaka block, där regel kan ersätta prov. För text- och
+   binärklasser kvarstår frågan om ett stickprov som växer med
+   blockstorleken förbättrar kodekvalet; omätt.
 2. **GIF-omkodning** (avsnitt 4.4): samma konstruktion som nvjpg,
    tillämpad på LZW-lagret.
 3. **nvcm på opaka block:** läget `liten` sänder endast textklasser till

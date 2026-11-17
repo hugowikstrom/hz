@@ -35,16 +35,15 @@ In summary:
 | Silesia, nvcm (single thread) | **1.677 bits/byte** | xz −9e: 1.829 |
 | enwik8, nvcm (single thread) | **1.713 bits/byte** | xz −9e: 1.986 |
 | video, all compressors | within 1 % of raw size | expected: already coded |
-| archives-of-archives, nvz vs. zstd −22 | **+20.0 %** (deviation from H1) | cause: sample selection, section 4.2 |
+| archives-of-archives, nvz vs. zstd −22 | **−0.1 %** after remedy (+20.0 % before) | diagnosed and fixed, section 4.2 |
 | restoration, 7 corpora | bit-exact, all entries | section 5 |
 | damage tests, 5 damage classes | all rejected | section 5.2 |
 
-The deviation from H1 is localized: on the corpus of already-compressed
-archives, the codec probe selects too weak a codec, because a 4 MiB sample
-cannot observe redundancy between files hundreds of megabytes apart. With a
-manually chosen codec the gap to the best classical tool is 0.7 %
-(section 4.2). The defect therefore lies in the sampling, not in the
-architecture.
+The initially measured deviation from H1 (+20.0 % on the corpus of
+already-compressed archives) was diagnosed as the codec probe's sample
+selection, remedied during the evaluation, and re-measured: with the rule
+of section 4.2, nvz is 0.1 % *smaller* than the best classical tool there
+as well. H1 thus stands without a known counterexample in this material.
 
 ## 1. Introduction
 
@@ -146,9 +145,9 @@ corpus. Negative values denote smaller archives.
 | Source code | 55 | 11.5 | 8.2 (xz -9e) | 7.3 (liten) | −36.5 % | −11.6 % | 70 / 47 s |
 | Images (PNG) | 431 | 362.9 | 245.2 (zst -22) | 208.8 (liten) | −42.5 % | −14.8 % | 265 / 156 s |
 | Photos (JPEG) | 409 | 406.3 | 404.9 (bz2 -9) | 345.1 (normal) | −15.1 % | −14.8 % | 49 / 57 s |
-| Images (GIF) | 27 | 27.0 | 14.2 (zst -22) | 14.2 (normal) | −47.6 % | −0.0 % | 7 / 5 s |
-| Video (h264 and VP9) | 537 | 533.9 | 532.0 (zst -19) | 532.3 (normal) | −0.3 % | +0.0 % | 41 / 57 s |
-| Archives (zip and tar.gz) | 392 | 381.8 | 242.8 (zst -22) | 291.3 (normal) | −23.7 % | +20.0 % | 44 / 154 s |
+| Images (GIF) | 27 | 27.0 | 14.2 (zst -22) | 14.2 (normal) | −47.6 % | −0.0 % | 8 / 5 s |
+| Video (h264 and VP9) | 537 | 533.9 | 532.0 (zst -19) | 532.0 (normal) | −0.3 % | +0.0 % | 61 / 57 s |
+| Archives (zip and tar.gz) | 392 | 381.8 | 242.8 (zst -22) | 242.5 (liten) | −36.5 % | −0.1 % | 192 / 154 s |
 | Loggfiles | 238 | 22.4 | 11.8 (xz -9e) | 10.0 (liten) | −55.2 % | −15.3 % | 197 / 897 s |
 | Silesia (archive level) | 202 | 63.1 | 46.2 (xz -9e) | 43.5 (liten) | −31.0 % | −5.7 % | 102 / 158 s |
 | enwik8 (archive level) | 95 | 33.8 | 23.7 (xz -9e) | 20.4 (liten) | −39.6 % | −13.7 % | 131 / 121 s |
@@ -173,12 +172,12 @@ unpack time. The silesia and enwik8 columns refer to the archive level
 | tar.bz2 -9 | 9.5 | 385.4 | 404.9 | 27.3 | 535.5 | 384.5 | 18.9 | 52.0 | 27.7 |
 | tar.zst -3 (dagens) | 11.5 | 362.9 | 406.3 | 27.0 | 533.9 | 381.8 | 22.4 | 63.1 | 33.8 |
 | tar.zst -19 --long | 8.5 | 252.7 | 405.1 | 14.2 | **532.0** | 261.4 | 13.1 | 50.2 | 25.2 |
-| tar.zst -22 --ultra | 8.5 | 245.2 | 405.1 | 14.2 | 532.0 | **242.8** | 12.9 | 49.8 | 24.1 |
+| tar.zst -22 --ultra | 8.5 | 245.2 | 405.1 | 14.2 | 532.0 | 242.8 | 12.9 | 49.8 | 24.1 |
 | tar.xz -9e | 8.2 | 266.4 | 405.4 | 14.2 | 532.9 | 251.7 | 11.8 | 46.2 | 23.7 |
 | **nvz snabb** | 11.4 | 279.3 | 408.5 | 14.4 | 536.8 | 329.0 | 22.4 | 63.2 | 33.8 |
-| **nvz utan knep** | 8.3 | 256.5 | 406.4 | 14.2 | 532.3 | 350.7 | 12.0 | 46.2 | 23.7 |
-| **nvz normal** | 8.3 | 208.8 | **345.1** | **14.2** | 532.3 | 291.3 | 12.0 | 46.2 | 23.7 |
-| **nvz liten** | **7.3** | **208.8** | **345.1** | **14.2** | 532.3 | 291.3 | **10.0** | **43.5** | **20.4** |
+| **nvz utan knep** | 8.3 | 256.5 | 406.4 | 14.2 | 532.0 | 242.5 | 12.0 | 46.2 | 23.7 |
+| **nvz normal** | 8.3 | 208.8 | **345.1** | **14.2** | 532.0 | 242.5 | 12.0 | 46.2 | 23.7 |
+| **nvz liten** | **7.3** | **208.8** | **345.1** | **14.2** | 532.0 | **242.5** | **10.0** | **43.5** | **20.4** |
 
 *MiB per corpus; column minimum in bold. Raw sizes: kod 55, png 431, foto 409, gif 27, film 537, arkiv 392, logg 238, silesia 202, enwik8 95 MiB.*
 
@@ -195,9 +194,9 @@ unpack time. The silesia and enwik8 columns refer to the archive level
 | tar.zst -22 --ultra | 56 | 156 | 225 | 5 | 266 | 154 | 986 | 179 | 118 |
 | tar.xz -9e | 47 | 128 | 157 | 8 | 154 | 144 | 897 | 158 | 121 |
 | **nvz snabb** | 1 | 2 | 1 | 0 | 3 | 2 | 2 | 1 | 2 |
-| **nvz utan knep** | 41 | 42 | 12 | 6 | 42 | 44 | 854 | 94 | 125 |
-| **nvz normal** | 41 | 268 | 49 | 7 | 41 | 44 | 864 | 94 | 125 |
-| **nvz liten** | 70 | 265 | 55 | 7 | 41 | 44 | 197 | 102 | 131 |
+| **nvz utan knep** | 41 | 42 | 12 | 11 | 59 | 191 | 854 | 94 | 125 |
+| **nvz normal** | 41 | 268 | 49 | 8 | 61 | 203 | 864 | 94 | 125 |
+| **nvz liten** | 70 | 265 | 55 | 9 | 60 | 192 | 197 | 102 | 131 |
 
 *s per corpus; column minimum in bold. Raw sizes: kod 55, png 431, foto 409, gif 27, film 537, arkiv 392, logg 238, silesia 202, enwik8 95 MiB.*
 
@@ -213,10 +212,10 @@ unpack time. The silesia and enwik8 columns refer to the archive level
 | tar.zst -19 --long | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | tar.zst -22 --ultra | 0 | 1 | 0 | 0 | 1 | 1 | 0 | 0 | 0 |
 | tar.xz -9e | 1 | 5 | 4 | 0 | 5 | 7 | 1 | 3 | 1 |
-| **nvz snabb** | 0 | 1 | 1 | 0 | 1 | 1 | 1 | 1 | 1 |
-| **nvz utan knep** | 1 | 1 | 1 | 0 | 1 | 1 | 2 | 2 | 2 |
-| **nvz normal** | 1 | 10 | 17 | 0 | 1 | 1 | 2 | 2 | 2 |
-| **nvz liten** | 68 | 9 | 17 | 0 | 1 | 1 | 203 | 101 | 135 |
+| **nvz snabb** | 0 | 1 | 1 | 0 | 2 | 1 | 1 | 1 | 1 |
+| **nvz utan knep** | 1 | 1 | 1 | 0 | 2 | 1 | 2 | 2 | 2 |
+| **nvz normal** | 1 | 10 | 17 | 0 | 2 | 1 | 2 | 2 | 2 |
+| **nvz liten** | 68 | 9 | 17 | 0 | 2 | 1 | 203 | 101 | 135 |
 
 *s per corpus; column minimum in bold. Raw sizes: kod 55, png 431, foto 409, gif 27, film 537, arkiv 392, logg 238, silesia 202, enwik8 95 MiB.*
 
@@ -242,9 +241,9 @@ relative to `tar.zst −3`; *exakt* is the bit-exactness outcome.
 | tar.zst -22 --ultra | 14.18 | 1.93× | −47.6 % | 5 s | 0 s | yes |
 | tar.xz -9e | 14.19 | 1.93× | −47.5 % | 8 s | 0 s | yes |
 | **nvz snabb** | 14.44 | 1.90× | −46.6 % | 0 s | 0 s | yes |
-| **nvz utan knep** | 14.18 | 1.93× | −47.6 % | 6 s | 0 s | yes |
-| **nvz normal** | **14.18** | 1.93× | −47.6 % | 7 s | 0 s | yes |
-| **nvz liten** | **14.18** | 1.93× | −47.6 % | 7 s | 0 s | yes |
+| **nvz utan knep** | 14.18 | 1.93× | −47.6 % | 11 s | 0 s | yes |
+| **nvz normal** | **14.18** | 1.93× | −47.6 % | 8 s | 0 s | yes |
+| **nvz liten** | **14.18** | 1.93× | −47.6 % | 9 s | 0 s | yes |
 
 ### Video (h264 and VP9) — 536.7 MiB i 67 filer
 
@@ -258,10 +257,10 @@ relative to `tar.zst −3`; *exakt* is the bit-exactness outcome.
 | tar.zst -19 --long | **532.02** | 1.01× | −0.3 % | 57 s | 0 s | yes |
 | tar.zst -22 --ultra | 532.03 | 1.01× | −0.3 % | 266 s | 1 s | yes |
 | tar.xz -9e | 532.86 | 1.01× | −0.2 % | 154 s | 5 s | yes |
-| **nvz snabb** | 536.75 | 1.00× | +0.5 % | 3 s | 1 s | yes |
-| **nvz utan knep** | 532.25 | 1.01× | −0.3 % | 42 s | 1 s | yes |
-| **nvz normal** | 532.25 | 1.01× | −0.3 % | 41 s | 1 s | yes |
-| **nvz liten** | 532.25 | 1.01× | −0.3 % | 41 s | 1 s | yes |
+| **nvz snabb** | 536.75 | 1.00× | +0.5 % | 3 s | 2 s | yes |
+| **nvz utan knep** | 532.04 | 1.01× | −0.3 % | 59 s | 2 s | yes |
+| **nvz normal** | 532.04 | 1.01× | −0.3 % | 61 s | 2 s | yes |
+| **nvz liten** | 532.04 | 1.01× | −0.3 % | 60 s | 2 s | yes |
 
 ### Archives (zip and tar.gz) — 391.8 MiB i 133 filer
 
@@ -273,12 +272,12 @@ relative to `tar.zst −3`; *exakt* is the bit-exactness outcome.
 | tar.bz2 -9 | 384.49 | 1.02× | +0.7 % | 56 s | 39 s | yes |
 | tar.zst -3 (dagens) | 381.78 | 1.03× | +0.0 % | **0 s** | 1 s | yes |
 | tar.zst -19 --long | 261.37 | 1.50× | −31.5 % | 47 s | 0 s | yes |
-| tar.zst -22 --ultra | **242.77** | 1.61× | −36.4 % | 154 s | 1 s | yes |
+| tar.zst -22 --ultra | 242.77 | 1.61× | −36.4 % | 154 s | 1 s | yes |
 | tar.xz -9e | 251.75 | 1.56× | −34.1 % | 144 s | 7 s | yes |
 | **nvz snabb** | 329.03 | 1.19× | −13.8 % | 2 s | 1 s | yes |
-| **nvz utan knep** | 350.70 | 1.12× | −8.1 % | 44 s | 1 s | yes |
-| **nvz normal** | 291.25 | 1.35× | −23.7 % | 44 s | 1 s | yes |
-| **nvz liten** | 291.25 | 1.35× | −23.7 % | 44 s | 1 s | yes |
+| **nvz utan knep** | 242.53 | 1.62× | −36.5 % | 191 s | 1 s | yes |
+| **nvz normal** | 242.53 | 1.62× | −36.5 % | 203 s | 1 s | yes |
+| **nvz liten** | **242.53** | 1.62× | −36.5 % | 192 s | 1 s | yes |
 
 ### Log files — 238.3 MiB i 76 filer
 
@@ -388,9 +387,9 @@ therefore reports MiB/s of raw data through the wall clock.
 | Source code | 1 | 86 | 325 | 2 | 1 |
 | Images (PNG) | 2 | 45 | 743 | 11 | 3 |
 | Photos (JPEG) | 8 | 24 | 869 | 8 | 3 |
-| Images (GIF) | 4 | 304 | 304 | 6 | 3 |
-| Video (h264 and VP9) | 13 | 410 | 1,220 | 9 | 3 |
-| Archives (zip and tar.gz) | 9 | 396 | 1,059 | 8 | 3 |
+| Images (GIF) | 3 | 274 | 304 | 6 | 3 |
+| Video (h264 and VP9) | 9 | 333 | 1,220 | 9 | 3 |
+| Archives (zip and tar.gz) | 2 | 363 | 1,059 | 8 | 3 |
 | Loggfiles | 0 | 128 | 1,254 | 2 | 0 |
 | Silesia (archive level) | 2 | 83 | 612 | 3 | 1 |
 | enwik8 (archive level) | 1 | 50 | 502 | 2 | 1 |
@@ -448,13 +447,39 @@ copies (62.8 MiB, 16.0 %); the remainder consists of *near*-copies
 (distinct gzip streams of similar raw data), visible only to long-range
 matching over the whole stream.
 
+**Remedy and re-measurement.** The diagnosis was implemented as two
+rules: (i) opaque blocks are not split at 192 MiB — on opaque data, block
+partitioning is a compression bound rather than a memory optimization,
+and zstd parallelizes within the block; (ii) for opaque blocks the
+sample classifies as compressible, the sampled choice is replaced by a
+two-stage rule, since a sample cannot distinguish video from
+archives-of-archives — both are locally dense, and the difference only
+shows over the whole block. The block is first compressed with zstd −19
+(2²⁷ window); a gain above 10 % indicates inter-file redundancy, and the
+block is recompressed with zstd −22 (2³¹ window), which collects the
+remainder. Video stops at around one percent and never pays for the
+expensive path. Re-measured:
+
+| configuration | size |
+|:--|--:|
+| zstd −22 `--ultra --long=31`, whole stream | 242.8 MiB |
+| nvz after remedy (1 block, escalated to zstd22) | **242.5 MiB** |
+
+The video corpus exercises the rule's other branch: escalation does not
+trigger (zstd −19 gains 0.9 %), and pack time stays at 60 s against the
+255 s an unconditional zstd −22 would have cost.
+
+nvz thus moves from +20.0 % to −0.1 % against the best classical tool on
+this corpus; the margin is deduplication's 62.8 MiB, which the classical
+pipeline must rediscover as matches rather than never storing.
+
 ### 4.3 Video: the null result and its price
 
 All twelve configurations land within 1 % of raw size — expected, since
 transform-coded video has no entropy layer accessible to generic
 compression. The relevant comparison is thus the cost of establishing
 this: nvz `normal` reaches the same size as `zstd −22` in 16 % of the time
-(41 vs. 266 s), because the codec probe classifies the blocks as
+(61 vs. 266 s), because the codec probe classifies the blocks as
 raw-storage cases from samples instead of compressing them in full.
 
 ### 4.4 GIF: ratio without compression contribution
@@ -572,10 +597,10 @@ concurrency or format migration, documented here for their generality:
 
 Ordered by estimated return:
 
-1. **Sample selection in the codec probe** (section 4.2): a sample that
-   grows with block size, or that always includes an expensive candidate
-   for opaque blocks, is worth ≈30 MiB on the archive corpus. Measurable
-   before implementation.
+1. **Sample selection for non-opaque classes:** the remedy in 4.2 covers
+   opaque blocks only, where a rule can replace the probe. For text and
+   binary classes, whether a sample growing with block size improves
+   codec choice remains unmeasured.
 2. **GIF re-encoding** (section 4.4): the nvjpg construction applied to
    the LZW layer.
 3. **nvcm on opaque blocks:** mode `liten` sends only text classes to

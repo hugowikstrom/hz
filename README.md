@@ -324,9 +324,9 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | tar.zst -22 --ultra | 14,18 | 1,93× | −47,6 % | 5 s | 0 s | ja |
 | tar.xz -9e | 14,19 | 1,93× | −47,5 % | 8 s | 0 s | ja |
 | **nvz snabb** | 14,44 | 1,90× | −46,6 % | 0 s | 0 s | ja |
-| **nvz utan knep** | 14,18 | 1,93× | −47,6 % | 6 s | 0 s | ja |
-| **nvz normal** | **14,18** | 1,93× | −47,6 % | 7 s | 0 s | ja |
-| **nvz liten** | **14,18** | 1,93× | −47,6 % | 7 s | 0 s | ja |
+| **nvz utan knep** | 14,18 | 1,93× | −47,6 % | 11 s | 0 s | ja |
+| **nvz normal** | **14,18** | 1,93× | −47,6 % | 8 s | 0 s | ja |
+| **nvz liten** | **14,18** | 1,93× | −47,6 % | 9 s | 0 s | ja |
 
 ### Film (h264/VP9) — 536 7 MiB i 67 filer
 
@@ -340,10 +340,10 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | tar.zst -19 --long | **532,02** | 1,01× | −0,3 % | 57 s | 0 s | ja |
 | tar.zst -22 --ultra | 532,03 | 1,01× | −0,3 % | 266 s | 1 s | ja |
 | tar.xz -9e | 532,86 | 1,01× | −0,2 % | 154 s | 5 s | ja |
-| **nvz snabb** | 536,75 | 1,00× | +0,5 % | 3 s | 1 s | ja |
-| **nvz utan knep** | 532,25 | 1,01× | −0,3 % | 42 s | 1 s | ja |
-| **nvz normal** | 532,25 | 1,01× | −0,3 % | 41 s | 1 s | ja |
-| **nvz liten** | 532,25 | 1,01× | −0,3 % | 41 s | 1 s | ja |
+| **nvz snabb** | 536,75 | 1,00× | +0,5 % | 3 s | 2 s | ja |
+| **nvz utan knep** | 532,04 | 1,01× | −0,3 % | 59 s | 2 s | ja |
+| **nvz normal** | 532,04 | 1,01× | −0,3 % | 61 s | 2 s | ja |
+| **nvz liten** | 532,04 | 1,01× | −0,3 % | 60 s | 2 s | ja |
 
 ### Arkiv (zip/tar.gz) — 391 8 MiB i 133 filer
 
@@ -355,12 +355,12 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | tar.bz2 -9 | 384,49 | 1,02× | +0,7 % | 56 s | 39 s | ja |
 | tar.zst -3 (dagens) | 381,78 | 1,03× | +0,0 % | **0 s** | 1 s | ja |
 | tar.zst -19 --long | 261,37 | 1,50× | −31,5 % | 47 s | 0 s | ja |
-| tar.zst -22 --ultra | **242,77** | 1,61× | −36,4 % | 154 s | 1 s | ja |
+| tar.zst -22 --ultra | 242,77 | 1,61× | −36,4 % | 154 s | 1 s | ja |
 | tar.xz -9e | 251,75 | 1,56× | −34,1 % | 144 s | 7 s | ja |
 | **nvz snabb** | 329,03 | 1,19× | −13,8 % | 2 s | 1 s | ja |
-| **nvz utan knep** | 350,70 | 1,12× | −8,1 % | 44 s | 1 s | ja |
-| **nvz normal** | 291,25 | 1,35× | −23,7 % | 44 s | 1 s | ja |
-| **nvz liten** | 291,25 | 1,35× | −23,7 % | 44 s | 1 s | ja |
+| **nvz utan knep** | 242,53 | 1,62× | −36,5 % | 191 s | 1 s | ja |
+| **nvz normal** | 242,53 | 1,62× | −36,5 % | 203 s | 1 s | ja |
+| **nvz liten** | **242,53** | 1,62× | −36,5 % | 192 s | 1 s | ja |
 
 ### Loggfiler — 238 3 MiB i 76 filer
 
@@ -449,8 +449,9 @@ tidsstämpel: [`rapport/bred-provning.md`](rapport/bred-provning.md), även som
 [`broad-evaluation.md`](rapport/broad-evaluation.md) /
 [PDF](rapport/broad-evaluation.pdf). Kortversionen: loggar packas 23,8×, nvcm
 slår varje klassiskt verktyg på båda standardkorpusarna, film går inte att
-packa (och det är rätt svar), och på arkiv av arkiv förlorar nvz på ett
-kodekprov som ser för lite av blocket.
+packa (och det är rätt svar), och på arkiv av arkiv — där nvz först
+förlorade med 20 % — tog en tvåstegsregel i kodekprovet hem matchen:
+−0,1 % mot bästa klassiska verktyg, utan att röra filmkorpusens tid.
 
 Den första mätningen finns också som **tryckfärdig rapport på nio sidor**:
 `rapport/nvz-rapport.pdf`, byggd med `make pdf`. Den genereras ur samma

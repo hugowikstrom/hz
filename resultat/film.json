@@ -61,30 +61,30 @@
   },
   "nvz snabb": {
    "packare": "nvz snabb",
-   "byte": 562824604,
-   "packsek": 2.82,
-   "uppacksek": 1.42,
+   "byte": 562824599,
+   "packsek": 2.97,
+   "uppacksek": 1.59,
    "identisk": true
   },
   "nvz normal": {
    "packare": "nvz normal",
-   "byte": 558106233,
-   "packsek": 41.4,
-   "uppacksek": 1.31,
+   "byte": 557882170,
+   "packsek": 60.9,
+   "uppacksek": 1.61,
    "identisk": true
   },
   "nvz liten": {
    "packare": "nvz liten",
-   "byte": 558106233,
-   "packsek": 41.25,
-   "uppacksek": 1.3,
+   "byte": 557882170,
+   "packsek": 59.71,
+   "uppacksek": 1.68,
    "identisk": true
   },
   "nvz utan knep": {
    "packare": "nvz utan knep",
-   "byte": 558106233,
-   "packsek": 42.14,
-   "uppacksek": 1.32,
+   "byte": 557882171,
+   "packsek": 58.92,
+   "uppacksek": 1.58,
    "identisk": true
   }
  }

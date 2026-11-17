@@ -379,9 +379,18 @@ u64 packa(const std::string &rot_in, const std::string &arkiv, const Val &v) {
     struct Bygge { Block b; Byte ra; };
     std::vector<Bygge> block;
     std::map<std::string, size_t> oppet;
+    // Opaka block delas inte vid 192 MiB. Taket finns för parallellitetens
+    // skull, men på opak data är blockdelning en kompressionsgräns: de
+    // likheter som alls finns ligger mellan filer långt isär, och två
+    // oberoende block kan per konstruktion inte matcha varandra
+    // (rapport §4.2: hela vinsten bor i fönstret). zstd är dessutom
+    // flertrådad inuti blocket, så parallelliteten överlever ändå.
+    auto tak_for = [](const std::string &klass) {
+        return klass == "opak" ? (u64)16 << 30 : BLOCKTAK;
+    };
     auto lagg = [&](const std::string &klass, const u8 *d, size_t n) {
         auto it = oppet.find(klass);
-        if (it == oppet.end() || block[it->second].ra.size() >= BLOCKTAK) {
+        if (it == oppet.end() || block[it->second].ra.size() >= tak_for(klass)) {
             Bygge nb;
             nb.b.i = (u32)block.size();
             nb.b.klass = klass;
@@ -441,8 +450,26 @@ u64 packa(const std::string &rot_in, const std::string &arkiv, const Val &v) {
         std::string kod = v.kodek.empty() ? b.b.kodek : v.kodek;
         if (kod.rfind("prova", 0) == 0)
             kod = valj_kodek(b.ra.data(), b.ra.size(), kod == "prova-cm",
-                             kod == "prova-gpu", per_block);
-        packade[k] = komprimera(kod, b.ra.data(), b.ra.size(), per_block);
+                             kod == "prova-gpu", per_block,
+                             b.b.klass == "opak");
+        if (kod == "opak-eskalera") {
+            // Tvåsteg för opaka block: zstd19 på hela blocket avgör det
+            // stickprovet inte kan. Vann den mindre än 10 % är innehållet
+            // film eller likvärdigt — då är dyrare kodek bortkastad tid.
+            // Vann den mer finns likheter mellan filer, och då tar zstd22
+            // med sitt större fönster hem resten.
+            kod = "zstd19";
+            packade[k] = komprimera(kod, b.ra.data(), b.ra.size(), per_block);
+            if ((double)packade[k].size() < (double)b.ra.size() * 0.90) {
+                Byte dyr = komprimera("zstd22", b.ra.data(), b.ra.size(), per_block);
+                if (dyr.size() < packade[k].size()) {
+                    packade[k] = std::move(dyr);
+                    kod = "zstd22";
+                }
+            }
+        } else {
+            packade[k] = komprimera(kod, b.ra.data(), b.ra.size(), per_block);
+        }
         b.b.kodek = kod;
         Byte().swap(b.ra);
     });
