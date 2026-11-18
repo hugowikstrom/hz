@@ -39,8 +39,10 @@ void hjalp() {
 "\n"
 "flaggor till packa:\n"
 "  --läge L     snabb | normal | liten   (standard liten — minsta arkivet)\n"
-"  --kodek K    tvinga zstd3|zstd19|zstd22|xz9e|nvcm\n"
+"  --kodek K    tvinga zstd3|zstd19|zstd22|xz9e|nvcm|nvlz\n"
 "  --utan-dedup --utan-omvandling\n"
+"  --utan-sortering --utan-klassning   (mätflaggor: slår av ett knep i taget)\n"
+"  --blocktak MiB   rått tak per block (standard 192; fler block = mer parallellt)\n"
 "gemensamma: -q tyst, -j N antal jobb\n");
 }
 
@@ -106,6 +108,10 @@ int main(int argc, char **argv) {
         else if (a.rfind("--kodek=", 0) == 0) v.kodek = a.substr(8);
         else if (a == "--utan-dedup") v.dedup = false;
         else if (a == "--utan-omvandling") v.omvandla = false;
+        else if (a == "--utan-sortering") v.sortera = false;
+        else if (a == "--utan-klassning") v.klassblock = false;
+        else if (a == "--blocktak") v.blocktak = (nvz::u64)atoll(varde("--blocktak").c_str()) << 20;
+        else if (a.rfind("--blocktak=", 0) == 0) v.blocktak = (nvz::u64)atoll(a.substr(11).c_str()) << 20;
         else if (a[0] == '-') { fprintf(stderr, "nvz: okänd flagga %s\n", a.c_str()); return 1; }
         else fria.push_back(a);
     }

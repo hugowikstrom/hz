@@ -75,7 +75,7 @@ void hjalp_yta() {
 "  -1 .. -9           snabbt .. litet: -1..-3 snabb, -4..-6 normal, -7..-9 liten\n"
 "                     (utan siffra: liten, alltså det minsta nvz kan)\n"
 "      --läge=L       snabb | normal | liten (slår -1..-9; standard liten)\n"
-"      --kodek=K      tvinga zstd3 | zstd19 | zstd22 | xz9e | nvcm\n"
+"      --kodek=K      tvinga zstd3 | zstd19 | zstd22 | xz9e | nvcm | nvlz\n"
 "      --utan-dedup --utan-omvandling -j N\n"
 "\n"
 "Underkommandon: nvz packa|packa-upp|lista|prova — se `nvz packa --help`.\n");

@@ -7,6 +7,12 @@ struct Val {
     std::string lage = "liten";     // snabb | normal | liten
     bool dedup = true;
     bool omvandla = true;
+    // Mätflaggor: de finns för att kunna isolera VARJE knep för sig i en
+    // ablation (rapportens avsnitt om förarbete). Sorteringen och
+    // klassindelningen är två skilda effekter som annars mäts ihop.
+    bool sortera = true;            // lägg lika filer intill varandra
+    bool klassblock = true;         // ett block per innehållsklass
+    u64 blocktak = 0;               // 0 = BLOCKTAK; annars rått tak per block
     int jobb = 0;                   // 0 = antal kärnor
     bool tyst = false;
     std::string kodek;              // tvingad kodek, tom = prova fram

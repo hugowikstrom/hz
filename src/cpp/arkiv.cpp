@@ -7,6 +7,7 @@
 // Python skriver JSON; här skrivs ett binärt v2. Läsaren känner igen båda på
 // första byten — '{' är v1, "NVZREG2" är v2.
 #include "arkiv.hpp"
+#include <set>
 #include "kodek.hpp"
 #include "trad.hpp"
 #include "json.hpp"
@@ -86,14 +87,31 @@ Byte skriv_register(const Register &r) {
     u.u32v(r.version);
     u.strv(r.rot);
     u.u8v(r.platt ? 1 : 0);
-    u.strv(r.skapad);
+    // v3: tiden som epoksekunder i stället för ISO-sträng (20 byte -> 5).
+    if (r.version >= 3) u.i64v(r.skapad_epok);
+    else                u.strv(r.skapad);
     u.u32v((u32)r.block.size());
     for (const Block &b : r.block) {
         u.u32v(b.i); u.strv(b.klass); u.strv(b.kodek);
         u.u64v(b.off); u.u64v(b.clen); u.u64v(b.ralen);
     }
     u.u32v((u32)r.objekt.size());
-    for (const Objekt &o : r.objekt) { u.ravv(o.h, 16); u.u64v(o.s); }
+    // HASHLÄNGDEN, och varför den krympte från 16 byte till 4.
+    //
+    // Hashen i registret har EN uppgift: `nvz -t` räknar om den ur den
+    // uppackade filen och jämför, så att ett arkiv som monterats fel
+    // upptäcks. Den uppgiften kräver inte 128 bitar. Bitfel i en
+    // komprimerad ström fångas redan av blockens egna kontrollsummor
+    // (CRC64 i xz, xxhash i zstd), och det hashen ska fånga är nvz:s egna
+    // monteringsfel — förväxlade objekt, fel offset — där en avvikelse ger
+    // olikhet med sannolikhet 1 - 2^-32.
+    //
+    // Priset för de tolv extra byten var högt, för hashar är slumpmässiga
+    // och därmed inkomprimerbara: på kodkorpusen (5 898 objekt) var de
+    // 94 368 byte av ett register på 239 049 — 1,1 % av hela arkivet, och
+    // mer än hela avståndet upp till `xz -9e`.
+    const size_t hl = r.version >= 3 ? 4 : 16;
+    for (const Objekt &o : r.objekt) { u.ravv(o.h, hl); u.u64v(o.s); }
     for (const Objekt &o : r.objekt) { u.u32v(o.blk); u.u64v(o.off); u.u64v(o.len); }
     // Omvandlade objekt är få; de står för sig i stället för som tomma fält
     // på varje rad.
@@ -122,7 +140,18 @@ Register las_register_v2(const u8 *d, size_t n) {
     r.version = in.u32v();
     r.rot = in.strv();
     r.platt = in.u8v() != 0;
-    r.skapad = in.strv();
+    if (r.version >= 3) {
+        r.skapad_epok = in.i64v();
+        char tid[32] = "";
+        time_t t = (time_t)r.skapad_epok;
+        struct tm tm{};
+        // localtime, inte gmtime: v2 skrev lokal tid som sträng, och
+        // `nvz lista` ska visa samma sak för båda formaten.
+        if (localtime_r(&t, &tm)) strftime(tid, sizeof tid, "%Y-%m-%dT%H:%M:%S", &tm);
+        r.skapad = tid;
+    } else {
+        r.skapad = in.strv();
+    }
     u32 nb = in.u32v();
     r.block.resize(nb);
     for (Block &b : r.block) {
@@ -131,7 +160,8 @@ Register las_register_v2(const u8 *d, size_t n) {
     }
     u32 no = in.u32v();
     r.objekt.resize(no);
-    for (Objekt &o : r.objekt) { in.ravv(o.h, 16); o.s = in.u64v(); }
+    r.hashlangd = r.version >= 3 ? 4 : 16;
+    for (Objekt &o : r.objekt) { in.ravv(o.h, r.hashlangd); o.s = in.u64v(); }
     for (Objekt &o : r.objekt) { o.blk = in.u32v(); o.off = in.u64v(); o.len = in.u64v(); }
     u32 ntr = in.u32v();
     for (u32 i = 0; i < ntr; i++) {
@@ -281,7 +311,13 @@ Register las_register(const std::string &arkiv) {
         fclose(f); throw Fel("kunde inte läsa registret");
     }
     fclose(f);
-    Byte rad = dekomprimera("zstd19", packat.data(), packat.size(), ralen);
+    // Vilken kompressor registret packades med avgörs av strömmens EGEN
+    // magi, inte av versionsfältet — det ligger inuti registret och är
+    // oläsbart innan registret är uppackat. xz börjar med FD 37 7A 58 5A 00.
+    const bool reg_xz = packat.size() >= 6 && packat[0] == 0xFD && packat[1] == 0x37 &&
+                        packat[2] == 0x7A && packat[3] == 0x58 && packat[4] == 0x5A &&
+                        packat[5] == 0x00;
+    Byte rad = dekomprimera(reg_xz ? "xz9e" : "zstd19", packat.data(), packat.size(), ralen);
     if (rad.size() >= 8 && !memcmp(rad.data(), REG2, 8)) return las_register_v2(rad.data(), rad.size());
     if (!rad.empty() && rad[0] == '{')
         return las_register_v1(std::string((const char*)rad.data(), rad.size()));
@@ -355,12 +391,40 @@ u64 packa(const std::string &rot_in, const std::string &arkiv, const Val &v) {
     // hamnar efter varandra i strömmen.
     std::vector<u32> ordning(objekt.size());
     for (u32 i = 0; i < ordning.size(); i++) ordning[i] = i;
-    std::sort(ordning.begin(), ordning.end(), [&](u32 a, u32 b) {
-        const Objekt &x = objekt[a], &y = objekt[b];
-        if (x.klass != y.klass) return x.klass < y.klass;
-        if (x.andelse != y.andelse) return x.andelse < y.andelse;
-        return x.kalla < y.kalla;
-    });
+    if (v.sortera)
+        std::sort(ordning.begin(), ordning.end(), [&](u32 a, u32 b) {
+            const Objekt &x = objekt[a], &y = objekt[b];
+            if (x.klass != y.klass) return x.klass < y.klass;
+            if (x.andelse != y.andelse) return x.andelse < y.andelse;
+            // STORA filer först inom gruppen, resten i sökvägsordning.
+            //
+            // Den stora filen bygger ordboken som de mindre, liknande
+            // filerna sedan matchar in i — känd heuristik i solida arkiv.
+            // Mätt på zlib-ng/corpora: neuro är två volymer av samma
+            // skanning, 38 och 19 MiB, och sökvägsordningen (19 före 38)
+            // kostade 2,0 %.
+            //
+            // Men regeln får INTE gälla alla filer. Prövad på hela gruppen
+            // kostade den 2,99 % på kodkorpusen, för ett projektträd har
+            // redan sin likhet samlad per katalog — `.py` ligger med `.py` i
+            // samma paket — och storleksordning river sönder den lokaliteten.
+            // Tröskeln avgränsar regeln till de filer som har en mekanism:
+            // bara en fil som är stor nog att själv fylla en märkbar del av
+            // blockets fönster kan tjäna som underlag för de följande.
+            // Därför en ÅTTONDEL AV BLOCKTAKET och inte ett fast tal — med
+            // standardtaket 192 MiB blir det 24 MiB.
+            //
+            // Gränsen är mätt, inte gissad. Med 4 MiB kvalificerade
+            // gif-korpusens största fil (7,4 MiB), hamnade först, ändrade
+            // kodekprovets stickprov och kostade 0,95 % på den korpusen.
+            // Med en åttondel av taket faller den utanför, medan neuros
+            // 36 MiB-volym — fallet regeln finns för — ligger innanför.
+            const u64 ORDBOKSBYGGARE = (v.blocktak ? v.blocktak : BLOCKTAK) / 8;
+            const bool xs = x.s >= ORDBOKSBYGGARE, ys = y.s >= ORDBOKSBYGGARE;
+            if (xs != ys) return xs;                 // stora före små
+            if (xs && x.s != y.s) return x.s > y.s;  // störst först bland de stora
+            return x.kalla < y.kalla;
+        });
     std::vector<u32> nytt(objekt.size());
     for (u32 i = 0; i < ordning.size(); i++) nytt[ordning[i]] = i;
     std::vector<Objekt> sorterade(objekt.size());
@@ -385,10 +449,48 @@ u64 packa(const std::string &rot_in, const std::string &arkiv, const Val &v) {
     // oberoende block kan per konstruktion inte matcha varandra
     // (rapport §4.2: hela vinsten bor i fönstret). zstd är dessutom
     // flertrådad inuti blocket, så parallelliteten överlever ändå.
-    auto tak_for = [](const std::string &klass) {
-        return klass == "opak" ? (u64)16 << 30 : BLOCKTAK;
+    // Taket styr både parallelliteten (ett block är en tråd) och kvoten (ett
+    // block är kompressorns fönster). Opaka block undantas enligt 4.2 och
+    // berörs inte av flaggan.
+    const u64 tak = v.blocktak ? v.blocktak : BLOCKTAK;
+    // UTVECKLAD BILDDATA delas finare i de snabba lägena. png-ra är PNG:ers
+    // filterrader, och den klassen är särskild på tre sätt: den är den enda
+    // som blåses upp (en PNG kan bli 150 gånger sin filstorlek, så ett träd
+    // på 431 MiB blir 2 GiB block), dess likheter ligger mellan NÄRLIGGANDE
+    // bilder och inte hundratals megabyte bort, och den är därför den klass
+    // där blockdelning kostar minst kvot per sparad sekund. Mätt på
+    // PNG-korpusen:
+    //
+    //     192 MiB block   261 s   218 956 236 byte
+    //      64 MiB block   201 s   221 495 996   (1,30x snabbare, +1,16 %)
+    //      32 MiB block   137 s   231 569 236   (1,90x snabbare, +5,76 %)
+    //
+    // Bästa etablerade på samma korpus är zstd −22 med 257 132 369 byte på
+    // 156 s. Vid 32 MiB är nvz alltså fortfarande 9,9 % mindre OCH snabbare,
+    // vilket `normal` finns för; `liten` behåller hela taket och tar de sista
+    // 5,8 procenten. Delningen håller dessutom nere minnet: ett 32 MiB-block
+    // får en 64 MiB-ordbok i stället för 256, och då ryms flera kodare
+    // samtidigt i stället för att minnesgrinden serialiserar dem.
+    const bool snabba_lagen = (v.lage != "liten");
+    auto tak_for = [&](const std::string &klass) {
+        if (klass == "opak") return (u64)16 << 30;
+        if (klass == "png-ra" && snabba_lagen && !v.blocktak) return (u64)32 << 20;
+        return tak;
     };
-    auto lagg = [&](const std::string &klass, const u8 *d, size_t n) {
+    auto lagg = [&](const std::string &klass_in, const u8 *d, size_t n) {
+        // Med --utan-klassning hamnar allt i samma blockström. Objekten pekar
+        // ut sitt innehåll med (block, offset, längd), och uppackningen läser
+        // bara blockets KODEK och objektets omvandlingstagg — aldrig klassen —
+        // så sammanslagningen är osynlig där. Bara kompressorns fönster
+        // märker den. Provat bitexakt med png- och jpeg-omvandlade objekt i
+        // samma block.
+        //
+        // En bieffekt att känna till när flaggan används till mätning: det
+        // sammanslagna blocket heter "blandat", så tvåstegsregeln för opaka
+        // block (rapportens 4.2, som nedan frågar på klassnamnet) slår aldrig
+        // till. Det är avsiktligt — ablationen ska mäta nvz UTAN knep — men
+        // det gör raden olämplig som referens för opak data.
+        const std::string klass = v.klassblock ? klass_in : std::string("blandat");
         auto it = oppet.find(klass);
         if (it == oppet.end() || block[it->second].ra.size() >= tak_for(klass)) {
             Bygge nb;
@@ -445,30 +547,159 @@ u64 packa(const std::string &rot_in, const std::string &arkiv, const Val &v) {
     // --- 5. packa blocken ---------------------------------------------------
     std::vector<Byte> packade(block.size());
     int per_block = std::max(1, jobb / std::max<int>(1, (int)block.size()));
+    const int samtidiga = std::min<int>((int)block.size(), jobb);
+
+    // KODEKPROVET GÖRS PER KLASS, INTE PER BLOCK.
+    //
+    // Provet kostar ett par sekunder (zstd19 och xz på 4 MiB), och det var
+    // försumbart så länge ett träd gav en handfull block. När utvecklad
+    // bilddata började delas vid 32 MiB blev det sextio block av samma slags
+    // data, och sextio prov med samma svar tog över hälften av packtiden:
+    // PNG-korpusen gick på 191 sekunder, varav ungefär 130 var prov.
+    //
+    // Klassen ÄR nvz:s svar på frågan "vad är det här för data" — den sätts
+    // av innehållet, och alla block i en klass bär samma slags innehåll per
+    // konstruktion. Därför provas det första blocket i varje klass, och
+    // resten ärver svaret. Att det är en förenkling ska stå här: två block
+    // av klassen `binar` kan i princip vilja ha olika kodek. Priset för att
+    // pröva det vore att betala provet sextio gånger.
+    std::map<std::string, std::pair<std::string, double>> provsvar;
+    {
+        std::vector<size_t> forsta;      // ett block per klass som behöver prov
+        std::set<std::string> sedda;
+        for (size_t k = 0; k < block.size(); k++) {
+            const std::string kod = v.kodek.empty() ? block[k].b.kodek : v.kodek;
+            if (kod.rfind("prova", 0) != 0) continue;
+            if (!sedda.insert(block[k].b.klass).second) continue;
+            forsta.push_back(k);
+        }
+        std::vector<std::pair<std::string, double>> svar(forsta.size());
+        parallellt(forsta.size(), jobb, [&](size_t i) {
+            Bygge &b = block[forsta[i]];
+            const std::string kod = v.kodek.empty() ? b.b.kodek : v.kodek;
+            double m = 1.0;
+            std::string vald = valj_kodek(b.ra.data(), b.ra.size(), kod == "prova-cm",
+                                          kod == "prova-gpu", per_block,
+                                          b.b.klass == "opak", &m);
+            svar[i] = {vald, m};
+        });
+        for (size_t i = 0; i < forsta.size(); i++)
+            provsvar[block[forsta[i]].b.klass] = svar[i];
+    }
+
     parallellt(block.size(), jobb, [&](size_t k) {
         Bygge &b = block[k];
         std::string kod = v.kodek.empty() ? b.b.kodek : v.kodek;
-        if (kod.rfind("prova", 0) == 0)
-            kod = valj_kodek(b.ra.data(), b.ra.size(), kod == "prova-cm",
-                             kod == "prova-gpu", per_block,
-                             b.b.klass == "opak");
+        double marginal = 1.0;      // 1.0 = ingen aning (ingen prövning gjord)
+        if (kod.rfind("prova", 0) == 0) {
+            auto it = provsvar.find(b.b.klass);
+            if (it != provsvar.end()) { kod = it->second.first; marginal = it->second.second; }
+            else kod = valj_kodek(b.ra.data(), b.ra.size(), kod == "prova-cm",
+                                  kod == "prova-gpu", per_block,
+                                  b.b.klass == "opak", &marginal);
+        }
         if (kod == "opak-eskalera") {
-            // Tvåsteg för opaka block: zstd19 på hela blocket avgör det
-            // stickprovet inte kan. Vann den mindre än 10 % är innehållet
-            // film eller likvärdigt — då är dyrare kodek bortkastad tid.
-            // Vann den mer finns likheter mellan filer, och då tar zstd22
-            // med sitt större fönster hem resten.
-            kod = "zstd19";
-            packade[k] = komprimera(kod, b.ra.data(), b.ra.size(), per_block);
+            // TVÅ FRÅGOR, OCH DEN FÖRSTA SKA VARA BILLIG.
+            //
+            // Stickprovet kan inte skilja film från arkiv-av-arkiv: båda är
+            // entropikodade och lokalt täta i 4 MiB (rapport §4.2). Men
+            // frågan "har det här blocket tiotals procent att ge?" behöver
+            // ingen stark kompressor för att besvaras — den behöver bara en
+            // ärlig körning över HELA blocket. Mätt på gif-korpusen:
+            //
+            //     zstd −3     14 983 720 byte      68 ms
+            //     zstd −19    14 868 267 byte   4 388 ms
+            //     zstd −22    14 867 123 byte   3 856 ms
+            //
+            // zstd −3 ser 47,8 % av de 48 som finns att hämta, på en
+            // sextiondel av tiden — men BARA när redundansen är lokal. På
+            // arkiv-av-arkiv ligger den hundratals megabyte isär, och där
+            // såg `zstd −3` med sitt megabytefönster bara 2,6 % av de 33
+            // som fanns: eskaleringen uteblev och arkivet blev 271 MB i
+            // stället för 248. Steget är därför `zstd3L` — samma nivå med
+            // långdistansmatchning, 27,6 % på samma 725 ms. Det
+            // kostar nästan ingenting och svarar på frågan ändå. (Innan den
+            // här ändringen var första steget zstd −19, vilket gjorde att
+            // nvz betalade 4,4 sekunder för ett svar som kostar 68
+            // millisekunder — och det var skillnaden mellan att vinna och
+            // förlora mot zstd −22 på tid.)
+            kod = "zstd3L";
+            packade[k] = komprimera(kod, b.ra.data(), b.ra.size(), per_block, samtidiga);
             if ((double)packade[k].size() < (double)b.ra.size() * 0.90) {
-                Byte dyr = komprimera("zstd22", b.ra.data(), b.ra.size(), per_block);
+                // Det finns likheter mellan filer. Då är det fönstret som
+                // avgör, och zstd −22 med 2 GiB fönster är rätt kandidat;
+                // zstd −19 är dominerad och hoppas över.
+                Byte dyr = komprimera("zstd22", b.ra.data(), b.ra.size(), per_block, samtidiga);
                 if (dyr.size() < packade[k].size()) {
                     packade[k] = std::move(dyr);
                     kod = "zstd22";
                 }
+                // Bara i läget `liten`: LZMA med en ordbok som täcker hela
+                // blocket. Den kandidaten är den enda vars fönster når över
+                // ett helt opakt block, och det var exakt den form 7-Zip
+                // slog nvz med i rapportens 3.6. Steget är en hel extra
+                // packning, och på arkivkorpusen är det värt 2,3 % — men
+                // bara i det läge som finns för att bli minst.
+                if (v.lage == "liten") {
+                    std::string variant = xz_variant(b.ra.data(), b.ra.size());
+                    Byte lz = komprimera(variant, b.ra.data(), b.ra.size(), per_block, samtidiga);
+                    if (lz.size() < packade[k].size()) {
+                        packade[k] = std::move(lz);
+                        kod = variant;
+                    }
+                }
+            } else {
+                // Filmlikt: en halv procent att hämta, inte tiotals. Där är
+                // zstd −19 ändå den som tar promillena, och den är både
+                // billigare och bättre än zstd −22 på sådan data (film:
+                // 557 863 118 byte på 56 s mot 557 873 791 på 264 s).
+                Byte z19 = komprimera("zstd19", b.ra.data(), b.ra.size(), per_block, samtidiga);
+                if (z19.size() < packade[k].size()) {
+                    packade[k] = std::move(z19);
+                    kod = "zstd19";
+                }
             }
         } else {
-            packade[k] = komprimera(kod, b.ra.data(), b.ra.size(), per_block);
+            packade[k] = komprimera(kod, b.ra.data(), b.ra.size(), per_block, samtidiga);
+            // STICKPROVETS BLINDA FLÄCK, och varför den kostar procent.
+            //
+            // Provet tar 4 MiB som åtta lösryckta bitar ur blocket. Det är
+            // rätt konstruktion för att se vad datan ÄR (rapportens 2.2:
+            // ett block är sorterat, så de första megabyten är en enda
+            // filtyp och säger inget om resten) — men det river sönder
+            // precis den långdistansstruktur som skiljer kodekerna åt. Åtta
+            // bitar ur skilda delar av blocket har inga upprepningar mellan
+            // sig, och då ser provet inte vad en ordbok som täcker hela
+            // blocket kan göra. Mätt på ett 120 MiB-block ur arkivkorpusen:
+            // provet valde zstd19 och fick 100,13 MiB, medan xz med
+            // täckande ordbok gav 91,97 — provet missade 8 procent.
+            //
+            // En billig förhandssignal provades och underkändes: zstd −3:s
+            // kvot på provet mot samma kvot på hela blocket skiljer sig åt
+            // (1,016 mot 1,025 på två block) men rangordnar dem fel, så den
+            // kan inte ersätta en mätning.
+            //
+            // Därför: i läget `liten`, där storleken går före tiden, provas
+            // xz med täckande ordbok på HELA blocket när provet valde något
+            // annat än xz. Villkoren håller kostnaden nere — valde provet
+            // redan xz jämförs ingenting, och små block (där provet nästan
+            // ÄR blocket) hoppas över.
+            // ... men bara när provets försprång var TUNT. Mätt: på text
+            // vinner nvcm provet med tiotals procent och vinner också hela
+            // blocket, så verifieringen kostar en full xz-packning och ger
+            // ingenting — enwik8 gick från 131 till 259 sekunder utan en
+            // enda sparad byte. Där rangordningen faktiskt vände (blocket ur
+            // arkivkorpusen, 8,2 %) var provets försprång under en procent.
+            // Tröskeln står vid åtta procent, med marginal åt det säkra.
+            if (v.lage == "liten" && kod.rfind("xz9e", 0) != 0 && kod != "ra"
+                && marginal < 0.08 && b.ra.size() > (16u << 20)) {
+                std::string variant = xz_variant(b.ra.data(), b.ra.size());
+                Byte lz = komprimera(variant, b.ra.data(), b.ra.size(), per_block, samtidiga);
+                if (lz.size() < packade[k].size()) {
+                    packade[k] = std::move(lz);
+                    kod = variant;
+                }
+            }
         }
         b.b.kodek = kod;
         Byte().swap(b.ra);
@@ -487,9 +718,11 @@ u64 packa(const std::string &rot_in, const std::string &arkiv, const Val &v) {
         Byte().swap(packade[k]);
     }
     Register reg;
+    reg.version = 3;                 // v3: kort hash, epoktid, valbar registerkodek
     reg.rot = rot.substr(rot.find_last_of('/') + 1);
     reg.platt = v.platt;
     time_t nu = time(nullptr);
+    reg.skapad_epok = (i64)nu;
     char tid[64];
     strftime(tid, sizeof tid, "%Y-%m-%dT%H:%M:%S", localtime(&nu));
     reg.skapad = tid;
@@ -497,7 +730,14 @@ u64 packa(const std::string &rot_in, const std::string &arkiv, const Val &v) {
     reg.objekt = objekt;
     reg.poster = poster;
     Byte rad = skriv_register(reg);
-    Byte regp = komprimera("zstd19", rad.data(), rad.size(), jobb);
+    // Registret är text och tal och packar sig bättre med xz än med zstd —
+    // på kodkorpusen 227 048 mot 239 053 byte. Men xz:s container är ~60
+    // byte mot zstds ~13, så på ett litet arkiv förlorar xz på sin egen
+    // ram. Därför provas båda och den minsta vinner; uppackningen känner
+    // igen vilken det blev på strömmens magi.
+    Byte regz = komprimera("zstd19", rad.data(), rad.size(), jobb);
+    Byte regx = komprimera("xz9e", rad.data(), rad.size(), jobb);
+    const Byte &regp = regx.size() < regz.size() ? regx : regz;
     fwrite(regp.data(), 1, regp.size(), ut);
     u8 svans[16];
     for (int i = 0; i < 8; i++) svans[i] = (u8)(pos >> (8*i));

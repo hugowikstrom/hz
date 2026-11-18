@@ -78,6 +78,7 @@ struct Register {
     // 16 första HEXTECKNEN. v2 bär alla 16 byte. Kontrollen vid uppackning
     // jämför så många byte registret faktiskt har.
     size_t hashlangd = 16;
+    i64 skapad_epok = 0;   // v3: tiden som epoksekunder
 };
 
 // --- småverktyg ------------------------------------------------------------

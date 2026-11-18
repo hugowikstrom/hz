@@ -75,6 +75,26 @@ Lagra varje kopia för sig. Finns för att kunna mäta vad dedupen är värd.
 .B \-\-utan\-omvandling
 Stäng av PNG\- och JPEG\-omvandlingarna.
 .TP
+.B \-\-utan\-sortering
+Lämna objekten i katalogordning i stället för att lägga lika filer intill
+varandra. Finns för att kunna mäta vad sorteringen \(em och bara den \(em är
+värd; se
+.B experiment/ablation.sh.
+.TP
+.BI \-\-blocktak " MiB"
+Rått tak per block, standard 192. Antalet block styr parallelliteten (ett
+block packas av en tråd) och samtidigt kvoten (ett block är kompressorns
+fönster), så flaggan är avvägningen mellan packtid och storlek. Opaka block
+undantas och berörs inte.
+.TP
+.B \-\-utan\-klassning
+Lägg allt i samma blockström i stället för ett block per innehållsklass.
+Tillsammans med
+.B \-\-utan\-sortering
+ger den nvz utan någon omordning alls, vilket är jämförelsepunkten mot
+.B tar
+i katalogordning.
+.TP
 .BI \-j " antal" "\fR, \fP" \-\-jobb " antal"
 Antal parallella jobb. Standard är antalet trådar, högst 24.
 .TP
