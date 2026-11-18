@@ -45,7 +45,14 @@ och förkortningar av dem också. `-1`–`-3` är läge **snabb**, `-4`–`-6`
 2 varning.
 
 Egna flaggor utöver gzips: `-j/--jobb=N`, `--läge=`, `--kodek=`,
-`--utan-dedup`, `--utan-omvandling`.
+`--utan-dedup`, `--utan-omvandling`, `--blocktak=MiB`.
+
+`--blocktak` är avvägningen mellan packtid och storlek: antalet block styr
+både parallelliteten (ett block packas av en tråd) och kvoten (ett block är
+kompressorns fönster). Opaka block undantas, av skälet i rapportens 4.2.
+Därtill finns två rena **mätflaggor**, `--utan-sortering` och
+`--utan-klassning`, som slår av ett knep i taget — de finns för ablationen i
+rapportens 7.1 och hör inte i vanligt bruk.
 
 **En enda avvikelse, och den är med flit.** gzip säger `is a directory --
 ignored` om en katalog. En katalog är precis vad nvz är byggd för, så en
@@ -89,7 +96,7 @@ man nvz                   # eller: man -l man/nvz.1 direkt ur trädet
 bash prov/prova-allt.sh   # hela provsviten
 ```
 
-**nvz är sedan 2026-11-16 EN C++-binär** (287 kB, `src/cpp/`): nvcm och
+**nvz är sedan 2026-11-16 EN C++-binär** (367 kB, 318 kB strippad, `src/cpp/`): nvcm och
 nvjpg är inlänkade, zstd/xz/zlib anropas som bibliotek i process, och
 standardläget är `liten` — det minsta nvz kan. Pythonversionen som byggde
 alla första mätningar ligger kvar som referens i `src/nvz.py` men anropas
@@ -115,6 +122,29 @@ omvandlingar avstängda, så vinsten går att se separat.
 Posterna sorteras på klass och ändelse före packning, så att all JavaScript
 ligger i en följd och alla skärmdumpar i en annan. Komprimeringen får syfta på
 likheter som i katalogordning låg hundratals megabyte isär.
+
+**Men mät det innan du tror på det.** Det här var länge en påstådd vinst
+utan egen siffra, och när den mättes (rapportens 7.1, flaggan
+`--utan-sortering`) blev den **noll** på både kod- och PNG-korpusen — med
+`zstd −3` till och med svagt negativ, +0,14 %. Orsakerna: PNG-korpusen har
+en enda filtyp, så sorteringen ger samma ordning som katalogordningen redan
+hade; kodkorpusen ryms helt i `xz −9e`:s ordbok, så kompressorn ser varje fil
+från varje annan ändå; och ett riktigt projektträd har redan sina likheter
+samlade per katalog, så sorteringen bryter upp en lokalitet som fanns.
+
+Sorteringen är alltså värd något först när likheterna ligger **utspridda**
+och fönstret är **litet**. Samma 5 974 kodfiler, utslängda i 200 slumpade
+kataloger (`experiment/sortering.sh`):
+
+| ordning | `zstd −3`, 2 MiB fönster | `xz −9e`, 64 MiB ordbok |
+|:--|--:|--:|
+| utan sortering | 13 945 434 | 9 066 545 |
+| med sortering | **12 833 126** (−8,0 %) | **8 869 852** (−2,2 %) |
+
+Det är också precis vad förarbetet säger (gwern.net/sort): metoden är känd,
+och dess värde är en funktion av fönsterstorleken. nvz:s egna vinster på
+korpusarna i rapporten kommer från punkt 3, 4 och nvcm — inte från den här
+punkten.
 
 ### 3. PNG vecklas ut och packas om
 
@@ -212,6 +242,26 @@ plats, och på kodkorpusens sorterade textblock förtjänade den den igen.
 
 ---
 
+## Förarbete: var de fem sakerna kommer ifrån
+
+Ingen av de fem är ny. Det ska stå här och inte bara i en kommentarstråd,
+för frågan "är det här inte bara känd teknik?" har ett ärligt svar: ja.
+
+| delen | känt sedan | nvz mot förlagan |
+|:--|:--|:--|
+| likhetssortering | *Sort Before Compression* (<https://gwern.net/sort>), solida arkiv i RAR och 7-Zip, lrzip | samma idé; bidraget mäts separat med `--utan-sortering` |
+| dedup | borg, restic, ZFS; chunkning sedan LBFS (2001) | svagare — hela filer, inte chunkar |
+| deflate tillbaka till rådata | precomp, preflate, reflate | smalare — bara strömmar zlib själv skrivit |
+| förlustfri JPEG-omkodning | packJPG, Lepton (Dropbox 2016), brunsli → JPEG XL | **sämre** — nvz −15,1 %, de andra publicerar −20 till −22 % |
+| kontextblandning (nvcm) | PAQ (Matt Mahoney), lpaq, zpaq, cmix | mindre modell — paq8px slår nvcm på enwik8, 15,8 mot 20,4 MB |
+| filterval per innehållstyp | FreeArc (Bulat Ziganshin), zpaq:s metodsträngar | samma tanke; nvz provar på data i stället för att gå på filändelsen |
+
+Vad som är eget är därmed inte en algoritm utan paketeringen: delarna i ett
+format med en återskapningsgaranti, kodekvalet avgjort genom prov i stället
+för regel, och mätningen av vad det är värt — inklusive den motinstans
+mätningen hittade och tvingade fram en rättning av (rapportens 4.2).
+Fullständig genomgång med siffror: rapportens avsnitt 7.
+
 ## nvcm: en egen kompressor för text och källkod
 
 `xz` var det starkaste som fanns installerat, så nvz fick något starkare.
@@ -239,14 +289,174 @@ talkolumn i 8 % större.
 
 ---
 
+## Sex mätningar som gjorde nvz mindre och snabbare än det etablerade
+
+Kravet var: *bättre än det etablerade, överallt — snabbare och minst lika
+bra.* Det krävde sex ändringar, och var och en kom ur en mätning som visade
+att nvz gjorde något onödigt dyrt eller onödigt stort. Två av dem rättade
+dessutom en regression som den första ändringen själv hade orsakat.
+
+**1. Ordboken ska täcka blocket.** LZMA:s `preset 9e` har en fast ordbok på
+64 MiB. nvz:s block är större — 192 MiB för vanliga klasser, hela korpusen
+för opaka — så kompressorn kunde per konstruktion inte se en upprepning
+längre bak än 64 MiB, hur stort blocket än var. Och det är precis den
+upprepningen dedupen och sorteringen lägger dit. Mätt på 120 MiB ur
+arkivkorpusen: 98 700 988 byte med 64 MiB ordbok, **96 559 784 med en ordbok
+som täcker indatan** — 2,17 % mindre *och* 12 % snabbare, för en funnen
+matchning är billigare än en fortsatt sökning. Ordboken skalas nu efter
+blocket, och minnesbehovet frågas av liblzma och tas ur en grind.
+
+**2. Stickprovet har en blind fläck, och den kostade 8 %.** Kodekprovet tar
+4 MiB som åtta lösryckta bitar ur blocket. Det är rätt konstruktion för att
+se vad datan *är*, men det river sönder den långdistansstruktur som skiljer
+kodekerna åt: åtta bitar ur skilda delar har inga upprepningar mellan sig. På
+ett 120 MiB-block ur arkivkorpusen valde provet zstd19 och fick 100,13 MiB,
+medan xz med täckande ordbok gav **91,97 MiB**. I läget `liten` provas därför
+xz på hela blocket när provet valde något annat — men bara när provets
+försprång var tunt (under 8 %), för på text vinner nvcm med tiotals procent
+och vinner också hela blocket: en ovillkorlig verifiering tog enwik8 från 131
+till 259 sekunder utan att spara en byte.
+
+**3. Det billiga steget var inte billigt.** Tvåstegsregeln för opaka block
+(rapportens 4.2) använde `zstd −19` för att svara på frågan "har blocket
+tiotals procent att ge?". Den frågan behöver ingen stark kompressor. Mätt på
+gif-korpusen: `zstd −3` ser 47,8 av de 48 procentenheter som finns att hämta
+— på **68 ms mot 4 388**. Första steget är nu `zstd −3`, och gif-korpusens
+packtid gick från 10 till 6 sekunder.
+
+**4. Registret bar 16 byte hash per fil.** Hashen finns för att `nvz -t`
+ska upptäcka felmonterat innehåll, och 32 bitar räcker för det — bitfel
+fångas redan av blockens CRC64. Men hashar är slumpmässiga och därmed
+inkomprimerbara: på kodkorpusen var de 94 368 byte av ett register på
+239 049, alltså **1,1 % av hela arkivet**, vilket var mer än hela avståndet
+upp till `xz −9e`. Registret bär nu 4 byte, tiden som epoksekunder i stället
+för ISO-sträng, och packas med den minsta av xz och zstd. Det gick från
+239 049 till 153 596 byte, och kodarkivet från 8 675 609 till 8 578 823.
+
+**5. En ordboksvinst som tar bort parallelliteten är ingen vinst.** Punkt 1
+hade en andra ordningens effekt som bara syns när minnet är knappt: kodaren
+behöver tio gånger ordboken, så PNG-korpusens 192 MiB-block fick 2,7 GiB
+styck och minnesgrinden släppte fram **ett åt gången**. Packtiden gick från
+268 till 841 sekunder för 0,06 % mindre arkiv. Tre rättelser tog den till
+129 s: ordboken krymps tills den ryms i budgeten delad på antalet samtidiga
+kodare, kodekprovet görs per klass i stället för per block (sextio block av
+samma slags data provades sextio gånger), och framför allt — ordboken blir
+aldrig **större** än blocket. Ett 32 MiB-block fick en 64 MiB-ordbok bara
+därför att golvet var satt till `preset 9e`:s värde, och en ordbok större än
+blocket kan per konstruktion inte användas men kostar minne ändå.
+
+**6. Utvecklad bilddata delas finare i de snabba lägena.** `png-ra` är den
+enda klassen som blåses upp (431 MiB filer blir 2 GiB block) och dess
+likheter ligger mellan närliggande bilder, inte hundratals megabyte bort.
+Den delas därför vid 32 MiB i alla lägen utom `liten`: 129 s i stället för
+265, för 5,0 % större arkiv — och fortfarande 10,4 % under bästa etablerade.
+
+Utfallet, mot de bästa etablerade verktygen på var korpus:
+
+| korpus | bästa etablerade | nvz före | nvz efter | utfall |
+|:--|--:|--:|--:|:--|
+| kod | `xz -9e` 8 629 516 / 47 s | 8 675 609 / 41 s | **8 580 323 / 40 s** | 0,57 % mindre, 15 % snabbare |
+| png | `zstd -22` 257 132 369 / 156 s | 218 956 236 / 268 s | **230 452 176 / 127 s** | 10,4 % mindre, 18 % snabbare |
+| arkiv | 7-Zip LZMA2 248 636 548 / 43 s | 254 310 751 / 192 s | **248 512 199 / 324 s** | 0,05 % mindre, 7,5× långsammare |
+| gif | `zstd -22` 14 867 185 / 4,7 s | 14 865 502 / 8 s | **14 864 575 / 5,6 s** | 0,02 % mindre, 20 % långsammare |
+
+Hela bilden korpus för korpus, på båda axlarna, står i
+`experiment/dominans.sh` och i rapportens avsnitt 3.9.
+
+---
+
+## Bättre OCH snabbare än det etablerade: sex korpusar av nio
+
+Rapportens tabeller jämför storlek och tid var för sig. Den hårda frågan är
+om nvz slår **samma** motståndare på båda axlarna samtidigt. Motståndaren är
+den av de etablerade packarna som gav minsta arkiv på korpusen, med sin egen
+uppmätta packtid på samma maskin (`python3 experiment/dominans.py`):
+
+```
+korpus     bästa etablerade                  byte    sek | nvz               byte    sek | utfall
+kod        tar.xz -9e                   8 629 516     47 | normal       8 580 323     40 | DOMINERAR (-0.57 % storlek, -15 % tid)
+png        tar.zst -22 --ultra        257 132 369    156 | normal     230 452 176    127 | DOMINERAR (-10.38 % storlek, -18 % tid)
+foto       tar.bz2 -9                 424 611 032     57 | normal     361 834 581     48 | DOMINERAR (-14.78 % storlek, -16 % tid)
+gif        tar.zst -22 --ultra         14 867 185      5 | liten       14 864 575      6 | mindre, men långsammare (-0.02 % storlek, +20 % tid)
+film       tar.zst -19 --long         557 861 782     57 | normal     557 880 433     56 | snabbare, men större (+0.00 % storlek, -0 % tid)
+arkiv      tar.zst -22 --ultra        254 567 277    154 | normal     254 287 214    153 | DOMINERAR (-0.11 % storlek, -1 % tid)
+logg       tar.xz -9e                  12 419 456    897 | liten       10 512 452    191 | DOMINERAR (-15.35 % storlek, -79 % tid)
+silesia    tar.xz -9e                  48 408 228    158 | liten       45 657 473    100 | DOMINERAR (-5.68 % storlek, -37 % tid)
+enwik8     tar.xz -9e                  24 831 492    121 | liten       21 417 335    129 | mindre, men långsammare (-13.75 % storlek, +7 % tid)
+
+dominerar på 6 av 9 korpusar
+```
+
+De tre som inte dominerar är de tre där det inte finns något att vinna:
+`gif` och `film` är redan entropikodade (0,02 % respektive 0,00 % att
+hämta), och `enwik8` är en enda textfil där varken dedup, sortering eller
+omvandlingar har något att bidra med — där är nvz 13,8 % mindre men 7 %
+långsammare, och den tiden är nvcm:s pris. **nvz är alltså aldrig påtagligt
+större än det bästa etablerade verktyget, och snabbare på sex av nio.**
+
+Gränsen går inte mellan datatyper utan mellan utnyttjbar struktur och ingen.
+
+---
+
+## Hur snabb kan den bli? Golvet är inte kodeken
+
+Frågan som föranledde den här mätningen: gör ett läge som är **både mindre
+och snabbare än zip**, och hur snabbt blir nvz om den bara behöver zips
+kompression?
+
+Första halvan är redan gjord. Kodkorpusen, 58 017 251 byte i 5 974 filer:
+
+| packare | arkiv | tid | mot nvz snabb |
+|:--|--:|--:|:--|
+| `zip -6 -r` | 16 989 215 | 2 204 ms | nvz är 29,5 % mindre och 3,0× snabbare |
+| `zip -9 -r` | 16 914 801 | 4 361 ms | nvz är 29,2 % mindre och 5,9× snabbare |
+| `tar.gz -6` | 12 895 526 | 2 197 ms | nvz är 7,2 % mindre och 3,0× snabbare |
+| `tar.gz -9` (pigz) | 12 748 449 | 416 ms | nvz är 6,1 % mindre, 1,8× långsammare |
+| `tar.zst -3` | 11 995 155 | 176 ms | nvz är 0,2 % mindre, 4,2× långsammare |
+| **nvz snabb** | **11 971 416** | **740 ms** | — |
+
+Andra halvan har ett svar som förvånade mig: **att packa sämre köper nästan
+ingenting.** Samma korpus, samma läge, men med kompressionen helt avstängd
+(`--kodek ra`) tar 660 ms av de 740. Kodeken är alltså 11 % av tiden, och de
+övriga 89 % är nvz:s eget arbete. Med zips kvot skulle nvz landa på
+660–680 ms i stället för 740 — högst 11 % snabbare för ett 30 % större arkiv.
+
+Och kostnaden är per byte, inte per fil. Hela korpusen packad som **en enda
+64 MB-fil**, utan kompression, tar 584 ms — nästan lika länge som 5 974
+separata filer (660 ms), medan `tar -cf /dev/null` över samma träd tar 29 ms
+och att bara läsa varje fil tar 101 ms. Golvet är alltså antalet svep över
+datan: nvz läser filen för att hasha den, läser den igen för att packa den,
+kopierar den in i blocket, komprimerar och skriver — fem svep där
+`tar | zstd` gör två.
+
+Att det är bandbredd och inte processor syns också i trådskalningen: samma
+packning tar 1 500 ms på en tråd och 775 ms på tjugofyra — **1,9× på 24
+trådar**, och kurvan är platt redan vid fyra. Uppstarten är inte heller
+boven: ett träd med en enda tom fil packas på 8 ms.
+
+Vägen till ett verkligt snabbare läge går därför inte genom en svagare
+kodek utan genom att ta bort svep: hasha under packningens läsning i stället
+för i ett eget pass, och strömma blocket genom kompressorn i stället för att
+först bygga det färdigt i minnet. Det senare halverar dessutom toppminnet,
+som är punkt 1 i rapportens avsnitt 8 — samma ändring betalar två gånger.
+Uppskattningen (omätt, eftersom ändringen inte är gjord) är ett golv kring
+350–400 ms, alltså ett `snabb` på knappt 500 ms.
+
+---
+
 ## Lägena
 
 | läge | vad som händer | när |
 |:--|:--|:--|
 | `snabb` | zstd −3, inga omvandlingar | motsvarar dagens arkivskript (`-1`) |
-| `normal` | omvandlingar på, zstd −19 eller xz efter prov | `-4` .. `-6` |
-| `liten` | dessutom nvcm på text där den vinner | **standard** |
+| `normal` | omvandlingar på, zstd −19 eller xz efter prov; opaka block avgörs av tvåstegsregeln | `-4` .. `-6` |
+| `liten` | dessutom nvcm på text där den vinner, LZMA med täckande ordbok som kandidat på opaka block, och omprövning av hela blocket när provets försprång var tunt | **standard** |
 | `gpu` | dessutom nvlz (lz77 på grafikkortet) i provet | aldrig — se mätningen nedan |
+
+Skillnaden mellan `normal` och `liten` är alltså tid, inte bara kodekval:
+`liten` betalar hela extra packningar för att avgöra frågor som provet inte
+kan avgöra. Det är därför `normal` är den som vinner på TID mot det
+etablerade, och `liten` den som vinner på STORLEK.
 
 ---
 
@@ -260,22 +470,22 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 
 <!-- TABELLER -->
 
-### Programkod — 55 3 MiB i 5 974 filer
+### Programkod — 55 4 MiB i 5 974 filer
 
 | packare | storlek MiB | kvot | mot dagens | packtid | uppacktid | exakt |
 |:--|--:|--:|--:|--:|--:|:-:|
 | tar (okomprimerad) | 60,83 | 0,91× | +430,8 % | **0 s** | 0 s | ja |
-| tar.gz -6 | 12,32 | 4,49× | +7,5 % | 2 s | 0 s | ja |
-| tar.gz -9 (pigz) | 12,18 | 4,54× | +6,3 % | 0 s | 0 s | ja |
+| tar.gz -6 | 12,32 | 4,50× | +7,5 % | 2 s | 0 s | ja |
+| tar.gz -9 (pigz) | 12,18 | 4,55× | +6,3 % | 0 s | 0 s | ja |
 | tar.bz2 -9 | 9,51 | 5,82× | −17,0 % | 7 s | 2 s | ja |
 | tar.zst -3 (dagens) | 11,46 | 4,83× | +0,0 % | 0 s | 0 s | ja |
 | tar.zst -19 --long | 8,53 | 6,49× | −25,6 % | 35 s | 0 s | ja |
 | tar.zst -22 --ultra | 8,45 | 6,55× | −26,2 % | 56 s | 0 s | ja |
-| tar.xz -9e | 8,23 | 6,72× | −28,2 % | 47 s | 1 s | ja |
-| **nvz snabb** | 11,42 | 4,85× | −0,4 % | 1 s | 0 s | ja |
-| **nvz utan knep** | 8,27 | 6,69× | −27,8 % | 41 s | 1 s | ja |
-| **nvz normal** | 8,27 | 6,69× | −27,8 % | 41 s | 1 s | ja |
-| **nvz liten** | **7,28** | 7,60× | −36,5 % | 70 s | 68 s | ja |
+| tar.xz -9e | 8,23 | 6,73× | −28,2 % | 47 s | 1 s | ja |
+| **nvz snabb** | 11,34 | 4,88× | −1,0 % | 1 s | 0 s | ja |
+| **nvz utan knep** | 8,18 | 6,77× | −28,6 % | 40 s | 1 s | ja |
+| **nvz normal** | 8,18 | 6,77× | −28,6 % | 40 s | 1 s | ja |
+| **nvz liten** | **7,20** | 7,69× | −37,1 % | 68 s | 67 s | ja |
 
 ### Bilder (PNG) — 431 1 MiB i 4 618 filer
 
@@ -289,10 +499,10 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | tar.zst -19 --long | 252,73 | 1,71× | −30,3 % | 40 s | 1 s | ja |
 | tar.zst -22 --ultra | 245,22 | 1,76× | −32,4 % | 156 s | 1 s | ja |
 | tar.xz -9e | 266,41 | 1,62× | −26,6 % | 128 s | 5 s | ja |
-| **nvz snabb** | 279,32 | 1,54× | −23,0 % | 2 s | 1 s | ja |
-| **nvz utan knep** | 256,49 | 1,68× | −29,3 % | 42 s | 1 s | ja |
-| **nvz normal** | 208,81 | 2,06× | −42,5 % | 268 s | 10 s | ja |
-| **nvz liten** | **208,81** | 2,06× | −42,5 % | 265 s | 9 s | ja |
+| **nvz snabb** | 279,29 | 1,54× | −23,0 % | 2 s | 1 s | ja |
+| **nvz utan knep** | 256,46 | 1,68× | −29,3 % | 42 s | 1 s | ja |
+| **nvz normal** | 219,78 | 1,96× | −39,4 % | 127 s | 8 s | ja |
+| **nvz liten** | **207,24** | 2,08× | −42,9 % | 280 s | 11 s | ja |
 
 ### Foton (JPEG) — 408 5 MiB i 1 143 filer
 
@@ -306,10 +516,10 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | tar.zst -19 --long | 405,09 | 1,01× | −0,3 % | 53 s | 0 s | ja |
 | tar.zst -22 --ultra | 405,09 | 1,01× | −0,3 % | 225 s | 0 s | ja |
 | tar.xz -9e | 405,43 | 1,01× | −0,2 % | 157 s | 4 s | ja |
-| **nvz snabb** | 408,51 | 1,00× | +0,5 % | 1 s | 1 s | ja |
-| **nvz utan knep** | 406,37 | 1,01× | +0,0 % | 12 s | 1 s | ja |
-| **nvz normal** | **345,09** | 1,18× | −15,1 % | 49 s | 17 s | ja |
-| **nvz liten** | **345,09** | 1,18× | −15,1 % | 55 s | 17 s | ja |
+| **nvz snabb** | 408,50 | 1,00× | +0,5 % | 2 s | 1 s | ja |
+| **nvz utan knep** | 406,43 | 1,01× | +0,0 % | 4 s | 1 s | ja |
+| **nvz normal** | **345,07** | 1,18× | −15,1 % | 48 s | 18 s | ja |
+| **nvz liten** | **345,07** | 1,18× | −15,1 % | 55 s | 17 s | ja |
 
 ### Bilder (GIF) — 27 4 MiB i 105 filer
 
@@ -324,9 +534,9 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | tar.zst -22 --ultra | 14,18 | 1,93× | −47,6 % | 5 s | 0 s | ja |
 | tar.xz -9e | 14,19 | 1,93× | −47,5 % | 8 s | 0 s | ja |
 | **nvz snabb** | 14,44 | 1,90× | −46,6 % | 0 s | 0 s | ja |
-| **nvz utan knep** | 14,18 | 1,93× | −47,6 % | 11 s | 0 s | ja |
-| **nvz normal** | **14,18** | 1,93× | −47,6 % | 8 s | 0 s | ja |
-| **nvz liten** | **14,18** | 1,93× | −47,6 % | 9 s | 0 s | ja |
+| **nvz utan knep** | 14,18 | 1,93× | −47,6 % | 4 s | 0 s | ja |
+| **nvz normal** | **14,18** | 1,93× | −47,6 % | 6 s | 0 s | ja |
+| **nvz liten** | **14,18** | 1,93× | −47,6 % | 6 s | 0 s | ja |
 
 ### Film (h264/VP9) — 536 7 MiB i 67 filer
 
@@ -340,10 +550,10 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | tar.zst -19 --long | **532,02** | 1,01× | −0,3 % | 57 s | 0 s | ja |
 | tar.zst -22 --ultra | 532,03 | 1,01× | −0,3 % | 266 s | 1 s | ja |
 | tar.xz -9e | 532,86 | 1,01× | −0,2 % | 154 s | 5 s | ja |
-| **nvz snabb** | 536,75 | 1,00× | +0,5 % | 3 s | 2 s | ja |
-| **nvz utan knep** | 532,04 | 1,01× | −0,3 % | 59 s | 2 s | ja |
-| **nvz normal** | 532,04 | 1,01× | −0,3 % | 61 s | 2 s | ja |
-| **nvz liten** | 532,04 | 1,01× | −0,3 % | 60 s | 2 s | ja |
+| **nvz snabb** | 536,75 | 1,00× | +0,5 % | 3 s | 1 s | ja |
+| **nvz utan knep** | 532,04 | 1,01× | −0,3 % | 57 s | 1 s | ja |
+| **nvz normal** | 532,04 | 1,01× | −0,3 % | 56 s | 1 s | ja |
+| **nvz liten** | 532,04 | 1,01× | −0,3 % | 57 s | 1 s | ja |
 
 ### Arkiv (zip/tar.gz) — 391 8 MiB i 133 filer
 
@@ -358,9 +568,9 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | tar.zst -22 --ultra | 242,77 | 1,61× | −36,4 % | 154 s | 1 s | ja |
 | tar.xz -9e | 251,75 | 1,56× | −34,1 % | 144 s | 7 s | ja |
 | **nvz snabb** | 329,03 | 1,19× | −13,8 % | 2 s | 1 s | ja |
-| **nvz utan knep** | 242,53 | 1,62× | −36,5 % | 191 s | 1 s | ja |
-| **nvz normal** | 242,53 | 1,62× | −36,5 % | 203 s | 1 s | ja |
-| **nvz liten** | **242,53** | 1,62× | −36,5 % | 192 s | 1 s | ja |
+| **nvz utan knep** | 242,51 | 1,62× | −36,5 % | 146 s | 1 s | ja |
+| **nvz normal** | 242,51 | 1,62× | −36,5 % | 153 s | 1 s | ja |
+| **nvz liten** | **237,00** | 1,65× | −37,9 % | 323 s | 8 s | ja |
 
 ### Loggfiler — 238 3 MiB i 76 filer
 
@@ -375,9 +585,9 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | tar.zst -22 --ultra | 12,92 | 18,45× | −42,3 % | 986 s | 0 s | ja |
 | tar.xz -9e | 11,84 | 20,12× | −47,1 % | 897 s | 1 s | ja |
 | **nvz snabb** | 22,41 | 10,63× | +0,1 % | 2 s | 1 s | ja |
-| **nvz utan knep** | 11,97 | 19,91× | −46,5 % | 854 s | 2 s | ja |
-| **nvz normal** | 11,97 | 19,91× | −46,5 % | 864 s | 2 s | ja |
-| **nvz liten** | **10,03** | 23,77× | −55,2 % | 197 s | 203 s | ja |
+| **nvz utan knep** | 11,87 | 20,08× | −47,0 % | 854 s | 2 s | ja |
+| **nvz normal** | 11,87 | 20,08× | −47,0 % | 851 s | 2 s | ja |
+| **nvz liten** | **10,03** | 23,77× | −55,2 % | 191 s | 198 s | ja |
 
 ### Blandat projektträd (symbios-3d) — 1 814 4 MiB i 15 139 filer
 
@@ -407,10 +617,10 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | tar.zst -19 --long | 50,17 | 4,03× | −20,6 % | 63 s | 0 s | ja |
 | tar.zst -22 --ultra | 49,82 | 4,06× | −21,1 % | 179 s | 0 s | ja |
 | tar.xz -9e | 46,17 | 4,38× | −26,9 % | 158 s | 3 s | ja |
-| **nvz snabb** | 63,16 | 3,20× | +0,0 % | 1 s | 1 s | ja |
-| **nvz utan knep** | 46,16 | 4,38× | −26,9 % | 94 s | 2 s | ja |
-| **nvz normal** | 46,16 | 4,38× | −26,9 % | 94 s | 2 s | ja |
-| **nvz liten** | **43,54** | 4,64× | −31,0 % | 102 s | 101 s | ja |
+| **nvz snabb** | 63,17 | 3,20× | +0,0 % | 1 s | 1 s | ja |
+| **nvz utan knep** | 46,14 | 4,38× | −26,9 % | 92 s | 2 s | ja |
+| **nvz normal** | 46,14 | 4,38× | −26,9 % | 92 s | 2 s | ja |
+| **nvz liten** | **43,54** | 4,64× | −31,0 % | 100 s | 99 s | ja |
 
 ### enwik8 (standardkorpus) — 95 4 MiB i 1 filer
 
@@ -424,10 +634,10 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | tar.zst -19 --long | 25,18 | 3,79× | −25,5 % | 61 s | 0 s | ja |
 | tar.zst -22 --ultra | 24,11 | 3,96× | −28,7 % | 118 s | 0 s | ja |
 | tar.xz -9e | 23,68 | 4,03× | −29,9 % | 121 s | 1 s | ja |
-| **nvz snabb** | 33,80 | 2,82× | +0,0 % | 2 s | 1 s | ja |
-| **nvz utan knep** | 23,68 | 4,03× | −29,9 % | 125 s | 2 s | ja |
-| **nvz normal** | 23,68 | 4,03× | −29,9 % | 125 s | 2 s | ja |
-| **nvz liten** | **20,43** | 4,67× | −39,6 % | 131 s | 135 s | ja |
+| **nvz snabb** | 33,80 | 2,82× | +0,0 % | 1 s | 1 s | ja |
+| **nvz utan knep** | 23,59 | 4,04× | −30,2 % | 122 s | 2 s | ja |
+| **nvz normal** | 23,59 | 4,04× | −30,2 % | 122 s | 2 s | ja |
+| **nvz liten** | **20,43** | 4,67× | −39,6 % | 129 s | 132 s | ja |
 
 <!-- SLUT TABELLER -->
 
@@ -749,3 +959,20 @@ katalog **försvann tyst** ur arkivet (den dyker upp bland `os.walk`s kataloger,
 inte bland dess filer), och katalogernas egna tidsstämplar återställdes inte
 alls. Båda är rättade; båda hade gått obemärkta förbi i varje mätning, för
 mätningarna jämför innehåll och inte träd.
+
+Utöver kantfallen finns tre prov som svarar på frågor utifrån:
+
+```bash
+python3 prov/slumpprov.py 400        # slumpade träd: storlekar, typer, dubbletter,
+                                     # rättigheter, tider, namn, symlänkar — hela
+                                     # rundgången i alla tre lägen, frö utskrivet vid fel
+bash experiment/karntest.sh          # linuxkärnan från kernel.org: md5-manifest före,
+                                     # packa, packa upp, md5sum -c efter
+bash experiment/ablation.sh kod xz9e # vad VARJE knep är värt, med kompressorn konstant
+```
+
+Slumpprovet finns därför att `prova-allt.sh` bara provar de kantfall någon
+kom på. Kärntestet finns därför att en korpus man valt själv aldrig kan
+avfärda invändningen att resultatet är anpassat till den. Ablationen finns
+därför att knepen annars mäts ihop, och då går det inte att svara på hur
+mycket sorteringen — som är den äldsta och mest kända delen — står för.

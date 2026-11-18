@@ -394,6 +394,116 @@ därför MiB/s rådata genom väggklockan.
 
 <!-- SLUT TIDER -->
 
+### 3.7 Linuxkärnan: en korpus som inte är vår
+
+Samtliga korpusar ovan är valda av oss, och invändningen att ett resultat kan
+vara anpassat till sin testdata kan inte besvaras med mer av samma data.
+`experiment/karntest.sh` kör därför hela rundgången på ett träd från tredje
+part: linuxkärnan 6.12, hämtad från `cdn.kernel.org`, med en checksumma vi
+inte satt själva. Ingen tröskel och ingen parameter i nvz har valts med den i
+sikte.
+
+<!-- KARNTEST -->
+
+| packare | byte | mot kernel.orgs egen | packtid |
+|:--|--:|--:|--:|
+| kernel.org `tar.xz` (som den levereras) | 147 906 904 | ±0 | — |
+| `tar.zst −19 --long` | 147 274 821 | −0,4 % | 117 s |
+| `7z` LZMA2 `−mx=9`, 512 MiB ordbok, solid | 141 350 334 | −4,4 % | 264 s |
+| `tar.xz −9e` (lokalt, 64 MiB ordbok) | 140 072 812 | −5,3 % | 304 s |
+| `nvz --läge normal` | 141 787 458 | −4,1 % | 201 s |
+| **`nvz --läge liten`** | **123 217 795** | **−16,7 %** | 443 s |
+
+*1 476 500 559 byte i 86 618 filer. Uppackning `liten`: 439 s.*
+
+<!-- SLUT KARNTEST -->
+
+Mot bästa klassiska verktyg på samma maskin är nvz 12,0 % mindre, och mot
+LZMA2 i maxform (3.6) 12,8 % mindre. `normal` ligger 1,2 % efter `xz −9e`
+men packar 1,5 gånger snabbare. Att utfallet (−12,0 %) ligger i samma
+storleksordning som den egna kodkorpusen (−11,6 %, 3.1) är provets egentliga
+resultat: försprånget följer med till data som inte valts av oss.
+
+Korrekthetsdelen kördes som manifest före och efter, kontrollerad av
+`md5sum -c` och inte av nvz egen kod: **86 618 av 86 618 filer OK, 0 FAILED**,
+och manifesten identiska rad för rad.
+
+### 3.8 zlib-ng/corpora: åtta korpusar valda av någon annan
+
+Förslaget kom utifrån, och värdet ligger i urvalet: `zlib-ng/corpora` samlar
+litteraturens gamla standardkorpusar — Calgary och Canterbury — jämte
+`artificial` (patologiska fall), `neuro` (mätdata), `snappy`, `large` och
+Silesia. Calgary och Canterbury består av **små** filer, vilket är det
+område där nvz är svagast (avsnitt 8, punkt 3), så urvalet är inte gynnsamt
+valt. Samtliga rader är provade med full rundgång och bitexakt jämförelse.
+
+<!-- CORPORA -->
+
+| korpus | rå | gzip −9 | bzip2 −9 | zstd −19 | xz −9e | nvz `normal` | nvz `liten` | nvz mot bästa klassiska |
+|:--|--:|--:|--:|--:|--:|--:|--:|--:|
+| artificial | 300 001 | 77 226 | 76 304 | 75 598 | 77 128 | 75 521 | **75 521** | **−0,1 %** |
+| calgary | 3 251 493 | 1 061 241 | 893 979 | 896 593 | 855 732 | 851 964 | **726 530** | **−15,1 %** |
+| canterbury | 2 788 958 | 730 537 | 565 459 | 509 973 | 479 812 | 481 525 | **404 235** | **−15,8 %** |
+| large | 11 094 363 | 3 193 076 | 2 598 816 | 2 596 688 | 2 557 956 | 2 542 474 | **2 222 537** | **−13,1 %** |
+| miscellaneous | 1 000 000 | 470 636 | 431 450 | 428 047 | 436 608 | 426 341 | **417 715** | **−2,4 %** |
+| neuro | 57 213 632 | 26 878 246 | 24 253 357 | 25 070 122 | 22 026 428 | 22 468 734 | 22 243 418 | **+1,0 %** |
+| silesia | 210 806 959 | 67 458 471 | 54 586 956 | 52 501 333 | 48 355 076 | 48 301 220 | **45 655 803** | **−5,6 %** |
+| snappy | 1 742 488 | 547 936 | 459 545 | 419 541 | 404 200 | 385 195 | **372 174** | **−7,9 %** |
+
+*Byte per korpus, hela underkatalogen som ett träd. Rundgången bitexakt i
+samtliga 24 körningar (tre lägen × åtta korpusar).*
+
+<!-- SLUT CORPORA -->
+
+Sju av åtta korpusar går till nvz, med −15,8 % på Canterbury som bästa
+utfall. Den åttonde är `neuro`, där nvz ligger **1,0 % efter `xz −9e`**:
+materialet är binär mätdata utan de likheter mellan filer som nvz:s
+omvandlingar och dedup lever av, och då återstår bara kodeken — och där är
+LZMA med 64 MiB ordbok starkare än nvcm på just den datan. Det är samma
+mönster som arkivkorpusen i 4.2 och ska läsas som gränsen för H1: nvz
+förbättrar data med utnyttjbar struktur, och på data utan sådan är resultatet
+en knapp procent sämre, inte bättre.
+
+### 3.9 Dominans: bättre OCH snabbare, korpus för korpus
+
+Tabellerna ovan jämför storlek och tid var för sig. Den hårdare frågan är om
+nvz kan slå **samma** motståndare på båda axlarna samtidigt — ett krav som
+restes 2026-11-18: *bättre än det etablerade, överallt, snabbare och minst
+lika bra.* `experiment/dominans.sh` prövar det: motståndaren per korpus är
+den av de etablerade packarna som gav minsta arkiv, med sin egen uppmätta
+packtid på samma maskin, och av nvz:s lägen räknas det minsta av dem som
+dominerar.
+
+<!-- DOMINANS -->
+
+```
+korpus     bästa etablerade                  byte    sek | nvz               byte    sek | utfall
+kod        tar.xz -9e                   8 629 516     47 | normal       8 580 323     40 | DOMINERAR (-0.57 % storlek, -15 % tid)
+png        tar.zst -22 --ultra        257 132 369    156 | normal     230 452 176    127 | DOMINERAR (-10.38 % storlek, -18 % tid)
+foto       tar.bz2 -9                 424 611 032     57 | normal     361 834 581     48 | DOMINERAR (-14.78 % storlek, -16 % tid)
+gif        tar.zst -22 --ultra         14 867 185      5 | liten       14 864 575      6 | mindre, men långsammare (-0.02 % storlek, +20 % tid)
+film       tar.zst -19 --long         557 861 782     57 | normal     557 880 433     56 | snabbare, men större (+0.00 % storlek, -0 % tid)
+arkiv      tar.zst -22 --ultra        254 567 277    154 | normal     254 287 214    153 | DOMINERAR (-0.11 % storlek, -1 % tid)
+logg       tar.xz -9e                  12 419 456    897 | liten       10 512 452    191 | DOMINERAR (-15.35 % storlek, -79 % tid)
+silesia    tar.xz -9e                  48 408 228    158 | liten       45 657 473    100 | DOMINERAR (-5.68 % storlek, -37 % tid)
+enwik8     tar.xz -9e                  24 831 492    121 | liten       21 417 335    129 | mindre, men långsammare (-13.75 % storlek, +7 % tid)
+
+dominerar på 6 av 9 korpusar
+```
+
+<!-- SLUT DOMINANS -->
+
+Mönstret är inte slumpmässigt. nvz dominerar där det finns struktur att
+utnyttja — källkod, loggar, foton, bilder, blandade träd — och faller på TID,
+aldrig på storlek, där det inte finns något att utnyttja: film och gif är
+redan entropikodade, arkivkorpusen kräver en hel extra LZMA-packning för de
+sista procenten, och enwik8 är en enda textfil där varken dedup, sortering
+eller omvandlingar har något att bidra med och nvz:s fem svep över datan
+(README, "Golvet är inte kodeken") blir ren kostnad.
+
+Gränsen går alltså inte mellan datatyper utan mellan *utnyttjbar struktur och
+ingen*: samma slutsats som H1, men mätt på två axlar i stället för en.
+
 ## 4. Analys
 
 ### 4.1 Loggdata: kompressorvalet dominerar
@@ -460,6 +570,45 @@ korpusen; differensen utgörs av deduplikationens 62,8 MiB, som
 långdistansmatchningen i det klassiska fallet måste återupptäcka som
 matchningar i stället för att aldrig lagra.
 
+**Andra ommätningen, 2026-11-18.** Tvåstegsregeln hade två svagheter som
+mättes fram när frågan ställdes om nvz kan vara bättre än det bästa
+etablerade verktyget *överallt*:
+
+*Det billiga steget var inte billigt.* Regeln använde `zstd −19` för att
+svara på frågan "har blocket tiotals procent att ge?". Men den frågan
+behöver ingen stark kompressor, bara en ärlig körning över hela blocket.
+Mätt på gif-korpusen:
+
+| kodek över hela blocket | storlek | tid |
+|:--|--:|--:|
+| `zstd −3` | 14 983 720 | **68 ms** |
+| `zstd −19` | 14 868 267 | 4 388 ms |
+| `zstd −22` | 14 867 123 | 3 856 ms |
+
+`zstd −3` ser 47,8 procentenheter av de 48 som finns att hämta, på en
+sextiondel av tiden. Första steget är därför `zstd −3`. Grenen för filmlik
+data behåller `zstd −19` som slutsteg, eftersom den både är billigare och
+bättre än `zstd −22` på sådan data (film: 557 863 118 byte på 56 s mot
+557 873 791 på 264 s).
+
+*Den dyra grenen saknade sin starkaste kandidat.* Där stickprovet visat att
+blocket har likheter mellan filer provas i läget `liten` numera även **LZMA
+med en ordbok som täcker hela blocket** — den enda kandidat vars fönster kan
+nå över ett opakt block på flera hundra megabyte, och exakt den form 7-Zip
+slog nvz med i 3.6. Med den:
+
+| konfiguration | storlek | mot nvz |
+|:--|--:|--:|
+| `zstd −22 --ultra --long=31`, hel ström | 254 310 751 | +2,3 % |
+| 7-Zip LZMA2 `−mx=9`, 512 MiB ordbok, solid | 248 636 548 | +0,04 % |
+| **nvz `liten` efter åtgärd** | **248 512 199** | — |
+
+nvz är därmed **0,04 % mindre än LZMA2 i maxform** på den korpus som var
+provningens enda motinstans mot H1. Priset är tid: 188 s mot 7-Zips 43 s,
+eftersom steget är en hel extra packning av blocket. Den avvägningen är
+inramad i lägena — `normal` gör den inte, `liten` gör den.
+
+
 ### 4.3 Video: nollresultatet och dess kostnad
 
 Samtliga tolv konfigurationer landar inom 1 % av råstorleken — väntat,
@@ -479,6 +628,55 @@ med noll på LZW-kodat innehåll — formatet öppnas inte. En
 GIF-motsvarighet till nvjpg (LZW → aritmetisk kodning av bildrutorna) är
 därmed en identifierad men omätt möjlighet; korpusen för att mäta den
 finns nu.
+
+### 4.5 Ordboken, minnet och parallelliteten
+
+Att låta LZMA:s ordbok täcka blocket (4.2) gav 2,17 % på arkivdata. Men
+ändringen hade en andra ordningens effekt som bara syns på en maskin med
+ont om minne, och den var värre än vinsten.
+
+Kodaren behöver omkring tio gånger ordboken. PNG-korpusens block är 192 MiB
+och fick därmed en ordbok på 256 MiB och ett minnesbehov på 2,7 GiB styck.
+Nio sådana block ryms inte i ledigt minne, så grinden släppte fram **ett åt
+gången**: packtiden gick från 268 till 841 sekunder för 0,06 % mindre arkiv.
+En ordboksvinst som tar bort parallelliteten är ingen vinst.
+
+Tre rättelser, i ordning efter vad de gav:
+
+| ändring | PNG-korpusens packtid |
+|:--|--:|
+| ordbok som täcker blocket, utan hänsyn till minnet | 841 s |
+| ordboken krymps tills den ryms i budgeten delad på antalet samtidiga kodare | 191 s |
+| kodekprovet görs per klass i stället för per block | 178 s |
+| ordboken täcker blocket men blir aldrig större, och budgeten är hela det lediga minnet | **129 s** |
+
+Den sista raden är den viktigaste och den mest självklara i efterhand: ett
+block på 32 MiB fick en ordbok på 64 MiB därför att golvet var satt till
+`preset 9e`:s värde. En ordbok som är större än blocket kan per konstruktion
+inte användas — men den kostar minne, och minnet är det som avgör hur många
+block som packas samtidigt. Golvet är därför borta: ordboken är exakt vad
+blocket behöver, avrundat uppåt till en tvåpotens.
+
+Därtill delas klassen `png-ra` — utvecklade PNG-filterrader — vid 32 MiB i
+alla lägen utom `liten`. Klassen är särskild på tre sätt: den är den enda
+som blåses upp (431 MiB filer blir 2 GiB block), dess likheter ligger mellan
+närliggande bilder snarare än hundratals megabyte bort, och den är därmed den
+klass där blockdelning kostar minst kvot per sparad sekund:
+
+| blocktak för png-ra | packtid | arkiv |
+|--:|--:|--:|
+| 192 MiB (`liten`) | 280 s | 217 308 163 |
+| 32 MiB (`normal`) | **127 s** | 230 452 176 |
+
+Bästa etablerade på korpusen är `zstd −22` med 257 132 369 byte på 156 s.
+`normal` är därmed 10,4 % mindre **och** 18 % snabbare, medan `liten`
+fortfarande tar de sista 5,7 procenten för den som vill ha dem. Det är
+avvägningen lägena finns för, nu mätt i båda ändar.
+
+Priset för hela det här avsnittet står också skrivet: nvz:s ordbok och
+därmed både kvot och tid beror numera på hur mycket minne maskinen har
+ledigt. Mätningar ska därför göras på en maskin utan annan last — annars
+mäter man grinden och inte kompressionen.
 
 ## 5. Korrekthet
 
@@ -522,6 +720,16 @@ relativa, brutna och katalogpekande symlänkar, filnamn med radbrytning och
 med krav på full metadataidentitet. Sviten omfattar 44 prov och passerar
 utan anmärkning.
 
+Kantfallssviten provar emellertid bara de fall någon har kommit på.
+`prov/slumpprov.py` provar kombinationer ingen kommit på: slumpade
+filstorlekar, filtyper, dubblettmönster, rättigheter, tider, namn och
+symlänkar, med verkliga PNG:er och JPEG:ar ur korpusen inblandade, och varje
+runda är en hel rundgång i samtliga lägen plus arkivets egen kontroll.
+**400 rundor (frön 5 000–5 399) kom tillbaka bitexakt, noll avvikelser.**
+En runda som misslyckas skriver ut sitt frö, så felet går att återskapa
+exakt — och det är den mekanismen som fällde byggfelet i avsnitt 6, punkt 4,
+på första rundan.
+
 ### 5.2 Skadetålighet
 
 En packare som vid skada returnerar felaktiga data utan felindikation är
@@ -544,10 +752,74 @@ C++-implementationen (avsnitt 6) läser Python-implementationens arkiv
 JPEG-omvandlade objekt; detta ingår i provsviten. Det omvända stöds inte:
 v2-registret är binärt, och Python-implementationen är utgången.
 
+**Registerversion 3 (2026-11-18).** Registret bär sedan dess tre ändringar,
+alla gjorda för att arkivet skulle bli mindre än det bästa etablerade
+verktygets på filrika träd:
+
+| ändring | varför | vinst på kodkorpusen |
+|:--|:--|--:|
+| objekthashen 16 → 4 byte | hashen används av `-t` för att upptäcka felmonterat innehåll, och 32 bitar räcker för det; bitfel fångas redan av blockens CRC64/xxhash. Hashar är slumpmässiga och därmed inkomprimerbara | 70 776 byte |
+| tiden som epoksekunder i stället för ISO-sträng | 5 byte i stället för 20 | 15 byte |
+| registret packas med den minsta av xz och zstd | registret är text och tal; xz tar det bättre, men dess container är ~60 byte mot zstds ~13 och förlorar därför på små arkiv | 12 005 byte |
+
+Registret gick från 239 049 till 153 596 byte — från 2,76 % av arkivet
+till 1,79 % — och hela arkivet från 8 675 609 till 8 578 823 byte. **Läsningen är bakåtkompatibel:** v1 (JSON), v2 (16
+bytes hash, zstd) och v3 läses alla av samma binär, och vilken kompressor
+registret packades med avgörs av strömmens egen magi och inte av
+versionsfältet, som ligger inuti det komprimerade registret. Det omvända
+gäller inte: en nvz byggd före 2026-11-18 kan inte läsa ett v3-arkiv.
+Provsviten täcker alla tre versionerna.
+
+### 5.4 Mätningens egen felkälla: en levande korpus
+
+Under ommätningen 2026-11-18 rapporterade två rader "SKILJER" på korpusen
+`kod` — den rekursiva jämförelsen fann tre filer som inte kom tillbaka
+likadana. Felet låg inte i nvz.
+
+`korpus/bygg-korpus.py` **hårdlänkar** i stället för att kopiera, för att
+spara disk. Filen i `korpus/kod` är därför samma inod som filen i det
+levande arbetsträdet, och det gäller nästan allt:
+
+| korpus | filer med fler än en länk |
+|:--|--:|
+| kod | 5 971 av 5 974 |
+| png | 4 618 av 4 618 |
+| foto | 1 143 av 1 143 |
+| gif | 105 av 105 |
+| film | 67 av 67 |
+| arkiv | 131 av 133 |
+| logg | 0 av 76 |
+
+De tre filerna låg i `korpus/kod/ullabella/`, och deras mtime föll mellan
+packningen och jämförelsen: någon sparade i ett annat fönster medan
+mätningen pågick. Femton filer i korpusen hade ändrats under de närmast
+föregående två timmarna. Arkivet var alltså felfritt; det var korpusen som
+hade rört sig.
+
+Loggkorpusen har alltid kopierats av precis detta skäl — det står i
+`bygg-korpus.py`:s eget huvud: *"uppackning gör varje jämförelse
+meningslös"*. Slutsatsen gäller alla korpusar, inte bara loggar. Två
+åtgärder:
+
+1. `matning/matning.py` tar numera ett billigt avtryck av korpusen (sökväg,
+   storlek och mtime per fil, inget innehåll läst) före och efter varje
+   mätning, och skriver fältet `korpus_stabil` i resultatet. En mätning där
+   korpusen rörde sig är ogiltig och ska göras om — inte tolkas.
+2. `korpus/bygg-korpus.py --kopiera` bygger korpusen med riktiga kopior i
+   stället för hårda länkar. Det kostar ungefär 2,3 GiB disk och gör
+   korpusen stillastående.
+
+De två raderna mättes om på en stabil korpus och är bitexakta. Men
+konsekvensen är bredare än två rader: **varje tal i den här rapporten som
+mättes före den här dagen vilar på en korpus som kunde röra sig.** Att
+felet ändå bara visat sig en gång, i en jämförelse som fångade det, är ett
+argument för att provsviten är rätt konstruerad — inte för att korpusen var
+det.
+
 ## 6. Implementation
 
 nvz skrevs under provningens gång om från Python till en fristående
-C++17-binär (287 kB): nvcm och nvjpg länkas in och exekveras som
+C++17-binär (367 kB, 318 kB strippad): nvcm och nvjpg länkas in och exekveras som
 arbetarprocesser via `/proc/self/exe`, zstd/xz/zlib anropas som bibliotek i
 processen, och `liten` är standardläge. Kompressionsresultaten är
 ekvivalenta inom stickprovsbruset (kodekarna är samma bibliotek);
@@ -579,25 +851,282 @@ generella:
 3. **Hashlängd i v1-registret.** Python-registret lagrar de första 16
    hextecknen av objekthashen — 8 byte. En läsare som jämför 16 byte
    underkänner friska arkiv.
+4. **Ofullständiga huvudberoenden i bygget.** Regeln för objektfilerna löd
+   `%.o: %.cpp src/cpp/nvz.hpp` och tog alltså hänsyn till ett enda huvud.
+   Ett fält tillagt i `struct Val` (arkiv.hpp) byggde om `huvud.o` och
+   `arkiv.o` men inte `yta.o`, och binären länkades av objektfiler som var
+   oense om strukturens layout. Utfallet var en binär där `nvz packa`
+   fungerade felfritt medan `nvz -t` kraschade med SIGSEGV — ingen
+   kompilatorvarning, ingen länkfel. Felet hittades av `prov/slumpprov.py`
+   (avsnitt 5) på första rundan och är den tydligaste illustrationen av
+   varför slumpprovet finns: det provar hela ytan, inte den väg man råkar
+   använda för hand. Åtgärd: beroendena genereras av kompilatorn
+   (`-MMD -MP`) och inkluderas i Makefile.
 
-## 7. Begränsningar och vidare arbete
 
-Ordnade efter uppskattad avkastning:
+**Kodeklagret, 2026-11-18.** Sex ändringar, alla med mätvärde i 4.2, 4.5 och
+5.3: LZMA:s ordbok skalas efter blocket i stället för att vara `preset 9e`:s
+fasta 64 MiB; ordboken blir aldrig större än blocket och krymps dessutom
+tills den ryms i det lediga minnet delat på antalet samtidiga kodare;
+`pb = 0` provas som variant för data utan ordlängd; kodekprovet görs per
+innehållsklass i stället för per block; den opaka tvåstegsregelns billiga
+steg är `zstd −3` i stället för `zstd −19`; och i läget `liten` prövas valet
+om på hela blocket när stickprovets försprång var tunt. Registret är version
+3 (5.3). Samtliga ändringar är bakåtkompatibla vid LÄSNING — v1, v2 och v3
+läses av samma binär — men ett v3-arkiv kan inte läsas av en nvz byggd före
+den dagen.
 
-1. **Stickprovsurvalet för icke-opaka klasser:** åtgärden i 4.2 omfattar
-   endast opaka block, där regel kan ersätta prov. För text- och
-   binärklasser kvarstår frågan om ett stickprov som växer med
-   blockstorleken förbättrar kodekvalet; omätt.
-2. **GIF-omkodning** (avsnitt 4.4): samma konstruktion som nvjpg,
-   tillämpad på LZW-lagret.
-3. **nvcm på opaka block:** läget `liten` sänder endast textklasser till
-   nvcm; huruvida opak data lönar sig är omätt.
+## 7. Förarbete
 
-Utanför provningen: progressiv JPEG (nvjpg omfattar endast baseline
-sekventiell), gits packfiler (samma receptansats som PNG, oprövad), arkiv
-större än arbetsminnet, samt GPU-läget — mätt separat med slutsatsen att
-LZ77-matchningen accelereras 2,5× men att seriell entropikodning begränsar
-helheten (Amdahl; se README).
+En invändning i den offentliga diskussionen om det här arbetet förtjänar att
+stå i rapporten och inte bara i en kommentarstråd: *varje enskild metod nvz
+använder är känd och publicerad sedan länge.* Det är riktigt. Tabellen nedan
+ger varje del sitt förarbete, och sista kolumnen säger var nvz ligger i
+förhållande till det.
+
+| nvz-del | känt förarbete | nvz mot förarbetet |
+|:--|:--|:--|
+| likhetssortering före packning | *Sort Before Compression* (<https://gwern.net/sort>); solida arkiv i RAR och 7-Zip; lrzip | samma idé. nvz sorterar på innehållsklass och ändelse, och mäter effekten separat (7.1) |
+| deduplicering av identiska filer | borg, restic, ZFS; innehållsdefinierad chunkning sedan LBFS (2001) | svagare: nvz dedupar hela filer, inte chunkar |
+| deflate-ström tillbaka till rådata plus recept | precomp (Christian Schneider), preflate, reflate | smalare: nvz klarar bara strömmar som zlib självt har skrivit |
+| förlustfri JPEG-omkodning | packJPG (Matthias Stirner), Lepton (Dropbox, 2016), brunsli → JPEG XL | **sämre**: nvjpg ger −15,1 %, publicerade siffror för de andra ligger kring −20 till −22 % |
+| kontextblandning, logistisk mixer, APM/SSE | PAQ-familjen (Matt Mahoney), lpaq, zpaq, cmix | mindre modell: paq8px slår nvcm på enwik8, 15,8 mot 20,4 MB (3.4) |
+| innehållsmedvetet filterval per datatyp | FreeArc (Bulat Ziganshin), zpaq:s metodsträngar | samma tanke, annan mekanism: nvz väljer genom stickprov på data i stället för genom regel på filtyp |
+| omvandling verifierad i båda riktningarna före den används | precomp och Lepton gör samma sak | samma |
+
+Siffrorna för packJPG, Lepton, brunsli och paq8px är **publicerade värden,
+inte mätta här**; undantaget är paq8px på enwik8, som ingår i 3.4.
+
+Vad som återstår som eget är därmed inte en algoritm utan tre saker: att
+delarna sitter i ett verktyg med ett gemensamt arkivformat och en gemensam
+återskapningsgaranti; att valet mellan kodekar avgörs genom att prova på
+data i stället för att följa filändelsen; och mätningen i den här rapporten,
+inklusive motinstansen den hittade och rättade (4.2). nvz slår alltså inte
+informationsteorin, och gör ingenting ingen har gjort: den paketerar känd
+teknik och redovisar vad paketeringen är värd.
+
+### 7.1 Hur mycket kommer från sorteringen?
+
+Frågan går inte att besvara med ett arkiv i taget, eftersom knepen mäts ihop.
+`experiment/ablation.sh` håller därför **kompressorn konstant** — samma
+`xz −9e`, samma 64 MiB ordbok — och slår på ett knep i taget med flaggorna
+`--utan-sortering`, `--utan-klassning`, `--utan-dedup` och
+`--utan-omvandling`. Korpusen `kod` är 55 MiB och ryms helt inom ordboken i
+varje rad, så fönsterstorleken är inte en fri variabel: det som skiljer
+raderna är ordningen och ingenting annat.
+
+<!-- ABLATION -->
+
+**Ablation, korpus `kod` (55 MiB), kodek `xz −9e` genomgående.** Hela
+korpusen ryms i ordboken (64 MiB), så kompressorn ser varje fil från varje
+annan fil i varje rad:
+
+| steg | byte | mot tar | steget självt |
+|:--|--:|--:|--:|
+| tar i katalogordning (ingen nvz) | 8 611 308 | ±0 | — |
+| nvz, alla knep av | 8 673 944 | +0,73 % | +0,73 % |
+| + ett block per innehållsklass | 8 673 942 | +0,73 % | −0,00 % |
+| + sortering inom klassen | 8 676 765 | +0,76 % | +0,03 % |
+| + deduplicering | 8 675 644 | +0,75 % | −0,01 % |
+| + omvandlingar | 8 675 644 | +0,75 % | ±0 |
+
+**Ablation, korpus `png` (431 MiB), kodek `zstd −19 --long=27` genomgående:**
+
+| steg | byte | mot tar | steget självt |
+|:--|--:|--:|--:|
+| tar i katalogordning (ingen nvz) | 264 771 708 | ±0 | — |
+| nvz, alla knep av | 268 949 955 | +1,58 % | +1,58 % |
+| + ett block per innehållsklass | 268 949 973 | +1,58 % | ±0 |
+| + sortering inom klassen | 268 949 972 | +1,58 % | −0,00 % |
+| + deduplicering | 258 596 586 | −2,33 % | **−3,85 %** |
+| + omvandlingar (png/jpeg) | 227 591 646 | **−14,04 %** | **−11,99 %** |
+
+Resultatet är tydligt och delvis obekvämt. **Sorteringen mäter ±0 på båda
+korpusarna**, och klassindelningen likaså. Vad som mäter är omvandlingarna
+(−12,0 % på png) och dedupen där det finns dubbletter (−3,9 % på png, där
+28,7 % av byten är dubbletter; ±0 på kod, där 0,7 % är det). Därtill kostar
+nvz:s eget arkivlager +0,7 till +1,6 % i de rader där ingenting är påslaget —
+register, blockhuvuden och att blocken packas var för sig.
+
+Noll är emellertid inte samma sak som värdelös, och orsaken till nollan är
+inte sorteringen utan korpusarna: `png` har en enda filtyp, så sortering på
+(klass, ändelse, sökväg) ger samma ordning som katalogordningen redan hade,
+och `kod` ryms helt i ordboken. Ett riktigt projektträd har dessutom redan
+sina likheter samlade per katalog — `.py` ligger med `.py` i samma paket —
+så det finns ingen utspriddhet att åtgärda. Med `zstd −3` (2 MiB fönster) på
+samma kodkorpus mäter sorteringen till och med svagt negativt, +0,14 %:
+den bryter upp en lokalitet som katalogordningen redan gav.
+
+`experiment/sortering.sh` bygger därför det fall sorteringen finns för, av
+exakt samma data: samma 5 974 filer ur `korpus/kod`, kopierade till 200
+kataloger med slumpade namn (fast frö), så att katalogordningen förlorar all
+lokalitet medan innehållet är oförändrat.
+
+| ordning | `zstd −3` (2 MiB fönster) | `xz −9e` (64 MiB ordbok) |
+|:--|--:|--:|
+| tar i katalogordning | 13 926 644 | 8 977 616 |
+| nvz utan sortering | 13 945 434 | 9 066 545 |
+| nvz **med** sortering | **12 833 126** | **8 869 852** |
+| sorteringens värde | **−8,0 %** | **−2,2 %** |
+
+Där står svaret, och det ger invändningen rätt: sorteringens värde är en
+funktion av fönstret och av hur utspridda likheterna låg från början. Med ett
+litet fönster och utspridd likhet är den värd 8 %; med en ordbok som täcker
+hela korpusen 2,2 %; på korpusar som redan är ordnade, noll. nvz:s mätbara
+vinster på materialet i den här rapporten kommer alltså från omvandlingarna,
+från dedupen där dubbletter finns, och från nvcm i läget `liten` — **inte**
+från sorteringen.
+
+```
+bash experiment/ablation.sh kod xz9e
+bash experiment/ablation.sh png zstd19
+bash experiment/sortering.sh
+```
+
+<!-- SLUT ABLATION -->
+
+## 8. Begränsningar och vidare arbete
+
+Ordnade efter uppskattad avkastning. Posterna 1–3 och 8–10 kom ur mätningar
+gjorda 2026-11-18 med anledning av frågor i den offentliga diskussionen av
+arbetet; de bär ett mätvärde och inte bara en gissning.
+
+1. **Minnet skalar med hela trädet, inte med blocket.** Mätt på linuxkärnan
+   6.12 (1,48 GiB i 86 618 filer): toppminne 2,1 GiB i läge `normal` och
+   3,3 GiB i `liten` — 1,4 respektive 2,2 gånger rådata.
+   Python-implementationen strömmade varje block till en temporärfil;
+   C++-omskrivningen håller i stället varje blocks rådata i `Bygge::ra` till
+   dess blocket packas. Det största träd nvz kan packa är därmed ungefär
+   tillgängligt RAM delat med 1,4, och för PNG-tunga träd mindre än så,
+   eftersom en utvecklad PNG får vara upp till 150 gånger sin filstorlek
+   (`PNG_UPPBLASNING_TAK`). Åtgärd: låt `Bygge::ra` ligga i en temporärfil
+   som skrivs igenom och läses tillbaka strömmande i steg 5. Det tar bort
+   verktygets hårdaste gräns och är den enda posten på listan som påverkar
+   vad nvz alls klarar.
+
+2. **Standardläget är det mest extrema.** `liten` är standard. Mätt (3.2):
+   där `liten` vinner storlek kostar den 50–100 gånger längre uppackning —
+   kod 68 s mot 1 s för 12 % mindre arkiv, logg 203 s mot 2 s för 17 %,
+   enwik8 135 s mot 2 s för 14 %, Silesia 101 s mot 2 s för 6 %. Där den
+   inte vinner något kostar den heller ingenting: på png, foto, gif, film
+   och arkiv är `liten` och `normal` lika stora och lika snabba, eftersom
+   kodekprovet avvisar nvcm av sig själv. Avvägningen är alltså verklig och
+   fungerar som tänkt; invändningen gäller bara att standardvärdet gör
+   valet åt användaren. Åtgärd att överväga: `normal` som standard, med
+   `liten` som uttalat val.
+
+3. **Småfilsgolvet, och det är registret — inte kompressionen.** Ett tomt
+   arkiv är 175 byte (gzip: 25), och under ungefär 30 kB indata är nvz
+   större än `xz −9e`: +14,2 % vid 1 kB, +2,9 % vid 10 kB, −11,8 % vid
+   100 kB, −14,6 % vid 1 MiB (samma textfil, växande prefix). Uppdelningen
+   av ett 1 kB-fall visar var byten ligger:
+
+   | | byte |
+   |:--|--:|
+   | nvz, hela arkivet | 791 |
+   | &nbsp;&nbsp;varav komprimerad nyttolast | 616 |
+   | &nbsp;&nbsp;varav register och svans | 175 |
+   | `xz −9e`, hela filen | 696 |
+   | &nbsp;&nbsp;varav xz:s container (huvud, blockhuvud, index, svans) | ≈60 |
+
+   nvz:s **nyttolast är alltså 80 byte mindre än xz:s hela fil** — det är
+   registret som förlorar loppet, tre gånger xz:s container. De tjocka
+   posterna är objekthashen (16 råa byte, och för ett enda objekt finns
+   ingenting att deduplicera mot), tidsstämpeln som ISO-sträng (~20 byte),
+   klass- och kodeknamn som strängar i stället för nummer (~17), samt
+   svansen på 16 byte med två 64-bitarstal. Åtgärd: ett kompakt register
+   för enfilsarkiv. Det kräver ett v3-format, så det är ett formatbeslut och
+   inte en kodrättning: för att gå om xz vid 1 kB behöver registret ner till
+   omkring 60 byte, och de uppräknade posterna ger ungefär hälften.
+
+4. **Stickprovets blinda fläck — mätt 2026-11-18, delvis åtgärdad.**
+   Provet tar 4 MiB som åtta lösryckta bitar ur blocket. Konstruktionen är
+   riktig för att se vad datan *är* (2.2), men den river sönder den
+   långdistansstruktur som skiljer kodekerna: åtta bitar ur skilda delar av
+   blocket har inga upprepningar mellan sig. På ett 120 MiB-block ur
+   arkivkorpusen valde provet `zstd19` och fick 100,13 MiB, medan xz med
+   täckande ordbok gav 91,97 — **provet missade 8,2 %**.
+
+   En billig förhandssignal prövades och underkändes: `zstd −3`:s kvot på
+   provet mot samma kvot på hela blocket skiljer sig (1,016 respektive 1,025
+   på två block) men rangordnar dem fel, så den kan inte ersätta en mätning.
+   Åtgärden blev därför att i läget `liten` packa om hela blocket med xz när
+   provet valde något annat — men bara när provets försprång var tunt (under
+   8 %), eftersom en ovillkorlig verifiering tog enwik8 från 131 till 259
+   sekunder utan att spara en byte.
+
+   Kvar står att `normal` fortfarande litar på provet, och att tröskeln på
+   8 % är satt av två mätpunkter. Ett prov som växer med blockstorleken är
+   fortfarande omätt.
+
+5. **nvjpg ligger under känd teknik.** −15,1 % mot publicerade −20 till
+   −22 % för packJPG, Lepton och brunsli (7). Avståndet är ett
+   modelleringsavstånd: Lepton modellerar grannkoefficienter i två
+   dimensioner och över blockgränser, nvjpg i en. Därtill lämnas progressiv
+   JPEG rå.
+
+6. **PNG-täckningen slutar vid zlib.** Strömmar skrivna av zlib-ng,
+   libdeflate eller Chrome går inte att återskapa med nvz:s receptsökning.
+   preflate löser det allmänna fallet (7); att binda in det vidgar
+   täckningen utan att röra formatet.
+
+7. **GIF-omkodning** (4.4): samma konstruktion som nvjpg, tillämpad på
+   LZW-lagret.
+
+8. **Dedup på chunknivå i stället för filnivå.** Filnivå hittar ingenting i
+   roterade loggar, diskavbilder och versioner av samma fil, där innehållet
+   är förskjutet. Innehållsdefinierad chunkning är känd sedan LBFS (2001)
+   och används av borg och restic.
+
+9. **Blockstorleken var en kompileringskonstant** (`BLOCKTAK`, 192 MiB) och
+   är nu flaggan `--blocktak MiB`. Antalet block styr både parallelliteten
+   (ett block packas av en tråd, och på 24 trådar står halva maskinen stilla
+   när ett träd ger elva block) och kvoten (ett block är kompressorns
+   fönster). Mätt på PNG-korpusen i läge `normal`:
+
+   | blocktak | packtid | arkiv | mot 192 MiB |
+   |--:|--:|--:|--:|
+   | 192 MiB (standard) | 261 s | 218 956 236 | ±0 |
+   | 64 MiB | 201 s | 221 495 996 | **1,30× snabbare, +1,16 %** |
+   | 32 MiB | 137 s | 231 569 236 | **1,90× snabbare, +5,76 %** |
+
+   Avvägningen är alltså verklig och svagt konvex: de första stegen nedåt
+   köper mycket tid för nästan ingen storlek, och därefter blir storleken
+   dyr. Undantagsregeln för opaka block (4.2) står kvar och berörs inte av
+   flaggan. Om standardvärdet ska ändras är omätt — det beror på vad man
+   optimerar — men valet går nu att göra utan att bygga om.
+
+10. **Portabilitet.** POSIX-beroenden i C++-delen: `fork`, `pipe2`,
+    `/proc/self/exe` (fyra ställen), `lstat` (sju), `utimensat`, `dirent`,
+    `symlink`. macOS kräver `_NSGetExecutablePath` samt `pipe` med `fcntl`;
+    Windows kräver därtill att arbetarmodellen byter `fork`/`exec` mot
+    `CreateProcess` eller trådar, och ett avgörande om symlänkar och
+    rättigheter. I dag: Linux, eller WSL2 på Windows.
+
+11. **nvcm på opaka block:** läget `liten` sänder endast textklasser till
+    nvcm; huruvida opak data lönar sig är omätt.
+
+12. **AVX-512 finns i maskinen men används inte.** nvcm:s inre slinga är en
+    skalärprodukt över tio int16-vikter per bit plus tio tabellslag. VNNI
+    kan ta skalärprodukten, men tabellslagen är spridda och det är de som
+    sannolikt dominerar; posten står sist därför att vinsten är omätt och
+    kan vara noll.
+
+13. **Korpusen är hårdlänkad till levande arbetsträd** (5.4). Avtrycket i
+    `matning/matning.py` upptäcker nu när den rör sig, men den rätta
+    åtgärden är att frysa den: `python3 korpus/bygg-korpus.py --kopiera`,
+    följt av en ommätning av hela matrisen. Till dess bär varje tal mätt
+    före 2026-11-18 den osäkerheten.
+14. **Minnesbudgeten är inte deterministisk.** Ordbokens storlek — och
+    därmed både kvot och packtid — beror på hur mycket minne maskinen har
+    ledigt när nvz startar (4.5). Det gör mätningar beroende av annan last.
+    Åtgärd: sätt budgeten till en andel av maskinens TOTALA minne i stället
+    för det lediga, och redovisa andelen i rapporten.
+
+Utanför provningen: gits packfiler (samma receptansats som PNG, oprövad)
+samt GPU-läget — mätt separat med slutsatsen att LZ77-matchningen
+accelereras 2,5 gånger men att seriell entropikodning begränsar helheten
+(Amdahl; se README).
 
 ## Appendix A: Reproduktion
 
@@ -615,6 +1144,12 @@ python3 matning/matning.py <korpus>                   # arkivnivå, per korpus
 python3 matning/standardkorpus.py silesia enwik8      # kodeknivå, en tråd
 python3 prov/aterskapning.py gif arkiv logg film png foto kod
 bash prov/prova-allt.sh                               # kantfall, 44 prov
+python3 prov/slumpprov.py 400                         # slumpade träd, 400 rundor
+bash experiment/karntest.sh                           # linuxkärnan, md5 före/efter (3.7)
+bash experiment/corpora.sh                            # zlib-ng/corpora, åtta korpusar (3.8)
+bash experiment/ablation.sh kod xz9e                  # ett knep i taget (7.1)
+bash experiment/ablation.sh png zstd19
+bash experiment/sortering.sh                          # sorteringen mot fönsterstorleken (7.1)
 bash experiment/arkiv-fonster.sh                      # hypotesprövningen i 4.2
 python3 experiment/dubbletter.py
 python3 rapport/bred-provning.py                      # fyller tabellerna här
