@@ -1,0 +1,16 @@
+{
+ "harkomst": "experiment/sortering.sh — samma 5 974 filer ur korpus/kod i 200 slumpade kataloger, frö 20261118",
+ "rabyte": 58017251,
+ "filer": 5974,
+ "kataloger": 200,
+ "zstd3_2MiB_fonster": {
+  "tar": 13926644,
+  "utan_sortering": 13945434,
+  "med_sortering": 12833126
+ },
+ "xz9e_64MiB_ordbok": {
+  "tar": 8977616,
+  "utan_sortering": 9066545,
+  "med_sortering": 8869852
+ }
+}

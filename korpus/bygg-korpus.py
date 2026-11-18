@@ -19,7 +19,7 @@ HOPPA = {'node_modules', '.git', 'venv', '.venv', '__pycache__', '.cache',
 FARSKT = 900          # sekunder: nyare än så här = kan skrivas just nu
 
 
-def samla(mal: Path, kalla: Path, andelser, hoppa=HOPPA, kopiera=False,
+def samla(mal: Path, kalla: Path, andelser, hoppa=HOPPA, kopiera=False, farskt=True,
           bytetak=None, flytt=None) -> int:
     """Länkar (eller kopierar) filer under *kalla* som slutar på *andelser*.
 
@@ -46,7 +46,7 @@ def samla(mal: Path, kalla: Path, andelser, hoppa=HOPPA, kopiera=False,
     for kall in kandidater:
         try: st = kall.stat()
         except OSError: continue
-        if kopiera and nu - st.st_mtime < FARSKT: continue
+        if kopiera and farskt and nu - st.st_mtime < FARSKT: continue
         if bytetak is not None and summa + st.st_size > bytetak: continue
         dest = mal / kall.relative_to(kalla)
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -128,13 +128,23 @@ PLAN = {
                              {'kopiera': True, 'bytetak': 10*1024*1024})],
 }
 
-valda = sys.argv[1:] or list(PLAN)
+# --- att frysa korpusen -----------------------------------------------------
+# Hårda länkar sparar disk, men de gör korpusen LEVANDE: filen i korpus/kod
+# är samma inod som filen i arbetsträdet, så ett sparat dokument i en annan
+# flik ändrar korpusen mitt i en mätning. Det hände 2026-11-18 — tre filer i
+# korpus/kod/ullabella ändrades mellan packning och jämförelse, och
+# mätningen rapporterade "SKILJER" på ett arkiv som var felfritt.
+# Loggkorpusen har alltid kopierats av precis det skälet (se huvudet); med
+# --kopiera gäller det alla.
+FRYS = '--kopiera' in sys.argv
+valda = [a for a in sys.argv[1:] if not a.startswith('--')] or list(PLAN)
 for korpus in valda:
     if korpus not in PLAN:
         print(f'okänd korpus: {korpus}', file=sys.stderr); sys.exit(1)
     shutil.rmtree(HIT/korpus, ignore_errors=True)
     for mal, kalla, andelser, extra in PLAN[korpus]:
-        samla(HIT/mal, kalla, andelser, **extra)
+        samla(HIT/mal, kalla, andelser,
+              **({**extra, 'kopiera': True, 'farskt': False} if FRYS else extra))
     filer = [p for p in (HIT/korpus).rglob('*') if p.is_file()]
     byte = sum(p.stat().st_size for p in filer)
     print(f'{korpus:<6} {len(filer):>6} filer  {byte/1048576:>8.1f} MiB')

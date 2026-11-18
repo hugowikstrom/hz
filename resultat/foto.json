@@ -54,30 +54,30 @@
   },
   "nvz snabb": {
    "packare": "nvz snabb",
-   "byte": 428357630,
-   "packsek": 1.42,
-   "uppacksek": 0.59,
+   "byte": 428338962,
+   "packsek": 2.41,
+   "uppacksek": 0.56,
    "identisk": true
   },
   "nvz utan knep": {
    "packare": "nvz utan knep",
-   "byte": 426108506,
-   "packsek": 12.27,
-   "uppacksek": 0.6,
+   "byte": 426171112,
+   "packsek": 3.95,
+   "uppacksek": 0.58,
    "identisk": true
   },
   "nvz normal": {
    "packare": "nvz normal",
-   "byte": 361851970,
-   "packsek": 48.55,
-   "uppacksek": 17.35,
+   "byte": 361834581,
+   "packsek": 47.92,
+   "uppacksek": 17.62,
    "identisk": true
   },
   "nvz liten": {
    "packare": "nvz liten",
-   "byte": 361851970,
-   "packsek": 55.02,
-   "uppacksek": 16.85,
+   "byte": 361834581,
+   "packsek": 55.28,
+   "uppacksek": 16.54,
    "identisk": true
   },
   "tar.bz2 -9": {

@@ -1,0 +1,22 @@
+{
+ "harkomst": "nvz packa korpus/png --läge normal --blocktak N, tyst maskin 2026-11-18",
+ "korpus": "png",
+ "rabyte": 452014330,
+ "rader": [
+  {
+   "blocktak_mib": 192,
+   "packtid_s": 261,
+   "byte": 218956236
+  },
+  {
+   "blocktak_mib": 64,
+   "packtid_s": 201,
+   "byte": 221495996
+  },
+  {
+   "blocktak_mib": 32,
+   "packtid_s": 137,
+   "byte": 231569236
+  }
+ ]
+}

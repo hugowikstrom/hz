@@ -1,0 +1,41 @@
+{
+ "harkomst": "kodkorpusen, 58 017 251 B i 5 974 filer, varm cache",
+ "zip6": {
+  "byte": 16989215,
+  "ms": 2204
+ },
+ "zip9": {
+  "byte": 16914801,
+  "ms": 4361
+ },
+ "gzip6": {
+  "byte": 12895526,
+  "ms": 2197
+ },
+ "gzip9_pigz": {
+  "byte": 12748449,
+  "ms": 416
+ },
+ "zstd3": {
+  "byte": 11995155,
+  "ms": 176
+ },
+ "nvz_snabb": {
+  "byte": 11971416,
+  "ms": 740
+ },
+ "nvz_snabb_utan_kompression": {
+  "byte": 57876771,
+  "ms": 660
+ },
+ "en_enda_64MB_fil_utan_kompression_ms": 584,
+ "tar_cf_devnull_ms": 29,
+ "las_alla_filer_ms": 101,
+ "tradskalning_ms": {
+  "j1": 1500,
+  "j4": 889,
+  "j12": 791,
+  "j24": 775
+ },
+ "uppstart_tomt_trad_ms": 8
+}

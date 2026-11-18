@@ -1,0 +1,30 @@
+{
+ "version": "6.12",
+ "nedladdad_tar_xz": 147906904,
+ "rabyte": 1476500559,
+ "filer": 86618,
+ "nvz_normal": {
+  "byte": 141787458,
+  "packtid": 201
+ },
+ "nvz_liten": {
+  "byte": 123217795,
+  "packtid": 443
+ },
+ "tar_xz_9e": {
+  "byte": 140072812,
+  "packtid": 304
+ },
+ "tar_zst_19": {
+  "byte": 147274821,
+  "packtid": 117
+ },
+ "lzma2_extrem_7z": {
+  "byte": 141350334,
+  "packtid": 264
+ },
+ "uppacktid_liten": 439,
+ "md5_ok": 86618,
+ "md5_fel": 0,
+ "manifest_lika": "ja"
+}

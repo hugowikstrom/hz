@@ -1,0 +1,39 @@
+{
+ "harkomst": "gzip-ytan (nvz -k -c) mot xz -9e och gzip -9, samma textfil i växande prefix",
+ "tomt_arkiv": {
+  "nvz": 175,
+  "gzip": 25
+ },
+ "kolumner": [
+  "rabyte",
+  "nvz",
+  "xz9e",
+  "gzip9"
+ ],
+ "rader": [
+  [
+   1024,
+   813,
+   712,
+   627
+  ],
+  [
+   10240,
+   4983,
+   4844,
+   4890
+  ],
+  [
+   102400,
+   28615,
+   32440,
+   36053
+  ],
+  [
+   1048576,
+   247294,
+   289660,
+   359051
+  ]
+ ]
+}

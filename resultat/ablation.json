@@ -1,0 +1,46 @@
+{
+ "harkomst": "experiment/ablation.sh — kompressorn hålls konstant, ett knep slås på per rad",
+ "steg": [
+  "tar_i_katalogordning",
+  "inget",
+  "klass",
+  "sort",
+  "dedup",
+  "allt"
+ ],
+ "korningar": {
+  "kod_xz9e": {
+   "rabyte": 58017251,
+   "byte": [
+    8611308,
+    8673944,
+    8673942,
+    8676765,
+    8675644,
+    8675644
+   ]
+  },
+  "kod_zstd3": {
+   "rabyte": 58017251,
+   "byte": [
+    11992742,
+    11955438,
+    11962706,
+    11979399,
+    11972439,
+    11972439
+   ]
+  },
+  "png_zstd19": {
+   "rabyte": 452014330,
+   "byte": [
+    264771708,
+    268949955,
+    268949973,
+    268949972,
+    258596586,
+    227591646
+   ]
+  }
+ }
+}

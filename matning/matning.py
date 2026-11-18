@@ -5,7 +5,7 @@ Varje packare får samma korpus och mäts på tre tal: storlek, packtid, uppackt
 Utdata skrivs till resultat/<korpus>.json så att tabellerna kan byggas om utan
 att packa om. Allt som skrivs hamnar i skräpkatalogen, aldrig i korpusen.
 """
-import json, os, re, shutil, subprocess, sys, time
+import hashlib, json, os, re, shutil, subprocess, sys, time
 from pathlib import Path
 
 ROT = Path(__file__).resolve().parent.parent
@@ -39,6 +39,31 @@ def kor(cmd):
 def korpusbyte(k: Path):
     return sum(p.stat().st_size for p in k.rglob('*') if p.is_file())
 
+
+def avtryck(k: Path) -> str:
+    """Billigt avtryck av korpusen: sökväg, storlek och mtime per fil.
+
+    KORPUSEN KAN ÄNDRAS UNDER MÄTNINGEN. korpus/bygg-korpus.py hårdlänkar
+    (os.link) i stället för att kopiera, så nästan varje fil i kod, png,
+    foto, gif, film och arkiv är SAMMA inod som filen i det levande
+    arbetsträdet. Sparar någon ett dokument i en annan flik mitt i en
+    mätning ändras korpusen under nvz:s fötter, och den rekursiva
+    jämförelsen efteråt rapporterar "SKILJER" — ett fel som ser ut som en
+    korrekthetsmiss men är en mätartefakt. Det hände 2026-11-18: tre filer i
+    korpus/kod/ullabella ändrades mellan packning och jämförelse.
+
+    Avtrycket läser ingen filinnehåll, bara katalogposter, så det kostar
+    några millisekunder. Skiljer det sig före och efter är mätningen ogiltig
+    och ska göras om — inte tolkas."""
+    h = hashlib.blake2b(digest_size=16)
+    for q in sorted(k.rglob('*')):
+        try:
+            st = q.lstat()
+        except OSError:
+            continue
+        h.update(f'{q.relative_to(k)}|{st.st_size}|{st.st_mtime_ns}\n'.encode())
+    return h.hexdigest()
+
 def matning(korpus: Path, namn, kontrollera=True):
     SKRAP.mkdir(parents=True, exist_ok=True)
     slug = re.sub(r'[^a-z0-9]+', '-', namn.lower()).strip('-')
@@ -47,6 +72,7 @@ def matning(korpus: Path, namn, kontrollera=True):
     fallt = dict(k=str(korpus), kf=str(korpus.parent), kn=korpus.name, a=str(arkiv),
                  u=str(upp), nv=str(ROT/'src'/'nvz'))
     pack, uppack = (c.format(**fallt) for c in PACKARE[namn])
+    fore = avtryck(korpus)
     arkiv.unlink(missing_ok=True)
     tp = kor(pack)
     storlek = arkiv.stat().st_size
@@ -58,8 +84,15 @@ def matning(korpus: Path, namn, kontrollera=True):
                            capture_output=True, text=True)
         lika = (r.returncode == 0)
         if not lika: print('   AVVIKELSE:', r.stdout[:500], file=sys.stderr)
+    efter = avtryck(korpus)
+    stabil = (fore == efter)
+    if not stabil:
+        print(f'   KORPUSEN ÄNDRADES UNDER MÄTNINGEN ({namn}) — mätningen är ogiltig.\n'
+              f'   Korpusen är hårdlänkad till levande arbetsträd; frys den innan du mäter:\n'
+              f'   python3 korpus/bygg-korpus.py --kopiera', file=sys.stderr)
     shutil.rmtree(upp, ignore_errors=True); arkiv.unlink(missing_ok=True)
-    return dict(packare=namn, byte=storlek, packsek=round(tp,2), uppacksek=round(tu,2), identisk=lika)
+    return dict(packare=namn, byte=storlek, packsek=round(tp,2), uppacksek=round(tu,2),
+                identisk=lika, korpus_stabil=stabil)
 
 def main():
     korpus = ROT/'korpus'/sys.argv[1]

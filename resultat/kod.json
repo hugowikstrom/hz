@@ -1,6 +1,6 @@
 {
  "korpus": "kod",
- "rabyte": 58017251,
+ "rabyte": 58067560,
  "filer": 5974,
  "matningar": {
   "tar.gz -6": {
@@ -54,31 +54,35 @@
   },
   "nvz snabb": {
    "packare": "nvz snabb",
-   "byte": 11972443,
-   "packsek": 0.78,
-   "uppacksek": 0.2,
-   "identisk": true
+   "byte": 11895766,
+   "packsek": 1.12,
+   "uppacksek": 0.15,
+   "identisk": true,
+   "korpus_stabil": true
   },
   "nvz utan knep": {
    "packare": "nvz utan knep",
-   "byte": 8676764,
-   "packsek": 40.87,
-   "uppacksek": 0.61,
-   "identisk": true
+   "byte": 8581811,
+   "packsek": 39.56,
+   "uppacksek": 0.56,
+   "identisk": true,
+   "korpus_stabil": true
   },
   "nvz normal": {
    "packare": "nvz normal",
-   "byte": 8675609,
-   "packsek": 40.97,
-   "uppacksek": 0.64,
-   "identisk": true
+   "byte": 8580323,
+   "packsek": 39.63,
+   "uppacksek": 0.57,
+   "identisk": true,
+   "korpus_stabil": true
   },
   "nvz liten": {
    "packare": "nvz liten",
-   "byte": 7631675,
-   "packsek": 69.65,
-   "uppacksek": 68.01,
-   "identisk": true
+   "byte": 7553094,
+   "packsek": 68.33,
+   "uppacksek": 66.69,
+   "identisk": true,
+   "korpus_stabil": true
   },
   "tar.bz2 -9": {
    "packare": "tar.bz2 -9",

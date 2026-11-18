@@ -1,0 +1,115 @@
+{
+ "harkomst": "mätt 2026-11-18, 120 MiB ur korpus/arkiv (/tmp/dicttest/bit.bin, 125 829 120 B)",
+ "dict_svep": [
+  {
+   "flaggor": "xz -9e -T1 (64 MiB ordbok)",
+   "byte": 98700988,
+   "sek": 83
+  },
+  {
+   "flaggor": "xz -9e -T0 (64 MiB, flertrådad)",
+   "byte": 98700996,
+   "sek": 83
+  },
+  {
+   "flaggor": "dict=128MiB (täcker indatan)",
+   "byte": 96559784,
+   "sek": 73
+  },
+  {
+   "flaggor": "dict=192MiB",
+   "byte": 96559784,
+   "sek": 62
+  },
+  {
+   "flaggor": "dict=128MiB,pb=0",
+   "byte": 96433036,
+   "sek": null
+  },
+  {
+   "flaggor": "dict=128MiB,pb=0,lc=0",
+   "byte": null,
+   "sek": null
+  }
+ ],
+ "registret_kod": {
+  "ra": 840313,
+  "zstd19": 239053,
+  "zstd22": 239048,
+  "xz9e": 227048,
+  "v3_komprimerat": 153596,
+  "v3_ra": 769522
+ },
+ "eskaleringens_billiga_steg_gif": {
+  "rabyte": 28726715,
+  "zstd3": {
+   "byte": 14983720,
+   "ms": 68
+  },
+  "zstd19": {
+   "byte": 14868267,
+   "ms": 4388
+  },
+  "zstd22": {
+   "byte": 14867123,
+   "ms": 3856
+  }
+ },
+ "eskaleringens_billiga_steg_film": {
+  "rabyte": 562820616,
+  "zstd3": {
+   "byte": 559822824,
+   "ms": 1054
+  },
+  "zstd19": {
+   "byte": 557863118,
+   "ms": 55639
+  },
+  "zstd22": {
+   "byte": 557873791,
+   "ms": 264255
+  }
+ },
+ "png_normal_tidsresa": [
+  {
+   "skede": "före 2026-11-18",
+   "sek": 268,
+   "byte": 218956236
+  },
+  {
+   "skede": "täckande ordbok utan minneshänsyn",
+   "sek": 841,
+   "byte": 218818104
+  },
+  {
+   "skede": "ordbok mot budget/samtidighet",
+   "sek": 191,
+   "byte": 230457816
+  },
+  {
+   "skede": "prov per klass",
+   "sek": 178,
+   "byte": 230458100
+  },
+  {
+   "skede": "ordbok aldrig större än blocket, hela budgeten",
+   "sek": 129,
+   "byte": 230452176
+  }
+ ],
+ "neuro_ordning": {
+  "asl16_forst": 22468484,
+  "asl32_forst": 22030540,
+  "var_fil_for_sig": 22017548,
+  "tar_strommen": 22028824,
+  "nvcm_asl16_forst": 22243176,
+  "nvcm_asl32_forst": 22252528
+ },
+ "arkiv_korpusen": {
+  "zstd22": 254567277,
+  "lzma2_extrem_7z": 248636548,
+  "nvz_fore": 254310751,
+  "nvz_efter": 248531672,
+  "nvz_efter_sek": 188
+ }
+}
