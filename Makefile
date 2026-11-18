@@ -16,8 +16,18 @@ SPV = src/band.spv src/blake2b.spv src/matcher.spv
 all: src/nvz src/nvjpg src/nvcm $(if $(HAR_GPU),gpu,utan-gpu)
 
 # --- nvz: C++-binären -------------------------------------------------------
-src/cpp/%.o: src/cpp/%.cpp src/cpp/nvz.hpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+# Beroendena genereras av kompilatorn (-MMD -MP) och läses in nedan. Den
+# gamla regeln lydde `%.o: %.cpp src/cpp/nvz.hpp` och tog alltså bara hänsyn
+# till ETT huvud. Ett fält tillagt i `struct Val` i arkiv.hpp byggde då om
+# huvud.o och arkiv.o men inte yta.o, och binären länkades ihop av
+# objektfiler som var oense om strukturens layout: `nvz -t` kraschade med
+# SIGSEGV medan `nvz packa` fungerade. Felet hittades av prov/slumpprov.py
+# 2026-11-18 och var inte synligt i någon kompilatorvarning — därför står
+# förklaringen här och inte i en commit-rad.
+src/cpp/%.o: src/cpp/%.cpp
+	$(CXX) $(CXXFLAGS) -MMD -MP -c $< -o $@
+
+-include $(CPPOBJ:.o=.d)
 
 # nvcm.c och nvjpg.c kompileras som C och länkas in via wrappers som byter
 # bort deras main. De är samma filer som bygger de fristående binärerna.
