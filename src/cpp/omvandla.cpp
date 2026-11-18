@@ -126,6 +126,39 @@ Byte packa_om(const Byte &ra, const std::array<int,4> &r) {
     return ut;
 }
 
+// DEFLATE-MOTORNS AVTRYCK, och varför det behövs.
+//
+// Receptet är fyra zlib-parametrar, och det vilar på ett antagande som inte
+// håller: att de fyra bestämmer utströmmen. Det gör de inte — utdatan beror
+// på IMPLEMENTATIONEN. zlib och zlib-ng ger olika bytes för samma
+// parametrar, och zlib-ng är standard-libz på fler och fler distributioner.
+// Ted Lyngmo visade det i en kodgranskning 2026-11-18: ett arkiv packat mot
+// systemets zlib gick inte att packa upp mot zlib-ng.
+//
+// Avtrycket är beteendebaserat, inte en versionssträng: en fast provsträng
+// deflateras med fasta parametrar och utdatans crc32 blir avtrycket. Två
+// bibliotek som ger samma bytes är utbytbara oavsett vad de kallar sig, och
+// det är precis den egenskapen som spelar roll här.
+std::string motoravtryck() {
+    static const std::string avtryck = [] {
+        Byte prov;
+        for (int i = 0; i < 4096; i++)                 // deterministisk, inte slumpad
+            prov.push_back((u8)((i * 37 + (i >> 3) * 11) & 0xff));
+        for (const char *t = "nvz deflate probe "; *t; t++) prov.push_back((u8)*t);
+        u32 c = 0;
+        try {
+            Byte ut = packa_om(prov, {6, 15, 8, 0});
+            c = (u32)crc32(0, ut.data(), (uInt)ut.size());
+        } catch (...) { c = 0; }
+        const char *v = zlibVersion();
+        std::string rent;
+        for (const char *q = v; *q && rent.size() < 12; q++)
+            if (*q != ',' && *q != ';' && *q != ' ') rent.push_back(*q);
+        return strf("z%s-%08x", rent.c_str(), c);
+    }();
+    return avtryck;
+}
+
 std::array<int,4> tolka_recept(const std::string &s) {
     std::array<int,4> r{};
     if (sscanf(s.c_str(), "%d,%d,%d,%d", &r[0], &r[1], &r[2], &r[3]) != 4)
@@ -196,24 +229,41 @@ std::optional<Omvandlat> png_veckla_ut(const Byte &b, double uppblasningstak) {
 
     Omvandlat o;
     o.tr = "png";
-    o.recept = strf("%d,%d,%d,%d", (*recept)[0], (*recept)[1], (*recept)[2], (*recept)[3]);
+    // Femte fältet är motorns avtryck. Äldre recept har fyra fält och
+    // tolkas som förut, så formatet är oförändrat.
+    o.recept = strf("%d,%d,%d,%d,%s", (*recept)[0], (*recept)[1], (*recept)[2],
+                    (*recept)[3], motoravtryck().c_str());
     o.rest = std::move(skelett);
     o.kropp = std::move(ra);
     if (png_aterskapa(o.rest, o.kropp, o.recept) != b) return std::nullopt;  // ska inte hända
     return o;
 }
 
-Byte png_aterskapa(const Byte &skelett, const Byte &ra, const std::string &recept) {
-    Byte strom = packa_om(ra, tolka_recept(recept));
+namespace {
+
+// Sätter ihop PNG:en av skelett och ström, och VERIFIERAR varje IDAT-bit mot
+// skelettets egen CRC32 innan den godtas.
+//
+// Verifieringen är inte en försiktighetsåtgärd utan en nödvändighet. Den
+// gamla koden kopierade skelettets CRC-bytes rakt in i utdatan, så en ström
+// med rätt LÄNGD men fel bytes — vilket är precis vad en annan deflate-motor
+// kan ge — hade blivit en PNG med fel bilddata och en CRC som ser riktig ut.
+// Tyst korruption är det enda utfall en packare aldrig får ha, och det var
+// vad som fanns här. Nu blir samma fall ett nej.
+std::optional<Byte> satt_ihop(const Byte &skelett, const Byte &strom) {
     Byte ut(skelett.begin(), skelett.begin() + std::min<size_t>(8, skelett.size()));
     size_t i = 8, j = 0, n = skelett.size();
     while (i + 8 <= n) {
         size_t ln = be32(&skelett[i]);
         const u8 *typ = &skelett[i+4];
+        if (i + 12 + (memcmp(typ, "IDAT", 4) ? ln : 0) > n) return std::nullopt;
         ut.insert(ut.end(), skelett.begin() + i, skelett.begin() + i + 8);
         if (!memcmp(typ, "IDAT", 4)) {
-            if (j + ln > strom.size()) throw Fel("png: strömmen är för kort för skelettet");
-            ut.insert(ut.end(), strom.begin() + j, strom.begin() + j + ln);
+            if (j + ln > strom.size()) return std::nullopt;       // strömmen för kort
+            const u8 *data = strom.data() + j;
+            u32 c = (u32)crc32(crc32(0, typ, 4), data, (uInt)ln);
+            if (c != be32(&skelett[i + 8])) return std::nullopt;  // fel bytes
+            ut.insert(ut.end(), data, data + ln);
             j += ln;
             ut.insert(ut.end(), skelett.begin() + i + 8, skelett.begin() + i + 12);
             i += 12;
@@ -223,8 +273,52 @@ Byte png_aterskapa(const Byte &skelett, const Byte &ra, const std::string &recep
         }
         if (!memcmp(typ, "IEND", 4)) break;
     }
+    if (j != strom.size()) return std::nullopt;        // strömmen för lång
     ut.insert(ut.end(), skelett.begin() + i, skelett.end());
     return ut;
+}
+
+std::string recept_motor(const std::string &s) {
+    size_t k = 0;
+    for (int f = 0; f < 4; f++) {
+        k = s.find(',', k);
+        if (k == std::string::npos) return "";
+        k++;
+    }
+    return s.substr(k);
+}
+
+}  // namespace
+
+Byte png_aterskapa(const Byte &skelett, const Byte &ra, const std::string &recept) {
+    const std::array<int,4> r = tolka_recept(recept);
+    if (auto ut = satt_ihop(skelett, packa_om(ra, r))) return *ut;
+
+    // Receptet återskapade inte strömmen. Den här maskinens deflate-motor är
+    // alltså inte den som packade arkivet — men parametrarna i receptet är
+    // en egenskap hos FILEN, inte hos motorn, så en annan kombination kan
+    // råka ge samma bytes här. Sökningen är billig i förhållande till
+    // alternativet (ett arkiv som inte går att packa upp) och körs bara på
+    // felvägen. Fönsterstorleken varieras inte: den står i PNG:ens eget
+    // zlib-huvud och är densamma oavsett motor.
+    for (int niva = 9; niva >= 1; niva--)
+        for (int minne : {r[2], 9, 8, 7, 6, 5, 4, 3, 2, 1})
+            for (int strat : {r[3], 0, 1, 2, 3, 4}) {
+                if (niva == r[0] && minne == r[2] && strat == r[3]) continue;
+                std::array<int,4> k{niva, r[1], minne, strat};
+                try {
+                    if (auto ut = satt_ihop(skelett, packa_om(ra, k))) return *ut;
+                } catch (const std::exception &) { /* ogiltig kombination */ }
+            }
+
+    const std::string packad = recept_motor(recept);
+    throw Fel("png: den här maskinens deflate-motor (" + motoravtryck() +
+              ") återskapar inte bildströmmen" +
+              (packad.empty() ? std::string(" och arkivet säger inte vilken som packade det")
+                              : " — arkivet packades med " + packad) +
+              ". Packa upp på en maskin med samma motor, eller packa om "
+              "arkivet med --utan-omvandling. Ingen felaktig data har "
+              "skrivits: varje IDAT-bit kontrolleras mot sin CRC.");
 }
 
 std::optional<Omvandlat> jpeg_veckla_ut(const Byte &b) {

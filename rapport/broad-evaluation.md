@@ -937,6 +937,45 @@ was thin. The register is version 3 (5.3). All changes are backward
 compatible for READING — v1, v2 and v3 are read by the same binary — but a v3
 archive cannot be read by an nvz built before that day.
 
+5. **The boundary of the self-check, and three faults that lived outside
+   it.** A code review by Ted Lyngmo on 2026-11-18 found three flaws that
+   neither the test suite, the reconstruction tests nor the randomised test
+   could see, and they shared one cause: those tests pack and unpack ON THE
+   SAME MACHINE, in a successful flow, with readable files and free disk.
+
+   *The PNG recipe is not portable.* The recipe is four zlib parameters, and
+   the assumption that they determine the output stream does not hold — the
+   output depends on the implementation, and zlib-ng produces different
+   bytes than zlib. An archive packed against one could not be unpacked
+   against the other. Fixing it revealed something worse: `png_aterskapa`
+   copied the skeleton's CRC straight into the output, so a stream of the
+   right LENGTH but the wrong bytes would have produced a PNG with wrong
+   image data and a correct-looking CRC — silent corruption. Each IDAT chunk
+   is now verified against its CRC, the recipe carries a behavioural
+   fingerprint of the deflate engine (fixed probe string, crc32 of the
+   output), and on a miss the level, memory level and strategy are searched
+   again; the window is not varied, as it is stated in the file's own zlib
+   header. If the stream still cannot be reproduced, nvz refuses with both
+   fingerprints in the message. What remains is that a PNG-heavy archive may
+   need a machine with the same engine — that is the format's price and it
+   belongs where it can be seen.
+
+   *Write failures caused silent data loss.* No write in the archive path
+   was checked, and the gzip surface deletes the source after a successful
+   pack. A full disk therefore produced a truncated archive, exit status 0
+   and a deleted original. Every `fwrite`, `fflush` and `fclose` is now
+   checked, the file is `fsync`ed before closing, and an archive that did
+   not finish is removed. SIGXFSZ is deliberately ignored: gzip dies at 153
+   and never cleans up, while nvz gets EFBIG and returns 1.
+
+   *An unreadable file killed the process.* `nvz a b c` with b unreadable
+   escaped through `main` and died in `std::terminate` — SIGABRT, exit 134,
+   with a's original already deleted and c never processed. Each operand is
+   now caught on its own: warning, the rest are packed, exit status 1. That
+   is gzip's contract, measured on the same case.
+
+   All three are regression tests in `prov/brister.sh`.
+
 ## 7. Related work
 
 One objection raised in the public discussion of this work belongs in the

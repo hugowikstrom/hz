@@ -1,4 +1,7 @@
 #include "nvz.hpp"
+#include <cerrno>
+#include <cstring>
+#include <unistd.h>
 #include <cstdarg>
 #include <cstring>
 #include <algorithm>
@@ -119,11 +122,48 @@ Byte las_fil(const std::string &sokvag) {
     return d;
 }
 
+// VARJE SKRIVNING MÅSTE KONTROLLERAS, och det av ett skäl som är specifikt
+// för en packare med gzip-yta: den RADERAR originalet när packningen gått
+// bra. Om en skrivning tystnar — full disk, överskriden kvot, filtak — och
+// nvz ändå säger att allt gick väl, så raderas källan och arkivet är
+// stympat. Datan är då borta.
+//
+// Felet kom ur en kodgranskning av Ted Lyngmo 2026-11-18, som reproducerade
+// det under RLIMIT_FSIZE: arkivet stympat, slutstatus 0, originalet
+// raderat, och `nvz -d` efteråt "registret pekar utanför arkivet". Hans
+// jämförelse är den rätta: `gzip -c fil > /dev/full` ger 1, nvz gav 0.
+//
+// Tre fällor som helpern finns för. (i) fwrite buffrar, så ENOSPC syns ofta
+// först när bufferten töms — därför fflush före fclose, och felet läses
+// innan strömmen stängs. (ii) fclose frigör strömmen även när den
+// misslyckas, så ett fel som bara fclose ser går annars förlorat.
+// (iii) fsync: för en packare som raderar källan räcker det inte att
+// kärnan tagit emot byten, de ska ligga på disken. EINVAL tolereras för
+// mål som inte går att synka (rör, /dev/null).
+void skriv_sakert(FILE *f, const void *d, size_t n, const std::string &vad) {
+    if (n && fwrite(d, 1, n, f) != n)
+        throw Fel(vad + ": skrivningen misslyckades (" + std::strerror(errno) + ")");
+}
+
+void stang_sakert(FILE *f, const std::string &vad, bool synka) {
+    if (fflush(f) != 0) {
+        int e = errno; fclose(f);
+        throw Fel(vad + ": kunde inte tömma bufferten (" + std::strerror(e) + ")");
+    }
+    if (synka && fsync(fileno(f)) != 0 && errno != EINVAL && errno != ENOTTY) {
+        int e = errno; fclose(f);
+        throw Fel(vad + ": kunde inte synka till disk (" + std::strerror(e) + ")");
+    }
+    if (fclose(f) != 0)
+        throw Fel(vad + ": kunde inte stänga filen (" + std::strerror(errno) + ")");
+}
+
 void skriv_fil(const std::string &sokvag, const u8 *d, size_t n) {
     FILE *f = fopen(sokvag.c_str(), "wb");
     if (!f) throw Fel(sokvag + ": går inte att skriva");
-    if (n && fwrite(d, 1, n, f) != n) { fclose(f); throw Fel(sokvag + ": kort skrivning"); }
-    fclose(f);
+    try { skriv_sakert(f, d, n, sokvag); }
+    catch (...) { fclose(f); throw; }
+    stang_sakert(f, sokvag, true);
 }
 
 std::string strf(const char *fmt, ...) {

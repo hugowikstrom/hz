@@ -89,6 +89,10 @@ void blake2b128(const u8 *data, size_t n, u8 ut[16]);
 
 Byte las_fil(const std::string &sokvag);
 void skriv_fil(const std::string &sokvag, const u8 *d, size_t n);
+// Kontrollerade skrivningar: se kommentaren i verktyg.cpp. `synka` fsyncar
+// före stängning och ska vara sant för allt som en källfil raderas efter.
+void skriv_sakert(FILE *f, const void *d, size_t n, const std::string &vad);
+void stang_sakert(FILE *f, const std::string &vad, bool synka);
 
 // Formaterad std::string utan iostream-dans.
 std::string strf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));

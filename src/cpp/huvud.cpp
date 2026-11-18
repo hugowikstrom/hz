@@ -13,6 +13,7 @@
 // maskiner, inte människor, och står därför inte i hjälpen.
 #include "arkiv.hpp"
 #include "trad.hpp"
+#include <csignal>
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
@@ -74,6 +75,14 @@ int prova(const std::string &katalog, const nvz::Val &v) {
 }  // namespace
 
 int main(int argc, char **argv) {
+    // SIGXFSZ IGNORERAS MED FLIT. Signalen kommer när en skrivning spränger
+    // RLIMIT_FSIZE, och standardbeteendet är att processen dör — gzip gör
+    // det och slutar på 153. Då hinner ingen städning köras, och ett stympat
+    // arkiv ligger kvar som ser giltigt ut. Ignorerad i stället får
+    // skrivningen EFBIG, kontrollerna i skriv_sakert fångar den, det halva
+    // arkivet tas bort och slutstatusen blir 1 — nvz:s egen konvention för
+    // fel. En avsiktlig avvikelse från gzip, och den enda i felvägen.
+    signal(SIGXFSZ, SIG_IGN);
     if (argc < 2) return nvz::main_gzip(argc, argv);
     std::string kmd = argv[1];
 

@@ -142,8 +142,12 @@ bool far_skriva(const Flaggor &o, const std::string &mal, int *status) {
 
 void till_stdout(const std::string &p) {
     Byte d = las_fil(p);
-    fwrite(d.data(), 1, d.size(), stdout);
-    fflush(stdout);
+    // `nvz -c fil > /dev/full` gav slutstatus 0 innan den här kontrollen;
+    // gzip ger 1. Ett skrivfel till standard ut är ett fel, inte en varning.
+    skriv_sakert(stdout, d.data(), d.size(), "standard ut");
+    if (fflush(stdout) != 0)
+        throw Fel(std::string("standard ut: skrivningen misslyckades (")
+                  + std::strerror(errno) + ")");
 }
 
 void kvot(const Flaggor &o, const std::string &fran, u64 ra, u64 packat,
@@ -364,8 +368,8 @@ int strom(const Flaggor &o) {
         if (!u) { rmdir(mall); return fel("kunde inte skriva arbetsytan"); }
         u8 buf[1 << 16];
         size_t r;
-        while ((r = fread(buf, 1, sizeof buf, stdin)) > 0) fwrite(buf, 1, r, u);
-        fclose(u);
+        while ((r = fread(buf, 1, sizeof buf, stdin)) > 0) skriv_sakert(u, buf, r, inne);
+        stang_sakert(u, inne, true);
     }
     int status = 0;
     try {
@@ -487,7 +491,16 @@ int main_gzip(int argc, char **argv) {
     std::vector<std::string> alla;
     utvidga(o, filer, o.d, alla);
     for (const std::string &p : alla) {
-        int s = o.d ? packa_upp_operand(o, p) : packa_operand(o, p);
+        // EN OPERAND SOM FALLER SKA INTE TA MED SIG RESTEN. Utan den här
+        // fångsten gick ett undantag ur packa_operand hela vägen ut genom
+        // main och processen dog i std::terminate: `nvz a.txt b.txt c.txt`
+        // med b.txt oläsbar gav SIGABRT och core dump (slutstatus 134), med
+        // a.txt redan packad och raderad och c.txt aldrig behandlad.
+        // Felet kom ur Ted Lyngmos kodgranskning 2026-11-18. gzips kontrakt
+        // är mätt på samma fall: varning, resten packas, slutstatus 1.
+        int s;
+        try { s = o.d ? packa_upp_operand(o, p) : packa_operand(o, p); }
+        catch (const std::exception &e) { s = fel(p + ": " + e.what()); }
         status = std::max(status, s);
     }
     return status;

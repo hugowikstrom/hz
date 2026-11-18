@@ -708,12 +708,21 @@ u64 packa(const std::string &rot_in, const std::string &arkiv, const Val &v) {
     // --- 6. skriv arkivet ---------------------------------------------------
     FILE *ut = fopen(arkiv.c_str(), "wb");
     if (!ut) throw Fel(arkiv + ": går inte att skriva");
-    fwrite(MAGI, 1, sizeof MAGI, ut);
+    // Varje skrivning kontrolleras, och ett arkiv som inte blev färdigt
+    // tas bort i stället för att ligga kvar som ett stympat arkiv som ser
+    // giltigt ut. Se kommentaren vid skriv_sakert i verktyg.cpp: gzip-ytan
+    // raderar källan efter en lyckad packning, så "lyckad" måste betyda att
+    // byten ligger på disk.
+    struct Stad {
+        const std::string &namn; FILE *f; bool klar = false;
+        ~Stad() { if (!klar) { if (f) fclose(f); unlink(namn.c_str()); } }
+    } stad{arkiv, ut};
+    skriv_sakert(ut, MAGI, sizeof MAGI, arkiv);
     u64 pos = sizeof MAGI;
     for (size_t k = 0; k < block.size(); k++) {
         block[k].b.off = pos;
         block[k].b.clen = packade[k].size();
-        fwrite(packade[k].data(), 1, packade[k].size(), ut);
+        skriv_sakert(ut, packade[k].data(), packade[k].size(), arkiv);
         pos += packade[k].size();
         Byte().swap(packade[k]);
     }
@@ -738,12 +747,13 @@ u64 packa(const std::string &rot_in, const std::string &arkiv, const Val &v) {
     Byte regz = komprimera("zstd19", rad.data(), rad.size(), jobb);
     Byte regx = komprimera("xz9e", rad.data(), rad.size(), jobb);
     const Byte &regp = regx.size() < regz.size() ? regx : regz;
-    fwrite(regp.data(), 1, regp.size(), ut);
+    skriv_sakert(ut, regp.data(), regp.size(), arkiv);
     u8 svans[16];
     for (int i = 0; i < 8; i++) svans[i] = (u8)(pos >> (8*i));
     for (int i = 0; i < 8; i++) svans[8+i] = (u8)(rad.size() >> (8*i));
-    fwrite(svans, 1, 16, ut);
-    fclose(ut);
+    skriv_sakert(ut, svans, 16, arkiv);
+    stang_sakert(ut, arkiv, true);
+    stad.f = nullptr; stad.klar = true;
 
     u64 byte = filstorlek(arkiv);
     double sek = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();

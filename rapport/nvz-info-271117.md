@@ -876,6 +876,43 @@ om på hela blocket när stickprovets försprång var tunt. Registret är versio
 läses av samma binär — men ett v3-arkiv kan inte läsas av en nvz byggd före
 den dagen.
 
+5. **Kontrollens gräns, och tre fel som bodde utanför den.** En
+   kodgranskning av Ted Lyngmo 2026-11-18 hittade tre brister som varken
+   provsviten, återskapningsproven eller slumpprovet kunde se, och de hade
+   samma orsak: proven packar och packar upp PÅ SAMMA MASKIN, i ett lyckat
+   flöde, med läsbara filer och ledig disk.
+
+   *PNG-receptet är inte portabelt.* Receptet är fyra zlib-parametrar, och
+   antagandet att de bestämmer utströmmen håller inte — utdatan beror på
+   implementationen, och zlib-ng ger andra bytes än zlib. Ett arkiv packat
+   mot den ena gick inte att packa upp mot den andra. Vid åtgärden visade
+   det sig vara värre: `png_aterskapa` kopierade skelettets CRC rakt in i
+   utdatan, så en ström med rätt LÄNGD men fel bytes hade blivit en PNG med
+   fel bilddata och en korrekt CRC — tyst korruption. Nu verifieras varje
+   IDAT-bit mot sin CRC, receptet bär ett beteendebaserat avtryck av
+   deflate-motorn (fast provsträng, crc32 på utdatan), och vid miss söks
+   nivå, minnesnivå och strategi om; fönstret varieras inte, det står i
+   filens eget zlib-huvud. Återskapas strömmen ändå inte vägrar nvz med
+   båda avtrycken i felet. Kvar står att ett PNG-tungt arkiv kan behöva en
+   maskin med samma motor — det är formatets pris och det ska stå där det
+   syns.
+
+   *Skrivfel gav tyst dataförlust.* Ingen skrivning i arkivvägen
+   kontrollerades, och gzip-ytan raderar källan efter en lyckad packning.
+   Full disk gav alltså stympat arkiv, slutstatus 0 och raderat original.
+   Nu kontrolleras varje `fwrite`, `fflush` och `fclose`, det `fsync`:as
+   före stängning, och ett arkiv som inte blev färdigt tas bort. SIGXFSZ
+   ignoreras med flit: gzip dör på 153 och hinner inte städa, nvz får EFBIG
+   och ger 1.
+
+   *En oläsbar fil dödade processen.* `nvz a b c` med b oläsbar gick ur
+   genom `main` och dog i `std::terminate` — SIGABRT, slutstatus 134, med
+   a:s original redan raderat och c aldrig behandlad. Nu fångas varje
+   operand för sig: varning, resten packas, slutstatus 1. Det är gzips
+   kontrakt, mätt på samma fall.
+
+   Alla tre är regressionsprov i `prov/brister.sh`.
+
 ## 7. Förarbete
 
 En invändning i den offentliga diskussionen om det här arbetet förtjänar att
