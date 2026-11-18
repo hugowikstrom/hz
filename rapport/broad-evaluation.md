@@ -41,9 +41,13 @@ In summary:
 
 The initially measured deviation from H1 (+20.0 % on the corpus of
 already-compressed archives) was diagnosed as the codec probe's sample
-selection, remedied during the evaluation, and re-measured: with the rule
-of section 4.2, nvz is 0.1 % *smaller* than the best classical tool there
-as well. H1 thus stands without a known counterexample in this material.
+selection, remedied during the evaluation, and re-measured to −0.1 %
+against zstd −22. A complementary measurement against LZMA2 at full
+strength (7-Zip, 512 MiB dictionary; section 3.6) moves the reference,
+however: there nvz trails by +2.3 % on that corpus, while its lead on
+text rather grows. H1 thus stands with one known, quantified
+counterexample — archives-of-archives against LZMA2-extreme — and none
+elsewhere.
 
 ## 1. Introduction
 
@@ -397,6 +401,35 @@ therefore reports MiB/s of raw data through the wall clock.
 *MiB per second, raw data through the wall clock.*
 
 <!-- SLUT TIDER -->
+
+### 3.6 LZMA2 at full strength
+
+`xz −9e` in the tables above is LZMA2 with a 64 MiB dictionary. The
+format's full form is a different opponent: 7-Zip at `-mx=9` with a
+**512 MiB dictionary** and solid archive — the dictionary then covers
+each corpus in full except video, the same playing field as nvz's large
+blocks. The comparison ran as complete cycles
+(`experiment/lzma2-extrem.sh`), no filters, LZMA2 alone against nvz in
+its default mode:
+
+<!-- LZMA2 -->
+
+| corpus | raw MiB | LZMA2-extreme MiB | nvz MiB | nvz vs. LZMA2-extreme | pack time LZMA2/nvz | exact |
+|:--|--:|--:|--:|--:|--:|:-:|
+| Source code | 55 | 8.22 | **7.28** | −11.4 % | 19 / 70 s | yes |
+| Loggfiles | 238 | 14.16 | **10.03** | −29.2 % | 70 / 196 s | yes |
+| Arkiv (zip/tar.gz) | 392 | 237.12 | 242.53 | +2.3 % | 43 / 195 s | yes |
+| Images (PNG) | 431 | 242.99 | **208.81** | −14.1 % | 40 / 268 s | yes |
+| Silesia | 202 | 46.43 | **43.54** | −6.2 % | 78 / 102 s | yes |
+| enwik8 | 95 | 23.65 | **20.43** | −13.6 % | 79 / 132 s | yes |
+
+<!-- SLUT LZMA2 -->
+
+Two observations. nvz's lead on text persists against even the strongest
+LZMA2 form — context mixing collects what a larger dictionary cannot. On
+the archive corpus, however, LZMA2 at full strength beats zstd −22 and
+thus becomes **the new best classical reference there: nvz trails by
++2.3 %**. 7-Zip also packs consistently faster (multithreaded LZMA2).
 
 ## 4. Analysis
 

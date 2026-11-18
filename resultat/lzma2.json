@@ -1,1 +1,92 @@
-{}
+{
+ "kod": {
+  "rabyte": 58017251,
+  "lzma2": {
+   "byte": 8615152,
+   "exakt": true,
+   "packsek": 18.6,
+   "uppacksek": 0.8
+  },
+  "nvz": {
+   "byte": 7631675,
+   "exakt": true,
+   "packsek": 69.5,
+   "uppacksek": 67.9
+  }
+ },
+ "logg": {
+  "rabyte": 249896132,
+  "lzma2": {
+   "byte": 14843130,
+   "exakt": true,
+   "packsek": 70.1,
+   "uppacksek": 1.6
+  },
+  "nvz": {
+   "byte": 10513624,
+   "exakt": true,
+   "packsek": 195.8,
+   "uppacksek": 205.0
+  }
+ },
+ "arkiv": {
+  "rabyte": 410833681,
+  "lzma2": {
+   "byte": 248636548,
+   "exakt": true,
+   "packsek": 43.2,
+   "uppacksek": 7.6
+  },
+  "nvz": {
+   "byte": 254310751,
+   "exakt": true,
+   "packsek": 194.8,
+   "uppacksek": 1.4
+  }
+ },
+ "png": {
+  "rabyte": 452014330,
+  "lzma2": {
+   "byte": 254796477,
+   "exakt": true,
+   "packsek": 39.5,
+   "uppacksek": 8.3
+  },
+  "nvz": {
+   "byte": 218955645,
+   "exakt": true,
+   "packsek": 268.2,
+   "uppacksek": 9.4
+  }
+ },
+ "silesia": {
+  "rabyte": 211938580,
+  "lzma2": {
+   "byte": 48688242,
+   "exakt": true,
+   "packsek": 77.9,
+   "uppacksek": 2.9
+  },
+  "nvz": {
+   "byte": 45659868,
+   "exakt": true,
+   "packsek": 101.6,
+   "uppacksek": 101.0
+  }
+ },
+ "enwik8": {
+  "rabyte": 100000000,
+  "lzma2": {
+   "byte": 24799514,
+   "exakt": true,
+   "packsek": 78.9,
+   "uppacksek": 1.4
+  },
+  "nvz": {
+   "byte": 21417365,
+   "exakt": true,
+   "packsek": 132.1,
+   "uppacksek": 134.8
+  }
+ }
+}

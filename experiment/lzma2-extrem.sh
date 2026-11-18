@@ -60,7 +60,7 @@ for k in "${korpusar[@]}"; do
                  "$bnv" "$oknv" "$t4" "$t5" "$t6" "$t7" <<'PY'
 import json, sys, pathlib
 p = pathlib.Path(sys.argv[1]); d = json.loads(p.read_text())
-(_, k, ra, b7, ok7, t0, t1, t2, t3, bnv, oknv, t4, t5, t6, t7) = sys.argv
+(k, ra, b7, ok7, t0, t1, t2, t3, bnv, oknv, t4, t5, t6, t7) = sys.argv[2:]
 d[k] = dict(rabyte=int(ra),
             lzma2=dict(byte=int(b7), exakt=ok7 == 'true',
                        packsek=round(float(t1)-float(t0), 1),

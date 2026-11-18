@@ -233,6 +233,26 @@ def enwik8_plats() -> str:
     return ' '.join(rader[:2]) + '\n' + rader[-1]
 
 
+def lzma2() -> str:
+    f = ROT / 'resultat' / 'lzma2.json'
+    if not f.exists(): return '*(lzma2-jämförelsen inte körd)*'
+    d = json.loads(f.read_text())
+    NAMN = {'kod': 'Programkod', 'logg': 'Loggfiler', 'arkiv': 'Arkiv (zip/tar.gz)',
+            'png': 'Bilder (PNG)', 'silesia': 'Silesia', 'enwik8': 'enwik8'}
+    ut = ['| korpus | rå MiB | LZMA2-extrem MiB | nvz MiB | nvz mot LZMA2-extrem | packtid LZMA2/nvz | exakt |',
+          '|:--|--:|--:|--:|--:|--:|:-:|']
+    for k, v in d.items():
+        l, n = v['lzma2'], v['nvz']
+        diff = 100 * (n['byte'] - l['byte']) / l['byte']
+        difftext = ('+' if diff >= 0 else '−') + tal(abs(diff), 1) + ' %'
+        vikt = '**' if n['byte'] < l['byte'] else ''
+        ut.append(f'| {NAMN.get(k, k)} | {tal(v["rabyte"]/MIB, 0)} | '
+                  f'{tal(l["byte"]/MIB)} | {vikt}{tal(n["byte"]/MIB)}{vikt} | {difftext} | '
+                  f'{l["packsek"]:.0f} / {n["packsek"]:.0f} s | '
+                  f'{"ja" if l["exakt"] and n["exakt"] else "NEJ"} |')
+    return '\n'.join(ut)
+
+
 def tider() -> str:
     """Genomströmning i MiB/s, för att tid ska gå att jämföra mellan korpusar."""
     ut = ['| korpus | nvz normal pack | nvz normal upp | zstd -3 pack '
@@ -302,7 +322,7 @@ def till_engelska(block: str) -> str:
         ('stjärnkatalog, binär', 'star catalogue, binary'),
         ('ordbok, text', 'dictionary, text'), ('röntgenbild, 16-bitars', 'X-ray, 16-bit'),
         ('| fil |', '| file |'), ('innehåll |', 'contents |'),
-        ('rå byte', 'raw bytes'), ('nvcm mot bäst', 'nvcm vs. best'),
+        ('rå byte', 'raw bytes'), ('nvcm mot bäst', 'nvcm vs. best'), ('nvz mot LZMA2-extrem', 'nvz vs. LZMA2-extreme'), ('LZMA2-extrem MiB', 'LZMA2-extreme MiB'), ('packtid LZMA2/nvz', 'pack time LZMA2/nvz'),
         ('upp MiB/s', 'unpack MiB/s')]
     for a, b in ORD:
         t = t.replace(a, b)
@@ -320,6 +340,7 @@ def main():
     r.infoga(md, standard(), 'STANDARD')
     r.infoga(md, silesia_per_fil(), 'SILESIA-PER-FIL')
     r.infoga(md, enwik8_plats(), 'ENWIK8-PLATS')
+    r.infoga(md, lzma2(), 'LZMA2')
     print(f'{md} uppdaterad')
     en = ROT / 'rapport' / 'broad-evaluation.md'
     if en.exists():
@@ -332,6 +353,7 @@ def main():
         r.infoga(en, till_engelska(standard()), 'STANDARD')
         r.infoga(en, till_engelska(silesia_per_fil()), 'SILESIA-PER-FIL')
         r.infoga(en, till_engelska(enwik8_plats()), 'ENWIK8-PLATS')
+        r.infoga(en, till_engelska(lzma2()), 'LZMA2')
         print(f'{en} uppdaterad')
 
 

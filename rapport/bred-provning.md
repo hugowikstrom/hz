@@ -39,9 +39,12 @@ I sammandrag:
 
 Den ursprungligen uppmätta avvikelsen från H1 (+20,0 % på korpusen av
 redan komprimerade arkiv) felsöktes till kodekprovets stickprovsurval,
-åtgärdades under provningen och ommättes: med regelvalet i avsnitt 4.2 är
-nvz 0,1 % *mindre* än bästa klassiska verktyg även där. H1 står därmed
-utan känd motinstans i materialet.
+åtgärdades under provningen och ommättes till −0,1 % mot zstd −22.
+En kompletterande mätning mot LZMA2:s maxform (7-Zip, 512 MiB ordbok;
+avsnitt 3.6) flyttar dock referensen: där ligger nvz +2,3 % efter på just
+den korpusen, medan försprånget på text snarare växer. H1 står därmed
+med en känd, kvantifierad motinstans — arkiv-av-arkiv mot LZMA2-extrem —
+och utan motinstans i övrigt.
 
 ## 1. Inledning
 
@@ -393,6 +396,34 @@ därför MiB/s rådata genom väggklockan.
 *MiB per sekund, rådata genom väggklockan.*
 
 <!-- SLUT TIDER -->
+
+### 3.6 LZMA2 i maxform
+
+`xz −9e` i tabellerna ovan är LZMA2 med 64 MiB ordbok. Formatets maxform
+är en annan motståndare: 7-Zip med `-mx=9`, **512 MiB ordbok** och solid
+arkiv — ordboken täcker då hela varje korpus utom film, samma spelplan
+som nvz:s stora block. Jämförelsen kördes som hel rundgång
+(`experiment/lzma2-extrem.sh`), inga filter, enbart LZMA2 mot nvz i
+standardläget:
+
+<!-- LZMA2 -->
+
+| korpus | rå MiB | LZMA2-extrem MiB | nvz MiB | nvz mot LZMA2-extrem | packtid LZMA2/nvz | exakt |
+|:--|--:|--:|--:|--:|--:|:-:|
+| Programkod | 55 | 8,22 | **7,28** | −11,4 % | 19 / 70 s | ja |
+| Loggfiler | 238 | 14,16 | **10,03** | −29,2 % | 70 / 196 s | ja |
+| Arkiv (zip/tar.gz) | 392 | 237,12 | 242,53 | +2,3 % | 43 / 195 s | ja |
+| Bilder (PNG) | 431 | 242,99 | **208,81** | −14,1 % | 40 / 268 s | ja |
+| Silesia | 202 | 46,43 | **43,54** | −6,2 % | 78 / 102 s | ja |
+| enwik8 | 95 | 23,65 | **20,43** | −13,6 % | 79 / 132 s | ja |
+
+<!-- SLUT LZMA2 -->
+
+Två observationer. nvz:s försprång på text består mot även den starkaste
+LZMA2-formen — kontextblandningen tar hem det en större ordbok inte kan.
+På arkivkorpusen är LZMA2-maxformen däremot starkare än zstd −22 och
+därmed **den nya bästa klassiska referensen där: nvz ligger +2,3 % efter**.
+7-Zip är dessutom genomgående snabbare i packning (flertrådad LZMA2).
 
 ## 4. Analys
 
