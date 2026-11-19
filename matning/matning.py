@@ -78,7 +78,7 @@ def matning(korpus: Path, namn, kontrollera=True):
     arkiv = SKRAP / f'prov-{slug}.ark'
     upp = SKRAP / 'upp'
     fallt = dict(k=str(korpus), kf=str(korpus.parent), kn=korpus.name, a=str(arkiv),
-                 u=str(upp), nv=str(ROT/'src'/'nvz'))
+                 u=str(upp), nv=str(ROT/'src'/'hz'))
     pack, uppack = (c.format(**fallt) for c in PACKARE[namn])
     fore = avtryck(korpus)
     arkiv.unlink(missing_ok=True)

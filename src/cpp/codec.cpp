@@ -494,7 +494,7 @@ std::string choose_codec(const u8 *d, size_t n, bool with_cm, bool with_gpu, int
     // sample".
     if (xz_margin) *xz_margin = xb ? (double)(xb - best) / (double)xb : 0.0;
 
-    // Three outcomes, not two — see the comment in src/nvz.py: half a
+    // Three outcomes, not two — see the comment in src/hz.py: half a
     // percent of 2.9 GB of film is fourteen megabytes, and a cheap codec
     // takes them for free.
     if ((double)best > pn * 0.998) return "ra";

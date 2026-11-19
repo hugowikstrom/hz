@@ -4,7 +4,7 @@
  *
  *     nvjpg pack   < image.jpg > image.nvj     exit 2 = cannot, store raw
  *     nvjpg unpack < image.nvj > image.jpg
- *     (the old names packa|packaupp remain as aliases; nvz runs nvjpg as a
+ *     (the old names packa|packaupp remain as aliases; hz runs nvjpg as a
  *     worker process)
  *
  * A JPEG is DCT coefficients Huffman-coded with tables carried in the

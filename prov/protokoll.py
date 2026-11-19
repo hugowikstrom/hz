@@ -33,7 +33,7 @@ import hashlib, json, os, shutil, subprocess, sys, time
 from pathlib import Path
 
 ROT = Path(__file__).resolve().parent.parent
-NVZ = ROT / 'src' / 'nvz'
+HZ = ROT / 'src' / 'hz'
 UT = ROT / 'resultat' / 'protokoll'
 SKRAP = Path(os.environ.get('NVPACK_SKRAP', ROT / '.skrap')) / 'protokoll'
 
@@ -80,14 +80,14 @@ def protokollfora(namn: str) -> dict:
 
     print(f'{namn}: packar (läge liten) ...', flush=True)
     t0 = time.monotonic()
-    kor([NVZ, 'packa', str(korpus), str(arkiv), '-q'])
+    kor([HZ, 'packa', str(korpus), str(arkiv), '-q'])
     packsek = round(time.monotonic() - t0, 1)
     arkivbyte = arkiv.stat().st_size
     arkivmd5 = md5_fil(arkiv)
 
     print(f'{namn}: packar upp ...', flush=True)
     t0 = time.monotonic()
-    kor([NVZ, 'packa-upp', str(arkiv), str(upp), '-q'])
+    kor([HZ, 'packa-upp', str(arkiv), str(upp), '-q'])
     uppsek = round(time.monotonic() - t0, 1)
 
     print(f'{namn}: manifest efter ...', flush=True)
@@ -125,7 +125,7 @@ def main():
     UT.mkdir(parents=True, exist_ok=True)
     data = json.loads(utfil.read_text()) if utfil.exists() else {}
     data['maskin'] = 'Ryzen AI 9 HX 470, 24 trådar, NVMe'
-    data['nvz'] = subprocess.run([NVZ, '--version'], capture_output=True,
+    data['nvz'] = subprocess.run([HZ, '--version'], capture_output=True,
                                  text=True).stdout.strip()
     data['datum'] = time.strftime('%Y-%m-%d %H:%M')
     data.setdefault('korpusar', {})

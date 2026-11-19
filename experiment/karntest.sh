@@ -16,7 +16,7 @@
 set -euo pipefail
 export LC_ALL=C
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-NVZ="$ROOT/src/hz"
+HZ="$ROOT/src/hz"
 WORK="${1:-${NVPACK_SKRAP:-$ROOT/.skrap}/karntest}"
 VER="${KARNA_VERSION:-6.12}"
 URL="https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-$VER.tar.xz"
@@ -35,15 +35,15 @@ RAW=$(du -sb kernel | cut -f1)
 echo "manifest before ($FILES files)"
 ( cd kernel && find . -type f -print0 | sort -z | xargs -0 -P "$(nproc)" -n 200 md5sum ) | sort -k2 > before.md5
 
-echo "nvz --mode normal"; TN=$(t "$NVZ" pack kernel nvz-normal.nvz --mode normal -q); SN=$(stat -c%s nvz-normal.nvz)
-echo "nvz --mode small";  TS=$(t "$NVZ" pack kernel nvz-small.nvz  --mode small  -q); SS=$(stat -c%s nvz-small.nvz)
+echo "nvz --mode normal"; TN=$(t "$HZ" pack kernel nvz-normal.nvz --mode normal -q); SN=$(stat -c%s nvz-normal.nvz)
+echo "nvz --mode small";  TS=$(t "$HZ" pack kernel nvz-small.nvz  --mode small  -q); SS=$(stat -c%s nvz-small.nvz)
 echo "tar.xz -9e";        TX=$(t bash -c 'tar -cf - kernel | xz -9e -T0 -c > ref.tar.xz'); SX=$(stat -c%s ref.tar.xz)
 echo "tar.zst -19";       TZ=$(t bash -c 'tar -cf - kernel | zstd -19 --long=27 -T0 -q -o ref.tar.zst -f'); SZ=$(stat -c%s ref.tar.zst)
 echo "7z LZMA2 -mx=9, 512 MiB dictionary, solid"
 rm -f ref.7z; T7=$(t 7z a -t7z -m0=LZMA2 -mx=9 -md=512m -ms=on -mmt="$(nproc)" ref.7z kernel); S7=$(stat -c%s ref.7z)
 
 echo "unpacking nvz-small and checking with md5sum -c"
-rm -rf out; mkdir out; TU=$(t "$NVZ" unpack nvz-small.nvz out)
+rm -rf out; mkdir out; TU=$(t "$HZ" unpack nvz-small.nvz out)
 CHECK=$( cd out/kernel && md5sum -c "$WORK/before.md5" 2>&1 | grep -c ': OK$' || true )
 BAD=$( cd out/kernel && md5sum -c "$WORK/before.md5" 2>&1 | grep -c ': FAILED' || true )
 ( cd out/kernel && find . -type f -print0 | sort -z | xargs -0 -P "$(nproc)" -n 200 md5sum ) | sort -k2 > after.md5

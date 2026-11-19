@@ -105,7 +105,7 @@ bash prov/prova-allt.sh   # hela provsviten
 **hz är sedan 2026-11-16 EN C++-binär** (367 kB, 318 kB strippad, `src/cpp/`): nvcm och
 nvjpg är inlänkade, zstd/xz/zlib anropas som bibliotek i process, och
 standardläget är `liten` — det minsta hz kan. Pythonversionen som byggde
-alla första mätningar ligger kvar som referens i `src/nvz.py` men anropas
+alla första mätningar ligger kvar som referens i `src/hz.py` men anropas
 inte av någonting. Den läser inte C++-binärens arkiv (binärt register);
 C++-binären läser däremot pythonversionens (JSON-register), så gamla arkiv
 packas upp med nya hz.
@@ -863,7 +863,7 @@ src/cpp/         hz: EN C++-binär — arkivet, kodekarna, gzip-ytan
 src/nvcm.c       kontextblandande kompressor (inlänkad + egen binär)
 src/nvjpg.c      förlustfri JPEG-ompackning (inlänkad + egen binär)
 src/nvgpu.c      GPU-mätinstrumentet (eget program, vulkan)
-src/nvz.py       pythonversionen — referens, anropas inte
+src/hz.py       pythonversionen — referens, anropas inte
 korpus/          bygger testkorpusarna som hårdlänkar
 matning/         mätharness och rapportgenerator
 experiment/      försöken som designbesluten kommer ur

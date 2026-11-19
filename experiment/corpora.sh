@@ -13,7 +13,7 @@
 set -euo pipefail
 export LC_ALL=C
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-NVZ="$ROOT/src/hz"
+HZ="$ROOT/src/hz"
 WORK="${1:-${NVPACK_SKRAP:-$ROOT/.skrap}/corpora}"
 mkdir -p "$WORK"; cd "$WORK"
 [ -d corpora ] || git clone --depth 1 -q https://github.com/zlib-ng/corpora corpora
@@ -32,9 +32,9 @@ for d in corpora/*/; do
     declare -A S
     for mode in fast normal small; do
         rm -f "$n-$mode.nvz"
-        "$NVZ" pack "$d" "$n-$mode.nvz" --mode "$mode" -q
+        "$HZ" pack "$d" "$n-$mode.nvz" --mode "$mode" -q
         S[$mode]=$(stat -c%s "$n-$mode.nvz")
-        rm -rf "out-$n"; "$NVZ" unpack "$n-$mode.nvz" "out-$n" -q
+        rm -rf "out-$n"; "$HZ" unpack "$n-$mode.nvz" "out-$n" -q
         diff -r --no-dereference "$d" "out-$n/$n" >/dev/null 2>&1 || roundtrip="NO($mode)"
         rm -rf "out-$n"
     done

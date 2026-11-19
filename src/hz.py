@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-only
-"""RETIRED. This is the original Python implementation of nvz, kept
+"""RETIRED. This is the original Python implementation of the tool
+(named nvz then, hz since 2026-11-19), kept
 verbatim as the v1 archive-format reference: the C++ implementation reads
 its archives bit for bit, and the test suite holds the two to the same
 bytes. It is built by nothing and called by nothing, and it is the one

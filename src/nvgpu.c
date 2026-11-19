@@ -1565,7 +1565,7 @@ int main(int argc, char **argv) {
     if (argc < 2 || !strcmp(argv[1], "--hjälp") || !strcmp(argv[1], "-h")) { hjälp(); return argc < 2 ? 2 : 0; }
 
     const char *kmd = argv[1];
-    /* English aliases for the subcommands and --quiet, so the nvz binary can
+    /* English aliases for the subcommands and --quiet, so the hz binary can
      * speak English to its measurement instrument. The Swedish names remain
      * the canonical ones inside this file. */
     if (!strcmp(kmd, "pack")) kmd = "packa";

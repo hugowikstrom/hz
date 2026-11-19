@@ -30,7 +30,7 @@ from pathlib import Path
 ROT = Path(__file__).resolve().parent.parent
 SKRAP = Path(os.environ.get('NVPACK_SKRAP', ROT / '.skrap')) / 'gpu-matning'
 NVGPU = ROT / 'src' / 'nvgpu'
-NVPACK = ROT / 'src' / 'nvz'
+HZ = ROT / 'src' / 'hz'
 BLOCK_MIB = 16            # så stort block kodekarna jämförs på
 
 
@@ -144,12 +144,12 @@ def arkivet(korpus: Path):
         upp = SKRAP / f'upp-{läge}'
         shutil.rmtree(upp, ignore_errors=True)
         ark.unlink(missing_ok=True)
-        tp, _ = tid(f'{NVPACK} packa {korpus} {ark} -q --läge {läge}')
+        tp, _ = tid(f'{HZ} packa {korpus} {ark} -q --läge {läge}')
         upp.mkdir(parents=True)
-        tu, _ = tid(f'{NVPACK} packa-upp {ark} {upp} -q')
+        tu, _ = tid(f'{HZ} packa-upp {ark} {upp} -q')
         lika = kör(f'diff -rq --no-dereference {korpus} {upp}/{korpus.name} '
                    f'>/dev/null 2>&1 && echo ja || echo nej').stdout.strip() == 'ja'
-        kodekar = kör(f'{NVPACK} lista {ark}').stdout
+        kodekar = kör(f'{HZ} lista {ark}').stdout
         ut[läge] = dict(byte=ark.stat().st_size, packsek=round(tp, 1), uppacksek=round(tu, 1),
                         identisk=lika,
                         kodekar=sorted(set(re.findall(r'\b(nvlz|xz9e|zstd19|zstd3|zstd22|nvcm|ra)\b',

@@ -14,7 +14,7 @@
 set -uo pipefail
 export LC_ALL=C
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-NVZ="$ROOT/src/hz"
+HZ="$ROOT/src/hz"
 WORK="$(mktemp -d /tmp/nvz-flaws-XXXXXX)"
 failed=0
 cleanup() { chmod -R u+rwX "$WORK" 2>/dev/null; rm -rf "$WORK"; }
@@ -36,7 +36,7 @@ while IFS= read -r f; do cp "$f" "$WORK/images/" 2>/dev/null && n=$((n+1)); [ $n
 if [ "$n" -eq 0 ]; then
     echo "        (skipped: korpus/png missing)"
 else
-    "$NVZ" pack "$WORK/images" "$WORK/p.nvz" --mode normal --codec zstd3 -q
+    "$HZ" pack "$WORK/images" "$WORK/p.nvz" --mode normal --codec zstd3 -q
     python3 - "$WORK" <<'PY'
 import re, subprocess, sys
 work = sys.argv[1]
@@ -63,14 +63,14 @@ PY
         echo "        (skipped: no PNG in the sample could be unfolded)"
     else
         rm -rf "$WORK/uA"
-        if "$NVZ" unpack "$WORK/wrong-level.nvz" "$WORK/uA" -q 2>/dev/null &&
+        if "$HZ" unpack "$WORK/wrong-level.nvz" "$WORK/uA" -q 2>/dev/null &&
            diff -r "$WORK/images" "$WORK/uA/images" >/dev/null 2>&1; then
             ok "a recipe that fails to reproduce the stream is re-searched and rescued bit-exact"
         else
             bad "the fallback search does not find the right parameters"
         fi
         rm -rf "$WORK/uB"
-        output=$("$NVZ" unpack "$WORK/wrong-window.nvz" "$WORK/uB" 2>&1); status=$?
+        output=$("$HZ" unpack "$WORK/wrong-window.nvz" "$WORK/uB" 2>&1); status=$?
         if [ $status -ne 0 ] && grep -q "deflate engine" <<<"$output"; then
             ok "an impossible recipe is REFUSED with the engine fingerprints named — never silent corruption"
         else
@@ -81,13 +81,13 @@ fi
 
 echo "flaw 2: write failures are errors, not silent data loss"
 printf 'data data data\n' > "$WORK/d.txt"
-"$NVZ" -c "$WORK/d.txt" > /dev/full 2>/dev/null
+"$HZ" -c "$WORK/d.txt" > /dev/full 2>/dev/null
 [ $? -ne 0 ] && ok "-c to /dev/full exits nonzero (gzip gives 1)" \
              || bad "-c to /dev/full gave 0"
 
 mkdir -p "$WORK/full"; head -c 3000000 /dev/urandom | base64 > "$WORK/full/big.txt"
 ( cd "$WORK/full" && md5sum big.txt > before.md5 )
-( cd "$WORK/full" && ulimit -f 200 && "$NVZ" big.txt >/dev/null 2>&1 )
+( cd "$WORK/full" && ulimit -f 200 && "$HZ" big.txt >/dev/null 2>&1 )
 if [ -f "$WORK/full/big.txt" ] && ( cd "$WORK/full" && md5sum -c before.md5 >/dev/null 2>&1 ); then
     ok "the original survives an aborted archive (file-size limit), md5 unchanged"
 else
@@ -99,7 +99,7 @@ fi
 echo "flaw 3: an unreadable file does not stop the rest"
 mkdir -p "$WORK/several"; cd "$WORK/several"
 printf 'aaa\n' > a.txt; printf 'bbb\n' > b.txt; printf 'ccc\n' > c.txt; chmod 000 b.txt
-output=$("$NVZ" a.txt b.txt c.txt 2>&1); status=$?
+output=$("$HZ" a.txt b.txt c.txt 2>&1); status=$?
 chmod 644 b.txt
 if [ $status -eq 1 ] && [ -f a.txt.nv ] && [ -f c.txt.nv ] && [ -f b.txt ]; then
     ok "a warning, the rest are packed, exit status 1 — gzip's contract, no core dump"

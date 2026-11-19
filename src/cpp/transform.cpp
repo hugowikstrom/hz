@@ -195,7 +195,7 @@ std::optional<Unfolded> png_unfold(const Byte &b, double inflation_cap) {
             if (rc == Z_STREAM_END) break;
             if (rc != Z_OK && rc != Z_BUF_ERROR) { inflateEnd(&z); return std::nullopt; }
             if ((double)filled > (double)stream.size() * inflation_cap) {
-                inflateEnd(&z); return std::nullopt;      // the guard rail, see nvz.py
+                inflateEnd(&z); return std::nullopt;      // the guard rail, see hz.py
             }
             if (z.avail_out == 0) raw.resize(raw.size() * 2);
             else if (rc == Z_BUF_ERROR) { inflateEnd(&z); return std::nullopt; }

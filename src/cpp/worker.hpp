@@ -15,7 +15,7 @@ namespace hz {
 Byte run_self(const std::vector<std::string> &arg, const u8 *in, size_t n, int *exit_code);
 
 // The same, but with a named binary. Used for nvgpu, which is a separate
-// program (the Vulkan dependency must not get into nvz). The binary is
+// program (the Vulkan dependency must not get into hz). The binary is
 // looked for next to our own first, then in PATH.
 Byte run_program(const std::string &binary, const std::vector<std::string> &arg,
                  const u8 *in, size_t n, int *exit_code);

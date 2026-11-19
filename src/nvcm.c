@@ -3,7 +3,7 @@
  * nvcm - context-mixing compressor for text and source code.
  *
  *     nvcm [flags] [file ...]        gzip-style CLI (see man nvcm)
- *     nvcm pack|unpack < in > out    worker path; nvz runs nvcm as a worker
+ *     nvcm pack|unpack < in > out    worker path; hz runs nvcm as a worker
  *                                    process (the old names packa|packaupp
  *                                    remain as aliases)
  *
@@ -25,7 +25,7 @@
  * model needs to be right.
  *
  * The price is speed: nvcm packs at a few MB/s where zstd does hundreds.
- * nvz picks it only for blocks where it actually wins, and only when the
+ * hz picks it only for blocks where it actually wins, and only when the
  * archive should be small rather than fast.
  *
  * Decoding is mirrored encoding: the same models, the same updates, in the
@@ -507,7 +507,7 @@ static int unpack_stream(FILE *in, FILE *out) {
  * but scripts send them and refusing a meaningless flag helps nothing.
  *
  * The worker subcommands `pack` and `unpack` (and their old names `packa`
- * and `packaupp`) remain for nvz but are not listed in the help.
+ * and `packaupp`) remain for hz but are not listed in the help.
  */
 
 static const char *SUF = ".nvcm";
@@ -619,7 +619,7 @@ int main(int argc, char **argv) {
     build_rates();
 
     /*
-     * Worker path first: nvz calls `nvcm pack|unpack`. The old Swedish
+     * Worker path first: hz calls `nvcm pack|unpack`. The old Swedish
      * names remain as aliases.
      */
     if (argc >= 2 && (!strcmp(argv[1], "pack") || !strcmp(argv[1], "packa")))

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-only
 # hz has been C++ since 2026-11-16: ONE binary with nvcm and nvjpg linked
 # in and libzstd/liblzma/libz in process. The retired Python implementation
-# stays in the tree as the v1 format reference (src/nvz.py) but is built by
+# stays in the tree as the v1 format reference (src/hz.py) but is built by
 # nothing and called by nothing. The portable cross-platform tool is
 # portable/nvzpy.py — pure stdlib Python, needs no build at all.
 #

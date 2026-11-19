@@ -28,7 +28,7 @@ import hashlib, json, os, shutil, stat, subprocess, sys, time
 from pathlib import Path
 
 ROT = Path(__file__).resolve().parent.parent
-NV = str(ROT / 'src' / 'nvz')
+HZ = str(ROT / 'src' / 'hz')
 SKRAP = Path(os.environ.get('NVPACK_SKRAP', ROT / '.skrap')) / 'aterskapning'
 
 
@@ -92,11 +92,11 @@ def prova_korpus(namn: str, lage: str = 'normal') -> dict:
     # Packas utan -q: raderna om dedup och om vilken kodek varje block fick
     # är halva svaret på VARFÖR en korpus komprimerar som den gör.
     t0 = time.monotonic()
-    r = kor([NV, 'packa', str(korpus), str(arkiv), '--läge', lage])
+    r = kor([HZ, 'packa', str(korpus), str(arkiv), '--läge', lage])
     packsek = time.monotonic() - t0
     packutdata = [rad.strip() for rad in r.stdout.splitlines() if rad.strip()]
     upp.mkdir(parents=True)
-    t0 = time.monotonic(); kor([NV, 'packa-upp', str(arkiv), str(upp), '-q'])
+    t0 = time.monotonic(); kor([HZ, 'packa-upp', str(arkiv), str(upp), '-q'])
     uppacksek = time.monotonic() - t0
     efter = avtryck(upp / namn)
     avvikelser = jamfor(fore, efter)
@@ -104,7 +104,7 @@ def prova_korpus(namn: str, lage: str = 'normal') -> dict:
     # `lista` ska redovisa lika många poster som trädet har — kataloger och
     # länkar inräknade. Stämmer inte det bär registret inte hela trädet,
     # även om de filer som KOM tillbaka råkade vara riktiga.
-    listad = kor([NV, 'lista', str(arkiv)]).stdout
+    listad = kor([HZ, 'lista', str(arkiv)]).stdout
     filer_fore = sum(1 for p in fore.values() if p['typ'] == 'fil')
     listade_poster = None
     for rad in listad.splitlines():
@@ -132,7 +132,7 @@ def prova_skada(namn: str) -> list[dict]:
     SKRAP.mkdir(parents=True, exist_ok=True)
     orig = SKRAP / f'skada-{namn}.nv'
     orig.unlink(missing_ok=True)
-    kor([NV, 'packa', str(korpus), str(orig), '-q'])
+    kor([HZ, 'packa', str(korpus), str(orig), '-q'])
     rent = avtryck(korpus)
     data = orig.read_bytes()
     prov = []
@@ -149,7 +149,7 @@ def prova_skada(namn: str) -> list[dict]:
         trasig.write_bytes(skada(data))
         upp = SKRAP / 'upp-trasig'
         shutil.rmtree(upp, ignore_errors=True); upp.mkdir(parents=True)
-        r = kor([NV, 'packa-upp', str(trasig), str(upp), '-q'], vantar_fel=True)
+        r = kor([HZ, 'packa-upp', str(trasig), str(upp), '-q'], vantar_fel=True)
         mal = upp / namn
         if r.returncode != 0:
             utfall, godkant = 'vägrade', True

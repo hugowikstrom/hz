@@ -16,7 +16,7 @@
 set -euo pipefail
 export LC_ALL=C
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-NVZ="$ROOT/src/hz"
+HZ="$ROOT/src/hz"
 CORPUS="${1:-kod}"
 CODEC="${2:-xz9e}"
 WORK="${NVPACK_SKRAP:-$ROOT/.skrap}/ablation"
@@ -28,7 +28,7 @@ RAW=$(du -sb "$K" | cut -f1)
 run() { # name, flags...
     local name="$1"; shift
     local s=$(date +%s)
-    "$NVZ" pack "$K" "$WORK/$name.nvz" --mode normal --codec "$CODEC" -q "$@"
+    "$HZ" pack "$K" "$WORK/$name.nvz" --mode normal --codec "$CODEC" -q "$@"
     local t=$(( $(date +%s) - s ))
     echo "$name $(stat -c%s "$WORK/$name.nvz") $t"
 }

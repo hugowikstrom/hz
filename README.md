@@ -522,7 +522,7 @@ src/nvcm.c             the context mixer (also a standalone binary)
 src/nvjpg.c            the JPEG recoder (also a standalone binary)
 src/nvgpu.c            the Vulkan measurement instrument
 portable/hzpy.py      the stdlib-Python portable implementation
-src/nvz.py             RETIRED Python implementation, kept verbatim as the
+src/hz.py             RETIRED Python implementation, kept verbatim as the
                        v1 format reference (deliberately untranslated)
 ```
 
@@ -539,7 +539,7 @@ Three kinds of Swedish survive on purpose: **archive format strings**
 archived bytes contain them), **top-level directory and corpus names**
 (`korpus/kod`, `rapport/`, `prov/brister.sh` … are referenced by published
 reports, PDFs and links; renaming them would break every published
-reproduction command), and the **retired `src/nvz.py`**. The reports exist
+reproduction command), and the **retired `src/hz.py`**. The reports exist
 in both languages in `rapport/`.
 
 **Three faults the port exposed** (general enough to repeat): a malloc

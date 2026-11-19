@@ -19,7 +19,7 @@ import os, random, shutil, subprocess, sys, tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-NVZ = ROOT / 'src' / 'nvz'
+HZ = ROOT / 'src' / 'hz'
 MODES = ['fast', 'normal', 'small']
 
 # Real PNGs and JPEGs from the corpus, if present — the transforms are the
@@ -80,13 +80,13 @@ def one_round(seed: int, work: Path, images) -> str | None:
     ark.unlink(missing_ok=True)
     build_tree(tree, r, images)
     mode = r.choice(MODES)
-    k = subprocess.run([NVZ, 'pack', str(tree), str(ark), '-q', f'--mode={mode}'],
+    k = subprocess.run([HZ, 'pack', str(tree), str(ark), '-q', f'--mode={mode}'],
                        capture_output=True, text=True)
     if k.returncode: return f'pack returned {k.returncode}: {k.stderr[:200]}'
-    k = subprocess.run([NVZ, '-t', str(ark)], capture_output=True, text=True)
+    k = subprocess.run([HZ, '-t', str(ark)], capture_output=True, text=True)
     if k.returncode: return f'-t returned {k.returncode}: {k.stderr[:200]}'
     up.mkdir(parents=True)
-    k = subprocess.run([NVZ, 'unpack', str(ark), str(up), '-q'], capture_output=True, text=True)
+    k = subprocess.run([HZ, 'unpack', str(ark), str(up), '-q'], capture_output=True, text=True)
     if k.returncode: return f'unpack returned {k.returncode}: {k.stderr[:200]}'
     k = subprocess.run(['diff', '-rq', '--no-dereference', str(tree), str(up / tree.name)],
                        capture_output=True, text=True)

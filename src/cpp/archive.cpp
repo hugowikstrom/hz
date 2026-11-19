@@ -199,7 +199,7 @@ Register read_register_v2(const u8 *d, size_t n) {
 
 // v1: the Python implementation's JSON register. Block positions are not
 // stored in v1 but derived from the lengths, in exactly the order the
-// objects were appended — same derivation as in src/nvz.py. The JSON keys
+// objects were appended — same derivation as in src/hz.py. The JSON keys
 // are format constants; do not translate.
 Register read_register_v1(const std::string &text) {
     Jptr j = parse_json(text);

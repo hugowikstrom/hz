@@ -26,7 +26,7 @@
 set -euo pipefail
 export LC_ALL=C
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-NVZ="$ROOT/src/hz"
+HZ="$ROOT/src/hz"
 WORK="${1:-${NVPACK_SKRAP:-$ROOT/.skrap}/sortering}"
 TREE="$WORK/scattered"
 mkdir -p "$WORK"
@@ -53,9 +53,9 @@ PY
 row() { # name, flags...
     local name="$1"; shift
     local a b
-    "$NVZ" pack "$TREE" "$WORK/a.nvz" --mode normal --codec zstd3 --no-dedup --no-transform -q "$@"
+    "$HZ" pack "$TREE" "$WORK/a.nvz" --mode normal --codec zstd3 --no-dedup --no-transform -q "$@"
     a=$(stat -c%s "$WORK/a.nvz")
-    "$NVZ" pack "$TREE" "$WORK/b.nvz" --mode normal --codec xz9e  --no-dedup --no-transform -q "$@"
+    "$HZ" pack "$TREE" "$WORK/b.nvz" --mode normal --codec xz9e  --no-dedup --no-transform -q "$@"
     b=$(stat -c%s "$WORK/b.nvz")
     printf '| %-34s | %11d | %11d |\n' "$name" "$a" "$b"
 }

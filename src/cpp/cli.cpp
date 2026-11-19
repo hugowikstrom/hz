@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
-// The gzip surface: flag parsing and operand handling for nvz run without
+// The gzip surface: flag parsing and operand handling for hz run without
 // a subcommand.
 //
 // The surface follows gzip because existing scripts, Makefiles and habits
 // speak it. Contract held by the test suite:
 //
-//  - `nvz file` replaces the file with file.nv; the archive inherits its
-//    mtime and permissions. `nvz -d` restores the same bytes and removes
+//  - `hz file` replaces the file with file.nv; the archive inherits its
+//    mtime and permissions. `hz -d` restores the same bytes and removes
 //    the archive. -c and -k touch nothing.
 //  - A directory operand becomes one archive of the tree (source kept);
 //    with -r each file is packed separately, as gzip does.
@@ -42,7 +42,7 @@ int warn(const Flags &o, const std::string &m) {
 
 // Level digits map onto the modes. Unlike gzip the default is the
 // smallest: whoever packs an archive almost always wants it small, and
-// nvz's transforms are expensive once and cheap to unpack.
+// hz's transforms are expensive once and cheap to unpack.
 const char *level_mode(int n) { return n <= 3 ? "fast" : n <= 6 ? "normal" : "small"; }
 
 struct LongFlag { const char *name; char shortc; bool takes_value; };
@@ -158,7 +158,7 @@ bool may_write(const Flags &o, const std::string &target, int *status) {
 
 void to_stdout(const std::string &p) {
     Byte d = read_file(p);
-    // `nvz -c file > /dev/full` returned 0 before this check; gzip returns
+    // `hz -c file > /dev/full` returned 0 before this check; gzip returns
     // 1. A write error to standard out is an error, not a warning.
     write_checked(stdout, d.data(), d.size(), "standard out");
     if (fflush(stdout) != 0)
@@ -175,7 +175,7 @@ void ratio_line(const Flags &o, const std::string &from, u64 raw, u64 packed,
 }
 
 // With -r a directory is swapped for the files inside it. In that sweep
-// files with the wrong suffix are skipped silently: an `nvz -r` that warns
+// files with the wrong suffix are skipped silently: an `hz -r` that warns
 // once per already-packed file is unusable. Explicitly named files still
 // get the warning.
 void expand(const Flags &o, const std::vector<std::string> &files,
@@ -297,7 +297,7 @@ int unpack_operand(const Flags &o, const std::string &p_in) {
     std::string p = p_in;
     struct stat st;
     if (stat(p.c_str(), &st) != 0 || !S_ISREG(st.st_mode)) {
-        std::string with = p + o.suffix;               // `nvz -d file` finds file.nv
+        std::string with = p + o.suffix;               // `hz -d file` finds file.nv
         if (exists(p) || stat(with.c_str(), &st) != 0 || !S_ISREG(st.st_mode))
             return err(p + ": does not exist");
         p = with;
@@ -517,7 +517,7 @@ int main_gzip(int argc, char **argv) {
     for (const std::string &p : all) {
         // One failing operand must not abort the rest. Without this catch
         // an exception out of pack_operand escaped through main and the
-        // process died in std::terminate: `nvz a.txt b.txt c.txt` with
+        // process died in std::terminate: `hz a.txt b.txt c.txt` with
         // b.txt unreadable gave SIGABRT and a core dump (exit status 134),
         // with a.txt already packed and deleted and c.txt never processed.
         // Found in Ted Lyngmo's code review of 2026-11-18. gzip's

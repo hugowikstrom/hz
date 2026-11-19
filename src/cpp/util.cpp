@@ -145,13 +145,13 @@ Byte read_file(const std::string &path) {
 // Every write must be checked, for a reason specific to a packer with a
 // gzip surface: the original is deleted once the pack has succeeded. If a
 // write fails silently — full disk, exceeded quota, a file-size limit —
-// and nvz still reports success, the source is deleted, the archive is
+// and hz still reports success, the source is deleted, the archive is
 // truncated and the data is gone.
 //
 // Found in Ted Lyngmo's code review of 2026-11-18, reproduced under
 // RLIMIT_FSIZE: truncated archive, exit status 0, original deleted, and
-// `nvz -d` afterwards said the register pointed outside the archive. The
-// reference behaviour: `gzip -c file > /dev/full` returns 1; nvz
+// `hz -d` afterwards said the register pointed outside the archive. The
+// reference behaviour: `gzip -c file > /dev/full` returns 1; hz
 // returned 0.
 //
 // Three traps these helpers cover. (i) fwrite buffers, so ENOSPC often
