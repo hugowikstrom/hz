@@ -68,8 +68,11 @@ src/blake2b.comp: src/gen-blake2b.py
 	python3 $<
 
 test: src/nvjpg src/nvcm
-	./src/nvz test korpus/kod
-	./prov/kontroll-jpg.sh korpus/foto
+	@if [ -d korpus/kod ]; then ./src/nvz test korpus/kod; \
+	 else echo "korpus/kod absent (release tarball) — self-testing on src/"; \
+	      ./src/nvz test src; fi
+	@if [ -d korpus/foto ]; then ./prov/kontroll-jpg.sh korpus/foto; \
+	 else echo "korpus/foto absent — jpeg check skipped"; fi
 	@if [ -x src/nvgpu ]; then ./src/nvgpu prov --tyst && echo "nvgpu: tests passed"; \
 	 else echo "nvgpu not built (make gpu) — gpu tests skipped"; fi
 
