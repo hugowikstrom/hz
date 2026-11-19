@@ -177,7 +177,10 @@ def silesia_per_fil() -> str:
     if not f.exists(): return '*(standardbenchmarken inte körd)*'
     d = json.loads(f.read_text())
     kodekar = ['zstd -19', 'brotli -q 11', 'xz -9e', 'nvcm']
-    ut = ['| fil | innehåll | rå byte | ' + ' | '.join(kodekar) + ' | nvcm mot bäst |',
+    # 'nvcm' är den frysta mätnyckeln i resultat/standard-*.json;
+    # verktyget heter hzcm sedan 2026-11-20 och det är vad tabellen visar.
+    visas = [k if k != 'nvcm' else 'hzcm' for k in kodekar]
+    ut = ['| fil | innehåll | rå byte | ' + ' | '.join(visas) + ' | hzcm mot bäst |',
           '|:--|:--|--:|' + '--:|' * len(kodekar) + '--:|']
     OM = {'dickens': 'engelsk litteratur, text', 'mozilla': 'körbara filer (tar)',
           'mr': 'medicinsk 3D-bild', 'nci': 'kemiska strukturer, text',
@@ -218,7 +221,7 @@ def enwik8_plats() -> str:
     s = d.get('summor', {})
     if 'nvcm' not in s: return '*(nvcm inte mätt på enwik8)*'
     nv = s['nvcm']
-    rader = ['Vår egen mätning: **nvcm gör enwik8 på ' + f'{nv["byte"]:,}'.replace(',', ' ') +
+    rader = ['Vår egen mätning: **hzcm gör enwik8 på ' + f'{nv["byte"]:,}'.replace(',', ' ') +
              f' byte, {tal(nv["bpb"], 3)} bits/byte**']
     egna = {k: v for k, v in s.items() if k != 'nvcm'}
     if egna:
@@ -229,7 +232,7 @@ def enwik8_plats() -> str:
                      f'`{bastnamn}` på samma maskin (' + f'{bast["byte"]:,}'.replace(',', ' ') +
                      f' byte, {tal(bast["bpb"], 3)} bpb).')
     takt = tal(nv["byte"]*8/100_000_000)
-    rader.append(f'\nMed {takt} bits/byte hamnar nvcm mellan ordbokspackarna '
+    rader.append(f'\nMed {takt} bits/byte hamnar hzcm mellan ordbokspackarna '
                  'och de tunga kontextblandarna i tabellen ovan: den tar hem det '
                  'en ordbokspackare inte kan se, men den har åtta modeller där '
                  'cmix har hundratals, och den kör i ett par MiB/s där cmix kör '
@@ -313,7 +316,7 @@ def till_engelska(block: str) -> str:
         ('godkänt |', 'passed |'), ('vägrade', 'rejected'),
         ('hz normal upp', 'hz normal unpack'),
         ('Vår egen mätning', 'Our own measurement'),
-        ('nvcm gör enwik8 på', 'nvcm compresses enwik8 to'),
+        ('hzcm gör enwik8 på', 'hzcm compresses enwik8 to'),
         (' byte, ', ' bytes, '), ('mindre än', 'smaller than'),
         ('större än', 'larger than'), ('på samma maskin', 'on the same machine'),
         ('engelsk litteratur, text', 'English literature, text'),
@@ -326,7 +329,7 @@ def till_engelska(block: str) -> str:
         ('stjärnkatalog, binär', 'star catalogue, binary'),
         ('ordbok, text', 'dictionary, text'), ('röntgenbild, 16-bitars', 'X-ray, 16-bit'),
         ('| fil |', '| file |'), ('innehåll |', 'contents |'),
-        ('rå byte', 'raw bytes'), ('nvcm mot bäst', 'nvcm vs. best'), ('hz mot LZMA2-extrem', 'hz vs. LZMA2-extreme'), ('LZMA2-extrem MiB', 'LZMA2-extreme MiB'), ('packtid LZMA2/hz', 'pack time LZMA2/hz'),
+        ('rå byte', 'raw bytes'), ('hzcm mot bäst', 'hzcm vs. best'), ('hz mot LZMA2-extrem', 'hz vs. LZMA2-extreme'), ('LZMA2-extrem MiB', 'LZMA2-extreme MiB'), ('packtid LZMA2/hz', 'pack time LZMA2/hz'),
         ('upp MiB/s', 'unpack MiB/s')]
     for a, b in ORD:
         t = t.replace(a, b)

@@ -3,7 +3,9 @@
 > **Renamed:** the tool was named **nvz** when these measurements were
 > made and was renamed **hz** on 2026-11-19. Only the name changed — every
 > hz reads every nvz archive bit for bit. The row keys in
-> `resultat/*.json` keep the old name as frozen measurement ids.
+> `resultat/*.json` keep the old name as frozen measurement ids. The codec tools were
+> renamed nvcm→hzcm, nvjpg→hzjpg, nvgpu→hzgpu on 2026-11-20; the stream
+> formats are unchanged.
 
 
 **Empirical evaluation of a content-aware archiver: compression ratio,
@@ -20,7 +22,7 @@ every figure is generated from `resultat/*.json` and can be reproduced per appen
 hz is an archiver that classifies its input and applies content-specific,
 lossless transforms — deduplication, similarity ordering, PNG inflation with
 recipe recovery, JPEG re-encoding to arithmetic code, and context-mixing
-compression (nvcm) — before selecting a codec per block by sampling. This
+compression (hzcm) — before selecting a codec per block by sampling. This
 report evaluates hz against seven established compressors on eleven corpora
 and tests two hypotheses:
 
@@ -38,8 +40,8 @@ In summary:
 |:--|--:|:--|
 | log files, ratio | **23.8×** (10.03 of 238.3 MiB) | xz −9e: 20.1× |
 | log files, vs. best classical | **−15.3 %** | vs. xz −9e |
-| Silesia, nvcm (single thread) | **1.677 bits/byte** | xz −9e: 1.829 |
-| enwik8, nvcm (single thread) | **1.713 bits/byte** | xz −9e: 1.986 |
+| Silesia, hzcm (single thread) | **1.677 bits/byte** | xz −9e: 1.829 |
+| enwik8, hzcm (single thread) | **1.713 bits/byte** | xz −9e: 1.986 |
 | video, all compressors | within 1 % of raw size | expected: already coded |
 | archives-of-archives, hz vs. zstd −22 | **−0.1 %** after remedy (+20.0 % before) | diagnosed and fixed, section 4.2 |
 | restoration, 7 corpora | bit-exact, all entries | section 5 |
@@ -82,7 +84,7 @@ bzip2 (−9), zstd (−3, −19 `--long=27`, −22 `--ultra --long=31`), and
 xz (−9e). `tar | zstd −3` is labelled *current* and serves as the baseline,
 as it matches the machine's existing archival script. hz is measured in
 modes `snabb` ("fast": zstd −3, no transforms), `normal` (transforms, codec
-probe per block), and `liten` ("small": additionally nvcm as a candidate;
+probe per block), and `liten` ("small": additionally hzcm as a candidate;
 the default), plus `utan knep` ("no tricks": mode normal with
 deduplication and transforms disabled) to isolate the transforms'
 contribution.
@@ -310,7 +312,7 @@ relative to `tar.zst −3`; *exakt* is the bit-exactness outcome.
 
 ### 3.4 Standard corpora, codec level
 
-This comparison isolates the nvcm compressor — one file at a time, one
+This comparison isolates the hzcm compressor — one file at a time, one
 thread — since published figures for these corpora are defined that way.
 hz as an archiver appears in 3.1–3.3.
 
@@ -346,7 +348,7 @@ Per file on Silesia, whose heterogeneity is the point of the corpus:
 
 <!-- SILESIA-PER-FIL -->
 
-| file | contents | raw bytes | zstd -19 | brotli -q 11 | xz -9e | nvcm | nvcm vs. best |
+| file | contents | raw bytes | zstd -19 | brotli -q 11 | xz -9e | hzcm | hzcm vs. best |
 |:--|:--|--:|--:|--:|--:|--:|--:|
 | `dickens` | English literature, text | 10,193,352 | 2,849,945 | 2,827,777 | 2,831,212 | 2,234,894 | −20.2 % |
 | `mozilla` | executables (tar) | 51,215,653 | 15,071,672 | 13,872,265 | 13,376,240 | 14,366,242 | +7.4 % |
@@ -379,9 +381,9 @@ versions; not our measurements):
 
 <!-- ENWIK8-PLATS -->
 
-Our own measurement: **nvcm compresses enwik8 to 21,417,184 bytes, 1.713 bits/byte** — 13.8 % smaller than `xz -9e` on the same machine (24,831,648 bytes, 1.986 bpb).
+Our own measurement: **hzcm compresses enwik8 to 21,417,184 bytes, 1.713 bits/byte** — 13.8 % smaller than `xz -9e` on the same machine (24,831,648 bytes, 1.986 bpb).
 
-Med 1.71 bits/byte hamnar nvcm mellan ordbokspackarna och de tunga kontextblandarna i tabellen ovan: den tar hem det en ordbokspackare inte kan se, men den har åtta modeller där cmix har hundratals, och den kör i ett par MiB/s där cmix kör i kilobyte per sekund.
+Med 1.71 bits/byte hamnar hzcm mellan ordbokspackarna och de tunga kontextblandarna i tabellen ovan: den tar hem det en ordbokspackare inte kan se, men den har åtta modeller där cmix har hundratals, och den kör i ett par MiB/s där cmix kör i kilobyte per sekund.
 
 <!-- SLUT ENWIK8-PLATS -->
 
@@ -513,7 +515,7 @@ Seven of eight corpora go to hz, with -15.8 % on Canterbury as the best
 outcome. The eighth is `neuro`, where hz trails `xz -9e` by **1.0 %**: the
 material is binary measurement data without the between-file similarity that
 hz's transforms and deduplication live on, leaving only the codec — and
-there LZMA with a 64 MiB dictionary is stronger than nvcm on that particular
+there LZMA with a 64 MiB dictionary is stronger than hzcm on that particular
 data. It is the same pattern as the archive corpus in 4.2 and should be read
 as the boundary of H1: hz improves data with exploitable structure, and on
 data without it the result is a bare percent worse, not better.
@@ -566,15 +568,15 @@ two axes instead of one.
 
 The log corpus exhibits the evaluation's highest ratio, 23.8×, and the
 source can be isolated through the mode comparison: `normal` and `liten`
-differ only in whether nvcm participates in the codec probe.
+differ only in whether hzcm participates in the codec probe.
 
 | mode | size | pack time | active difference |
 |:--|--:|--:|:--|
 | `normal` | 11.97 MiB | 864 s | codec probe zstd/xz |
-| `liten` | **10.03 MiB** | **197 s** | nvcm added |
+| `liten` | **10.03 MiB** | **197 s** | hzcm added |
 
-nvcm won the probe for every text block, which the archive register
-confirms (2 blocks, both nvcm; 192.03 → 9.00 MiB and 46.29 → 1.03 MiB).
+hzcm won the probe for every text block, which the archive register
+confirms (2 blocks, both hzcm; 192.03 → 9.00 MiB and 46.29 → 1.03 MiB).
 That the smaller archive also packs faster is a parallelism effect: hz's
 blocks compress independently, whereas `xz -9e -T0` on this input
 effectively runs single-threaded due to its per-thread memory budget. The
@@ -691,7 +693,7 @@ the corpus) and by the corpus (27.4 MiB) fitting inside every modern
 compressor's window: hz, zstd −19/−22 and xz reach the same size, and
 `hz utan knep` is identical to `hz normal`. hz's transforms contribute
 nothing on LZW-coded content — the format is not opened. A GIF
-counterpart to nvjpg (LZW → arithmetic coding of the frames) is thus an
+counterpart to hzjpg (LZW → arithmetic coding of the frames) is thus an
 identified but unmeasured opportunity; the corpus to measure it now
 exists.
 
@@ -887,7 +889,7 @@ test suite is correctly built — not that the corpus was.
 ## 6. Implementation
 
 During the evaluation, hz was rewritten from Python into a standalone
-C++17 binary (367 kB, 318 kB stripped): nvcm and nvjpg are linked in and executed as worker
+C++17 binary (367 kB, 318 kB stripped): hzcm and hzjpg are linked in and executed as worker
 processes via `/proc/self/exe`, zstd/xz/zlib are called as in-process
 libraries, and `liten` is the default mode. Compression results are
 equivalent within sampling noise (the codecs are the same libraries); the
@@ -1001,8 +1003,8 @@ credits each part, and the last column states where hz sits relative to it.
 | similarity sorting before compression | *Sort Before Compression* (<https://gwern.net/sort>); solid archives in RAR and 7-Zip; lrzip | same idea. hz sorts on content class and extension, and measures the effect separately (7.1) |
 | deduplication of identical files | borg, restic, ZFS; content-defined chunking since LBFS (2001) | weaker: hz deduplicates whole files, not chunks |
 | deflate stream back to raw data plus a recipe | precomp (Christian Schneider), preflate, reflate | narrower: hz only handles streams zlib itself wrote |
-| lossless JPEG recompression | packJPG (Matthias Stirner), Lepton (Dropbox, 2016), brunsli -> JPEG XL | **worse**: nvjpg achieves -15.1 %, published figures for the others are around -20 to -22 % |
-| context mixing, logistic mixer, APM/SSE | the PAQ family (Matt Mahoney), lpaq, zpaq, cmix | smaller model: paq8px beats nvcm on enwik8, 15.8 vs. 20.4 MB (3.4) |
+| lossless JPEG recompression | packJPG (Matthias Stirner), Lepton (Dropbox, 2016), brunsli -> JPEG XL | **worse**: hzjpg achieves -15.1 %, published figures for the others are around -20 to -22 % |
+| context mixing, logistic mixer, APM/SSE | the PAQ family (Matt Mahoney), lpaq, zpaq, cmix | smaller model: paq8px beats hzcm on enwik8, 15.8 vs. 20.4 MB (3.4) |
 | content-aware filter selection per data type | FreeArc (Bulat Ziganshin), zpaq method strings | same thought, different mechanism: hz decides by probing the data rather than by a rule on file type |
 | transform verified in both directions before use | precomp and Lepton do the same | same |
 
@@ -1088,7 +1090,7 @@ with. With a small window and scattered similarity it is worth 8 %; with a
 dictionary covering the whole corpus, 2.2 %; on corpora that are already
 ordered, zero. hz's measurable gains on the material in this report
 therefore come from the transforms, from deduplication where duplicates
-exist, and from nvcm in mode `liten` — **not** from the sorting.
+exist, and from hzcm in mode `liten` — **not** from the sorting.
 
 ```
 bash experiment/ablation.sh kod xz9e
@@ -1123,7 +1125,7 @@ they carry a measured value rather than a guess.
    2 s for 17 %, enwik8 135 s vs. 2 s for 14 %, Silesia 101 s vs. 2 s for
    6 %. Where it wins nothing it also costs nothing: on png, foto, gif, film
    and arkiv, `liten` and `normal` are equal in both size and time, because
-   the codec probe rejects nvcm on its own. The trade-off is therefore real
+   the codec probe rejects hzcm on its own. The trade-off is therefore real
    and works as intended; the objection is only that the default makes the
    choice for the user. Worth considering: `normal` as the default, with
    `liten` as an explicit choice.
@@ -1173,10 +1175,10 @@ they carry a measured value rather than a guess.
    on two data points. A sample that grows with block size is still
    unmeasured.
 
-5. **nvjpg sits below known technique.** -15.1 % against published figures
+5. **hzjpg sits below known technique.** -15.1 % against published figures
    of -20 to -22 % for packJPG, Lepton and brunsli (7). The gap is a
    modelling gap: Lepton models neighbouring coefficients in two dimensions
-   and across block boundaries, nvjpg in one. Progressive JPEG is also left
+   and across block boundaries, hzjpg in one. Progressive JPEG is also left
    raw.
 
 6. **PNG coverage stops at zlib.** Streams written by zlib-ng, libdeflate or
@@ -1184,7 +1186,7 @@ they carry a measured value rather than a guess.
    the general case (7); linking it in widens coverage without touching the
    format.
 
-7. **GIF recompression** (4.4): the same construction as nvjpg, applied to
+7. **GIF recompression** (4.4): the same construction as hzjpg, applied to
    the LZW layer.
 
 8. **Chunk-level instead of file-level deduplication.** File level finds
@@ -1219,10 +1221,10 @@ they carry a measured value rather than a guess.
     `fork`/`exec` for `CreateProcess` or threads, and a decision about
     symlinks and permissions. Today: Linux, or WSL2 on Windows.
 
-11. **nvcm on opaque blocks:** mode `liten` sends only text classes to nvcm;
+11. **hzcm on opaque blocks:** mode `liten` sends only text classes to hzcm;
     whether opaque data pays off is unmeasured.
 
-12. **AVX-512 is present in the machine but unused.** nvcm's inner loop is a
+12. **AVX-512 is present in the machine but unused.** hzcm's inner loop is a
     dot product over ten int16 weights per bit plus ten table lookups. VNNI
     could take the dot product, but the lookups are scattered and are likely
     what dominates; this item is last because the gain is unmeasured and may
@@ -1253,7 +1255,7 @@ gzip, pigz, bzip2, zstd, and xz.
 
 ```bash
 git clone https://github.com/hugowikstrom/hz && cd hz
-make                                                  # builds hz, nvcm, nvjpg
+make                                                  # builds hz, hzcm, hzjpg
 python3 korpus/bygg-korpus.py gif film arkiv logg     # local corpora
 export NVPACK_SKRAP=$PWD/.skrap
 python3 matning/matning.py <corpus>                   # archive level, per corpus

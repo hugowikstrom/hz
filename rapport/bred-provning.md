@@ -3,7 +3,9 @@
 > **Namnbyte:** verktyget hette **nvz** när mätningarna gjordes och döptes
 > om till **hz** 2026-11-19. Bara namnet ändrades — varje hz läser varje
 > nvz-arkiv bit för bit. Radnycklarna i `resultat/*.json` behåller det
-> gamla namnet som frysta mät-id:n.
+> gamla namnet som frysta mät-id:n. Kodekverktygen döptes om
+> nvcm→hzcm, nvjpg→hzjpg, nvgpu→hzgpu 2026-11-20; strömformaten är
+> oförändrade.
 
 
 **Empirisk utvärdering av en innehållsmedveten arkivpackare: kompressionskvot,
@@ -18,7 +20,7 @@ alla tal genereras ur `resultat/*.json` och kan reproduceras enligt appendix A*
 hz är en arkivpackare som klassificerar sitt innehåll och tillämpar
 innehållsspecifika, förlustfria omvandlingar — deduplicering, likhetssortering,
 PNG-utveckling med receptåtersökning, JPEG-omkodning till aritmetisk kod samt
-kontextblandande kompression (nvcm) — innan den väljer kodek per block genom
+kontextblandande kompression (hzcm) — innan den väljer kodek per block genom
 stickprov. Denna rapport utvärderar hz mot sju etablerade packare på elva
 korpusar och prövar två hypoteser:
 
@@ -36,8 +38,8 @@ I sammandrag:
 |:--|--:|:--|
 | loggfiler, kvot | **23,8×** (10,03 av 238,3 MiB) | xz −9e: 20,1× |
 | loggfiler, relativt bästa klassiska | **−15,3 %** | mot xz −9e |
-| Silesia, nvcm (en tråd) | **1,677 bit/byte** | xz −9e: 1,829 |
-| enwik8, nvcm (en tråd) | **1,713 bit/byte** | xz −9e: 1,986 |
+| Silesia, hzcm (en tråd) | **1,677 bit/byte** | xz −9e: 1,829 |
+| enwik8, hzcm (en tråd) | **1,713 bit/byte** | xz −9e: 1,986 |
 | film, samtliga packare | inom 1 % av råstorlek | väntat: redan kodad |
 | arkiv-av-arkiv, hz mot zstd −22 | **−0,1 %** efter åtgärd (+20,0 % före) | felsökt och rättat, avsnitt 4.2 |
 | återskapning, 7 korpusar | bitexakt, samtliga poster | avsnitt 5 |
@@ -79,7 +81,7 @@ bzip2 (−9), zstd (−3, −19 `--long=27`, −22 `--ultra --long=31`) och
 xz (−9e). `tar | zstd −3` betecknas *dagens* och utgör referensnivå, då den
 motsvarar maskinens befintliga arkivskript. hz mäts i lägena `snabb`
 (zstd −3, inga omvandlingar), `normal` (omvandlingar, kodekprov per block)
-och `liten` (därtill nvcm som kandidat; standardläge), samt som `utan knep`
+och `liten` (därtill hzcm som kandidat; standardläge), samt som `utan knep`
 (läge normal med deduplicering och omvandlingar avslagna) för att isolera
 omvandlingarnas bidrag.
 
@@ -305,7 +307,7 @@ relativt `tar.zst −3`.
 
 ### 3.4 Standardkorpusar, kodeknivå
 
-Jämförelsen avser kompressorn nvcm isolerad — en fil i taget, en tråd —
+Jämförelsen avser kompressorn hzcm isolerad — en fil i taget, en tråd —
 eftersom publicerade tal för dessa korpusar är definierade så. hz som
 arkivpackare ingår i 3.1–3.3.
 
@@ -341,7 +343,7 @@ Per fil på Silesia, där korpusens heterogenitet är själva poängen:
 
 <!-- SILESIA-PER-FIL -->
 
-| fil | innehåll | rå byte | zstd -19 | brotli -q 11 | xz -9e | nvcm | nvcm mot bäst |
+| fil | innehåll | rå byte | zstd -19 | brotli -q 11 | xz -9e | hzcm | hzcm mot bäst |
 |:--|:--|--:|--:|--:|--:|--:|--:|
 | `dickens` | engelsk litteratur, text | 10 193 352 | 2 849 945 | 2 827 777 | 2 831 212 | 2 234 894 | −20,2 % |
 | `mozilla` | körbara filer (tar) | 51 215 653 | 15 071 672 | 13 872 265 | 13 376 240 | 14 366 242 | +7,4 % |
@@ -374,9 +376,9 @@ programversioner; ej egna mätningar):
 
 <!-- ENWIK8-PLATS -->
 
-Vår egen mätning: **nvcm gör enwik8 på 21 417 184 byte, 1,713 bits/byte** — 13,8 % mindre än `xz -9e` på samma maskin (24 831 648 byte, 1,986 bpb).
+Vår egen mätning: **hzcm gör enwik8 på 21 417 184 byte, 1,713 bits/byte** — 13,8 % mindre än `xz -9e` på samma maskin (24 831 648 byte, 1,986 bpb).
 
-Med 1,71 bits/byte hamnar nvcm mellan ordbokspackarna och de tunga kontextblandarna i tabellen ovan: den tar hem det en ordbokspackare inte kan se, men den har åtta modeller där cmix har hundratals, och den kör i ett par MiB/s där cmix kör i kilobyte per sekund.
+Med 1,71 bits/byte hamnar hzcm mellan ordbokspackarna och de tunga kontextblandarna i tabellen ovan: den tar hem det en ordbokspackare inte kan se, men den har åtta modeller där cmix har hundratals, och den kör i ett par MiB/s där cmix kör i kilobyte per sekund.
 
 <!-- SLUT ENWIK8-PLATS -->
 
@@ -506,7 +508,7 @@ Sju av åtta korpusar går till hz, med −15,8 % på Canterbury som bästa
 utfall. Den åttonde är `neuro`, där hz ligger **1,0 % efter `xz −9e`**:
 materialet är binär mätdata utan de likheter mellan filer som hz:s
 omvandlingar och dedup lever av, och då återstår bara kodeken — och där är
-LZMA med 64 MiB ordbok starkare än nvcm på just den datan. Det är samma
+LZMA med 64 MiB ordbok starkare än hzcm på just den datan. Det är samma
 mönster som arkivkorpusen i 4.2 och ska läsas som gränsen för H1: hz
 förbättrar data med utnyttjbar struktur, och på data utan sådan är resultatet
 en knapp procent sämre, inte bättre.
@@ -557,15 +559,15 @@ ingen*: samma slutsats som H1, men mätt på två axlar i stället för en.
 
 Loggkorpusen uppvisar provningens högsta kvot, 23,8×, och källan kan
 isoleras genom lägesjämförelsen: `normal` och `liten` skiljer sig enbart i
-att nvcm deltar i kodekprovet.
+att hzcm deltar i kodekprovet.
 
 | läge | storlek | packtid | aktiv skillnad |
 |:--|--:|--:|:--|
 | `normal` | 11,97 MiB | 864 s | kodekprov zstd/xz |
-| `liten` | **10,03 MiB** | **197 s** | därtill nvcm |
+| `liten` | **10,03 MiB** | **197 s** | därtill hzcm |
 
-nvcm vann provet för samtliga textblock, vilket arkivregistret bekräftar
-(2 block, båda nvcm; 192,03 → 9,00 MiB respektive 46,29 → 1,03 MiB).
+hzcm vann provet för samtliga textblock, vilket arkivregistret bekräftar
+(2 block, båda hzcm; 192,03 → 9,00 MiB respektive 46,29 → 1,03 MiB).
 Att det mindre arkivet också packas snabbare beror på parallellitet:
 hz:s block komprimeras oberoende av varandra, medan `xz -9e -T0` på denna
 datamängd i praktiken exekverar enkeltrådat till följd av sin
@@ -680,7 +682,7 @@ korpusen) och av att korpusen (27,4 MiB) ryms inom samtliga moderna
 packares fönster: hz, zstd −19/−22 och xz når samma storlek, och
 `hz utan knep` är identisk med `hz normal`. hz:s omvandlingar bidrar
 med noll på LZW-kodat innehåll — formatet öppnas inte. En
-GIF-motsvarighet till nvjpg (LZW → aritmetisk kodning av bildrutorna) är
+GIF-motsvarighet till hzjpg (LZW → aritmetisk kodning av bildrutorna) är
 därmed en identifierad men omätt möjlighet; korpusen för att mäta den
 finns nu.
 
@@ -874,7 +876,7 @@ det.
 ## 6. Implementation
 
 hz skrevs under provningens gång om från Python till en fristående
-C++17-binär (367 kB, 318 kB strippad): nvcm och nvjpg länkas in och exekveras som
+C++17-binär (367 kB, 318 kB strippad): hzcm och hzjpg länkas in och exekveras som
 arbetarprocesser via `/proc/self/exe`, zstd/xz/zlib anropas som bibliotek i
 processen, och `liten` är standardläge. Kompressionsresultaten är
 ekvivalenta inom stickprovsbruset (kodekarna är samma bibliotek);
@@ -988,8 +990,8 @@ förhållande till det.
 | likhetssortering före packning | *Sort Before Compression* (<https://gwern.net/sort>); solida arkiv i RAR och 7-Zip; lrzip | samma idé. hz sorterar på innehållsklass och ändelse, och mäter effekten separat (7.1) |
 | deduplicering av identiska filer | borg, restic, ZFS; innehållsdefinierad chunkning sedan LBFS (2001) | svagare: hz dedupar hela filer, inte chunkar |
 | deflate-ström tillbaka till rådata plus recept | precomp (Christian Schneider), preflate, reflate | smalare: hz klarar bara strömmar som zlib självt har skrivit |
-| förlustfri JPEG-omkodning | packJPG (Matthias Stirner), Lepton (Dropbox, 2016), brunsli → JPEG XL | **sämre**: nvjpg ger −15,1 %, publicerade siffror för de andra ligger kring −20 till −22 % |
-| kontextblandning, logistisk mixer, APM/SSE | PAQ-familjen (Matt Mahoney), lpaq, zpaq, cmix | mindre modell: paq8px slår nvcm på enwik8, 15,8 mot 20,4 MB (3.4) |
+| förlustfri JPEG-omkodning | packJPG (Matthias Stirner), Lepton (Dropbox, 2016), brunsli → JPEG XL | **sämre**: hzjpg ger −15,1 %, publicerade siffror för de andra ligger kring −20 till −22 % |
+| kontextblandning, logistisk mixer, APM/SSE | PAQ-familjen (Matt Mahoney), lpaq, zpaq, cmix | mindre modell: paq8px slår hzcm på enwik8, 15,8 mot 20,4 MB (3.4) |
 | innehållsmedvetet filterval per datatyp | FreeArc (Bulat Ziganshin), zpaq:s metodsträngar | samma tanke, annan mekanism: hz väljer genom stickprov på data i stället för genom regel på filtyp |
 | omvandling verifierad i båda riktningarna före den används | precomp och Lepton gör samma sak | samma |
 
@@ -1073,7 +1075,7 @@ funktion av fönstret och av hur utspridda likheterna låg från början. Med et
 litet fönster och utspridd likhet är den värd 8 %; med en ordbok som täcker
 hela korpusen 2,2 %; på korpusar som redan är ordnade, noll. hz:s mätbara
 vinster på materialet i den här rapporten kommer alltså från omvandlingarna,
-från dedupen där dubbletter finns, och från nvcm i läget `liten` — **inte**
+från dedupen där dubbletter finns, och från hzcm i läget `liten` — **inte**
 från sorteringen.
 
 ```
@@ -1109,7 +1111,7 @@ arbetet; de bär ett mätvärde och inte bara en gissning.
    enwik8 135 s mot 2 s för 14 %, Silesia 101 s mot 2 s för 6 %. Där den
    inte vinner något kostar den heller ingenting: på png, foto, gif, film
    och arkiv är `liten` och `normal` lika stora och lika snabba, eftersom
-   kodekprovet avvisar nvcm av sig själv. Avvägningen är alltså verklig och
+   kodekprovet avvisar hzcm av sig själv. Avvägningen är alltså verklig och
    fungerar som tänkt; invändningen gäller bara att standardvärdet gör
    valet åt användaren. Åtgärd att överväga: `normal` som standard, med
    `liten` som uttalat val.
@@ -1158,10 +1160,10 @@ arbetet; de bär ett mätvärde och inte bara en gissning.
    8 % är satt av två mätpunkter. Ett prov som växer med blockstorleken är
    fortfarande omätt.
 
-5. **nvjpg ligger under känd teknik.** −15,1 % mot publicerade −20 till
+5. **hzjpg ligger under känd teknik.** −15,1 % mot publicerade −20 till
    −22 % för packJPG, Lepton och brunsli (7). Avståndet är ett
    modelleringsavstånd: Lepton modellerar grannkoefficienter i två
-   dimensioner och över blockgränser, nvjpg i en. Därtill lämnas progressiv
+   dimensioner och över blockgränser, hzjpg i en. Därtill lämnas progressiv
    JPEG rå.
 
 6. **PNG-täckningen slutar vid zlib.** Strömmar skrivna av zlib-ng,
@@ -1169,7 +1171,7 @@ arbetet; de bär ett mätvärde och inte bara en gissning.
    preflate löser det allmänna fallet (7); att binda in det vidgar
    täckningen utan att röra formatet.
 
-7. **GIF-omkodning** (4.4): samma konstruktion som nvjpg, tillämpad på
+7. **GIF-omkodning** (4.4): samma konstruktion som hzjpg, tillämpad på
    LZW-lagret.
 
 8. **Dedup på chunknivå i stället för filnivå.** Filnivå hittar ingenting i
@@ -1202,10 +1204,10 @@ arbetet; de bär ett mätvärde och inte bara en gissning.
     `CreateProcess` eller trådar, och ett avgörande om symlänkar och
     rättigheter. I dag: Linux, eller WSL2 på Windows.
 
-11. **nvcm på opaka block:** läget `liten` sänder endast textklasser till
-    nvcm; huruvida opak data lönar sig är omätt.
+11. **hzcm på opaka block:** läget `liten` sänder endast textklasser till
+    hzcm; huruvida opak data lönar sig är omätt.
 
-12. **AVX-512 finns i maskinen men används inte.** nvcm:s inre slinga är en
+12. **AVX-512 finns i maskinen men används inte.** hzcm:s inre slinga är en
     skalärprodukt över tio int16-vikter per bit plus tio tabellslag. VNNI
     kan ta skalärprodukten, men tabellslagen är spridda och det är de som
     sannolikt dominerar; posten står sist därför att vinsten är omätt och
@@ -1236,7 +1238,7 @@ bzip2, zstd och xz.
 
 ```bash
 git clone https://github.com/hugowikstrom/hz && cd hz
-make                                                  # bygger hz, nvcm, nvjpg
+make                                                  # bygger hz, hzcm, hzjpg
 python3 korpus/bygg-korpus.py gif film arkiv logg     # lokala korpusar
 export NVPACK_SKRAP=$PWD/.skrap
 python3 matning/matning.py <korpus>                   # arkivnivå, per korpus

@@ -214,7 +214,7 @@ den här rapporten redovisar vad var och en gav, inklusive de som gav noll.</p>
 <tr><td>Sortera likt med likt</td><td style="text-align:left"><b>−1,85 %</b> … men registret
   kostar <b>+1,81 %</b> → netto noll</td><td class="mitt">kod</td></tr>
 <tr><td>Välja kodek genom prov</td><td style="text-align:left">hela stegen
-  zstd −19 → xz → nvcm: 8,53 → 8,23 → 7,19 MiB</td><td class="mitt">kod</td></tr>
+  zstd −19 → xz → hzcm: 8,53 → 8,23 → 7,19 MiB</td><td class="mitt">kod</td></tr>
 <tr><td>Prova i stället för anta</td><td style="text-align:left"><b>175 MiB</b> på PNG-korpusen,
   och gränsen mellan vinst och förlust på ett riktigt arkiv</td><td class="mitt">png, skarpt arkiv</td></tr>
 </tbody></table>
@@ -240,10 +240,10 @@ smartare ordning.</p>
 <h2>Tre lager som ingen vanlig packare rör</h2>
 <hr class="regel">
 
-<h3>JPEG kodas om utan att en pixel rörs &nbsp;<span class="mono" style="font-size:7.6pt;color:#717f7a">src/nvjpg.c · 760 rader C</span></h3>
+<h3>JPEG kodas om utan att en pixel rörs &nbsp;<span class="mono" style="font-size:7.6pt;color:#717f7a">src/hzjpg.c · 760 rader C</span></h3>
 <p>En JPEG är DCT-koefficienter entropikodade med Huffman. Huffman kan inte koda en
 symbol på mindre än en bit, och vet ingenting om att blocket bredvid såg nästan
-likadant ut. nvjpg avkodar koefficienterna och kodar om dem med en adaptiv
+likadant ut. hzjpg avkodar koefficienterna och kodar om dem med en adaptiv
 aritmetisk kodare vars modeller frågar tre grannskap: blocket till vänster och
 ovanför (<em>hur rörig är den här delen av bilden?</em>), samma plats i grannblocken
 (<em>hur stor brukar just den frekvensen vara här?</em>), och platserna till vänster
@@ -270,21 +270,21 @@ gnome-screenshot använder deflate-motorer som systemets zlib inte kan härma. I
 PNG-korpusen gick 281 av 4 422 provade filer att veckla ut — vinsten på dem som gick
 är desto större.</p>
 
-<h3>En egen kompressor för källkod &nbsp;<span class="mono" style="font-size:7.6pt;color:#717f7a">src/nvcm.c · 450 rader C</span></h3>
+<h3>En egen kompressor för källkod &nbsp;<span class="mono" style="font-size:7.6pt;color:#717f7a">src/hzcm.c · 450 rader C</span></h3>
 <p>xz var det starkaste som fanns installerat, så hz fick något starkare. I
-stället för att hänvisa bakåt i en ordbok gissar nvcm nästa <em>bit</em>, med åtta
+stället för att hänvisa bakåt i en ordbok gissar hzcm nästa <em>bit</em>, med åtta
 modeller samtidigt: ordning 0–8, en ordmodell, och en matchmodell som gör
 ordbokspackarens trick som en röst bland andra. En blandare lär sig under tiden vem
 som brukar ha rätt, och två efterjusterare putsar resultatet.</p>
 <table class="jämför">
-<thead><tr><th>indata</th><th>xz −9e</th><th>nvcm</th><th></th></tr></thead>
+<thead><tr><th>indata</th><th>xz −9e</th><th>hzcm</th><th></th></tr></thead>
 <tbody>
 <tr><td>källkod, 8 MB</td><td>782 876</td><td><b>663 744</b></td><td>−15 %</td></tr>
 <tr><td>seq 1 50000</td><td><b>10 160</b></td><td>47 548</td><td>+368 %</td></tr>
 </tbody></table>
 <p>Den är alltså inte bättre på allt — en modell som gissar nästa bit ur de
 föregående byten ser inte att ett tal ökar med ett, medan ordbokspackarens
-matchningslängd gör det. Därför <em>provas</em> nvcm mot xz och zstd per block i
+matchningslängd gör det. Därför <em>provas</em> hzcm mot xz och zstd per block i
 stället för att väljas på filtyp.</p><div class="fot"><span>hz · mätrapport</span><span>sida 3 av 9</span></div></div>
 <div class="sida"><span class="etikett">Mätningen</span><h2>Fyra träd, tolv packare</h2><hr class="regel"><p class="lead">Stapeln visar hur stor del av originalet som är kvar — kortare är bättre. Det streckade märket är dagens arkivskript: allt till vänster om det är en vinst, allt till höger en förlust.</p>
 <div class="figrubrik"><div class="namn">Programkod — 55,4 MiB i 5 974 filer</div><div class="om">Källkod ur arton projekt på maskinen: .mjs, .py, .ts, .json, .html, .css, .md</div></div>
@@ -438,7 +438,7 @@ index och utan dedup. hz bor i tomrummet mellan dem.</p>
 <code>precomp</code> och <code>reflate</code> sedan länge. Förlustfri JPEG-ompackning
 gör <code>lepton</code> och <code>brunsli</code> — och <em>bättre</em> än min, cirka
 22 % mot mina 15 %. Kontextblandning är paq- och zpaq-familjen, och de är långt
-starkare än nvcm. Skillnaden är inte uppfinningen utan <b>integrationen</b>: ett enda
+starkare än hzcm. Skillnaden är inte uppfinningen utan <b>integrationen</b>: ett enda
 arkivprogram som gör allt det här, och som för varje omvandling bevisar att den går
 att vända innan den används. Inget av de klassiska verktygen försöker ens; de
 specialiserade gör det var och en för sin filtyp, och ingen av dem fanns installerad
@@ -459,7 +459,7 @@ delvis uppackning, och det kostar det här.</li>
 restic rätt verktyg.</li>
 <li><b>Hårda länkar blir fristående kopior</b>, och rör, uttag och enheter hoppas över
 med varning. <b>Progressiv JPEG</b> och <b>PNG ur okända deflate-motorer</b> lagras rå.</li>
-<li><b>nvcm är långsam i båda riktningarna</b> — 207 s att packa upp det blandade trädet,
+<li><b>hzcm är långsam i båda riktningarna</b> — 207 s att packa upp det blandade trädet,
 mot 8 s för läget <code>normal</code>.</li>
 </ul>
 
@@ -554,7 +554,7 @@ att källträdet då alltid lämnas kvar. Underkommandona <code>packa</code>, <c
 <code>lista</code> och <code>prova</code> finns kvar; mätningarna anropar dem.</p>
 <p style="font-size:7.8pt;color:#717f7a">Tre lägen: <code>snabb</code> motsvarar dagens
 arkivskript (zstd −3, inga omvandlingar), <code>normal</code> är standard, och
-<code>liten</code> släpper dessutom in nvcm på de textblock där provet visar att den
+<code>liten</code> släpper dessutom in hzcm på de textblock där provet visar att den
 vinner.</p><div class="fot"><span>hz · mätrapport</span><span>sida 9 av 9</span></div></div><div id="kontroll" style="display:none"></div>
 <script>
 (function () {
