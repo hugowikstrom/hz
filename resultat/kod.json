@@ -1,6 +1,6 @@
 {
  "korpus": "kod",
- "rabyte": 58067560,
+ "rabyte": 58065924,
  "filer": 5974,
  "matningar": {
   "tar.gz -6": {
@@ -78,9 +78,9 @@
   },
   "nvz liten": {
    "packare": "nvz liten",
-   "byte": 7553094,
-   "packsek": 68.33,
-   "uppacksek": 66.69,
+   "byte": 7553932,
+   "packsek": 63.65,
+   "uppacksek": 61.63,
    "identisk": true,
    "korpus_stabil": true
   },

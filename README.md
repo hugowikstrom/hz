@@ -211,7 +211,7 @@ built-in dictionaries at all. Its price is ~1 MB/s, which is why only mode
 |:--|:--|:--|
 | `fast` | zstd −3, no transforms | matches a plain `tar \| zstd -3` script (`-1`) |
 | `normal` | transforms on; zstd −19 or covering-dictionary xz by probe; opaque blocks settled by the two-step rule | `-4` .. `-6` |
-| `small` | plus nvcm where it wins, LZMA with a covering dictionary as an extra candidate on opaque blocks, and a whole-block re-check when the probe's lead was thin | **default** |
+| `small` | plus nvcm where it wins (in parallel 32 MiB shards, `nvcm-p`, on blocks of 64 MiB and up), LZMA with a covering dictionary as an extra candidate on opaque blocks, and a whole-block re-check when the probe's lead was thin | **default** |
 | `gpu` | plus nvlz (GPU LZ77) in the probe | never — see the GPU section |
 
 The difference between `normal` and `small` is time, not just codec
@@ -244,7 +244,7 @@ by hand.
 | **nvz fast** | 11.34 | 4.88× | −1.0 % | 1 s | 0 s | yes |
 | **nvz, tricks off** | 8.18 | 6.77× | −28.6 % | 40 s | 1 s | yes |
 | **nvz normal** | 8.18 | 6.77× | −28.6 % | 40 s | 1 s | yes |
-| **nvz small** | **7.20** | 7.69× | −37.1 % | 68 s | 67 s | yes |
+| **nvz small** | **7.20** | 7.69× | −37.1 % | 64 s | 62 s | yes |
 
 ### Images (PNG) — 431.1 MiB in 4 618 files
 
@@ -346,7 +346,7 @@ by hand.
 | **nvz fast** | 22.41 | 10.63× | +0.1 % | 2 s | 1 s | yes |
 | **nvz, tricks off** | 11.87 | 20.08× | −47.0 % | 854 s | 2 s | yes |
 | **nvz normal** | 11.87 | 20.08× | −47.0 % | 851 s | 2 s | yes |
-| **nvz small** | **10.03** | 23.77× | −55.2 % | 191 s | 198 s | yes |
+| **nvz small** | **10.23** | 23.30× | −54.3 % | 73 s | 42 s | yes |
 
 ### Mixed project tree (symbios-3d) — 1 814.4 MiB in 15 139 files
 
@@ -379,7 +379,7 @@ by hand.
 | **nvz fast** | 63.17 | 3.20× | +0.0 % | 1 s | 1 s | yes |
 | **nvz, tricks off** | 46.14 | 4.38× | −26.9 % | 92 s | 2 s | yes |
 | **nvz normal** | 46.14 | 4.38× | −26.9 % | 92 s | 2 s | yes |
-| **nvz small** | **43.54** | 4.64× | −31.0 % | 100 s | 99 s | yes |
+| **nvz small** | **43.62** | 4.63× | −30.9 % | 94 s | 38 s | yes |
 
 ### enwik8 (standard corpus) — 95.4 MiB in 1 files
 
@@ -396,7 +396,7 @@ by hand.
 | **nvz fast** | 33.80 | 2.82× | +0.0 % | 1 s | 1 s | yes |
 | **nvz, tricks off** | 23.59 | 4.04× | −30.2 % | 122 s | 2 s | yes |
 | **nvz normal** | 23.59 | 4.04× | −30.2 % | 122 s | 2 s | yes |
-| **nvz small** | **20.43** | 4.67× | −39.6 % | 129 s | 132 s | yes |
+| **nvz small** | **20.81** | 4.58× | −38.4 % | 50 s | 43 s | yes |
 
 <!-- SLUT TABELLER -->
 
@@ -563,7 +563,11 @@ outside that boundary.
 * **PNG from unknown deflate engines** (zlib-ng, libdeflate, Chrome) is
   stored raw at pack time; at unpack time a foreign-engine archive is
   rescued by parameter search or refused — never corrupted.
-* **nvcm is slow** (~1 MB/s) and only mode `small` uses it.
+* **nvcm is slow** (~1 MB/s per stream) and only mode `small` uses it.
+  Blocks of 64 MiB and up are coded as `nvcm-p` — independent 32 MiB
+  shards in parallel — which cut enwik8 from 129/132 s (pack/unpack) to
+  49/43 s for +1.9 % size. `--codec nvcm` still forces the single-stream
+  minimum. Shard curve measured in `src/cpp/codec.cpp`.
 * **Memory scales with the whole tree** (~1.4× raw data), and the xz
   dictionary budget depends on free memory at start — measure on an
   unloaded machine. Report §8 holds the full ranked list of fourteen
@@ -592,3 +596,8 @@ python3 experiment/dominans.py       # both axes against the best opponent
 The suite found real faults at every stage — a directory symlink that
 vanished silently, directory mtimes never restored, the struct-layout
 build fault, the three review flaws. That is what it is for.
+
+## License
+
+GPL-2.0-only — the kernel's license. See `LICENSE`, the per-file SPDX
+identifiers, and `PACKAGING.md` for what a distribution package ships.

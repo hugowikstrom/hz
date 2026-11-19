@@ -75,10 +75,11 @@
   },
   "nvz liten": {
    "packare": "nvz liten",
-   "byte": 10512452,
-   "packsek": 190.58,
-   "uppacksek": 197.9,
-   "identisk": true
+   "byte": 10724600,
+   "packsek": 72.64,
+   "uppacksek": 42.33,
+   "identisk": true,
+   "korpus_stabil": true
   },
   "nvz utan knep": {
    "packare": "nvz utan knep",

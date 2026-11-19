@@ -68,8 +68,14 @@ established tool on both size and time on most corpora;
 is deduplication and sorting with zstd \-3, matching a plain
 \fBtar | zstd \-3\fR pipeline in speed.
 .TP
-.BI \-\-codec " zstd3|zstd19|zstd22|xz9e|nvcm|nvlz"
+.BI \-\-codec " zstd3|zstd19|zstd22|xz9e|nvcm|nvcm\-p|nvlz"
 Force one codec instead of probing. Exists for measurements.
+.B nvcm
+forces the single-stream minimum; without the flag, blocks of 64 MiB and
+up that choose nvcm are coded as
+.B nvcm\-p
+\(em independent 32 MiB shards packed and unpacked in parallel, under two
+percent larger and three to four times faster in both directions.
 .TP
 .B \-\-portable
 Restrict the archive to the codecs {ra, xz9e, xz9e\-j0} and switch the

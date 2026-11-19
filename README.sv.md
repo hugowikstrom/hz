@@ -487,7 +487,7 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | **nvz snabb** | 11,34 | 4,88× | −1,0 % | 1 s | 0 s | ja |
 | **nvz utan knep** | 8,18 | 6,77× | −28,6 % | 40 s | 1 s | ja |
 | **nvz normal** | 8,18 | 6,77× | −28,6 % | 40 s | 1 s | ja |
-| **nvz liten** | **7,20** | 7,69× | −37,1 % | 68 s | 67 s | ja |
+| **nvz liten** | **7,20** | 7,69× | −37,1 % | 64 s | 62 s | ja |
 
 ### Bilder (PNG) — 431 1 MiB i 4 618 filer
 
@@ -589,7 +589,7 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | **nvz snabb** | 22,41 | 10,63× | +0,1 % | 2 s | 1 s | ja |
 | **nvz utan knep** | 11,87 | 20,08× | −47,0 % | 854 s | 2 s | ja |
 | **nvz normal** | 11,87 | 20,08× | −47,0 % | 851 s | 2 s | ja |
-| **nvz liten** | **10,03** | 23,77× | −55,2 % | 191 s | 198 s | ja |
+| **nvz liten** | **10,23** | 23,30× | −54,3 % | 73 s | 42 s | ja |
 
 ### Blandat projektträd (symbios-3d) — 1 814 4 MiB i 15 139 filer
 
@@ -622,7 +622,7 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | **nvz snabb** | 63,17 | 3,20× | +0,0 % | 1 s | 1 s | ja |
 | **nvz utan knep** | 46,14 | 4,38× | −26,9 % | 92 s | 2 s | ja |
 | **nvz normal** | 46,14 | 4,38× | −26,9 % | 92 s | 2 s | ja |
-| **nvz liten** | **43,54** | 4,64× | −31,0 % | 100 s | 99 s | ja |
+| **nvz liten** | **43,62** | 4,63× | −30,9 % | 94 s | 38 s | ja |
 
 ### enwik8 (standardkorpus) — 95 4 MiB i 1 filer
 
@@ -639,7 +639,7 @@ byggs av `korpus/bygg-korpus.py` ur riktiga projekt på maskinen, som hårdlänk
 | **nvz snabb** | 33,80 | 2,82× | +0,0 % | 1 s | 1 s | ja |
 | **nvz utan knep** | 23,59 | 4,04× | −30,2 % | 122 s | 2 s | ja |
 | **nvz normal** | 23,59 | 4,04× | −30,2 % | 122 s | 2 s | ja |
-| **nvz liten** | **20,43** | 4,67× | −39,6 % | 129 s | 132 s | ja |
+| **nvz liten** | **20,81** | 4,58× | −38,4 % | 50 s | 43 s | ja |
 
 <!-- SLUT TABELLER -->
 
@@ -978,3 +978,8 @@ kom på. Kärntestet finns därför att en korpus man valt själv aldrig kan
 avfärda invändningen att resultatet är anpassat till den. Ablationen finns
 därför att knepen annars mäts ihop, och då går det inte att svara på hur
 mycket sorteringen — som är den äldsta och mest kända delen — står för.
+
+## Licens
+
+GPL-2.0-only — kärnans licens. Se `LICENSE`, SPDX-raderna per fil och
+`PACKAGING.md` för vad ett distributionspaket skeppar.
