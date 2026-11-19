@@ -69,7 +69,7 @@ PY
         fi
         rm -rf "$ARB/uB"
         utdata=$("$NVZ" packa-upp "$ARB/fel-fonster.nvz" "$ARB/uB" 2>&1); status=$?
-        if [ $status -ne 0 ] && grep -q "deflate-motor" <<<"$utdata"; then
+        if [ $status -ne 0 ] && grep -q "deflate engine" <<<"$utdata"; then
             ok "ett orimligt recept VÄGRAS med motorns avtryck i felet, aldrig tyst korruption"
         else
             inte "ett orimligt recept gav status $status i stället för ett nej"

@@ -1,156 +1,167 @@
-.TH NVZ 1 "2026-11-16" "nvz 1" "Användarkommandon"
-.SH NAMN
-nvz \- innehållsmedveten arkivpackare
+.TH NVZ 1 "November 2026" "nvz 2.0" "User commands"
+.SH NAME
+nvz \- content-aware archiver that knows what it is packing
 .SH SYNOPSIS
-.B nvz packa
-.I katalog arkiv.nv
-.RI [ flaggor ]
+.B nvz pack
+.I dir archive.nv
+.RI [ flags ]
 .br
-.B nvz packa\-upp
-.I arkiv.nv målkatalog
-.RI [ flaggor ]
+.B nvz unpack
+.I archive.nv target
 .br
-.B nvz lista
-.I arkiv.nv
+.B nvz list
+.I archive.nv
 .br
-.B nvz prova
-.I katalog
-.SH BESKRIVNING
+.B nvz test
+.I dir
+.br
 .B nvz
-packar ett katalogträd till ett arkiv. Den är EN binär: kompressorerna
-nvcm och nvjpg är inlänkade, och zstd, xz och zlib anropas som bibliotek i
-samma process \(em inga yttre program, ingen tolk. Till skillnad från
-.BR tar (1)
-i rör med en komprimerare vet nvz vad den packar, och gör fem saker som
-röret inte kan göra:
-.TP
-.B 1. Identiska filer lagras en gång.
-Innehållet hashas med blake2b och dubbletter blir pekare. Uppackningen ger
-tillbaka fristående filer, inte hårda länkar.
-.TP
-.B 2. Lika filer läggs bredvid varandra.
-Posterna sorteras på klass och ändelse före packning, så att likheter som i
-katalogordning låg hundratals megabyte isär hamnar inom komprimerarens
-fönster.
-.TP
-.B 3. PNG vecklas ut och packas om.
-IDAT\-strömmen vecklas ut till råa filterrader, och det
-.I recept
-som återskapar exakt samma deflate\-ström sparas. Hittas inget recept
-lagras filen rå.
-.TP
-.B 4. JPEG kodas om utan att en pixel rörs.
-Huffman\-lagret byts mot en aritmetisk kodare med grannskapsmodeller; se
-.BR nvjpg (1).
-.TP
-.B 5. Ingenting antas \(em allt provas.
-Varje block provpackas med varje tillgänglig kodek på åtta stickprov, och
-den som vinner får blocket. Film och ljud lagras rått av sig självt, därför
-att provet säger det och inte därför att en tabell gissat det.
+.RI [ FLAG ]...
+.RI [ FILE ]...
+.SH DESCRIPTION
+.B nvz
+classifies its content and applies content-specific, lossless transforms —
+deduplication, similarity sorting, PNG unfolding with recipe search,
+lossless JPEG recoding and context-mixing compression — before choosing a
+codec per block by probing a sample. Everything is bit-exact: every
+transform is tried in both directions at pack time, and whatever cannot be
+reproduced exactly is stored raw.
 .PP
-Varje omvandling bevisas vid packning: resultatet sys ihop igen och jämförs
-med originalet innan det godtas. Går det inte ihop lagras filen rå. Arkivet
-är därmed bit\-exakt, rättigheter och tidsstämplar inräknade.
-.SH FLAGGOR
-.SS packa
+Five things
+.B tar
+does not do:
 .TP
-.BI \-\-läge " snabb|normal|liten|gpu"
-.B liten
-är STANDARD: omvandlingarna på, och
-.BR nvcm (1)
-får tävla om textblocken \(em det minsta arkivet nvz kan göra.
+.B 1. Identical files are stored once.
+Content is hashed with blake2b; duplicates become pointers into the same
+block.
+.TP
+.B 2. Similar files are placed next to each other.
+Entries are sorted by content class and extension before compression, so
+the compressor's window sees likenesses that sat far apart in directory
+order. Within a group, files larger than an eighth of the block cap go
+first — the large file builds the dictionary the small ones match into.
+.TP
+.B 3. PNGs are unfolded and recompressed.
+The IDAT stream is unfolded to raw filter rows, and the zlib recipe that
+reproduces the original stream byte for byte is stored, together with a
+fingerprint of the deflate engine that wrote it. On unpack every IDAT
+chunk is verified against its CRC.
+.TP
+.B 4. JPEGs are recoded without touching a pixel.
+The Huffman entropy layer is replaced by an adaptive arithmetic coder
+(nvjpg); the DCT coefficients themselves are untouched and the original
+bytes are proven reproducible before the transform is accepted.
+.TP
+.B 5. Nothing is assumed \(em everything is probed.
+Each block chooses its codec by compressing a sample with every candidate:
+zstd, xz with a dictionary that covers the block, or the context mixer
+nvcm.
+.SH SUBCOMMAND FLAGS
+.TP
+.BI \-\-mode " fast|normal|small|gpu"
+.B small
+(the default) is the smallest archive nvz can make;
 .B normal
-hoppar över nvcm (snabbare packning, något större arkiv).
-.B snabb
-motsvarar dagens arkivskript: zstd \-3 och inga omvandlingar.
-.B gpu
-låter kodeken nvlz tävla; se ANMÄRKNINGAR.
+skips the most expensive re-checks and is the mode that beats the best
+established tool on both size and time on most corpora;
+.B fast
+is deduplication and sorting with zstd \-3, matching a plain
+\fBtar | zstd \-3\fR pipeline in speed.
 .TP
-.BI \-\-kodek " zstd3|zstd19|zstd22|xz9e|nvcm|nvlz"
-Tvinga en kodek i stället för att prova fram en. Finns för mätningar.
+.BI \-\-codec " zstd3|zstd19|zstd22|xz9e|nvcm|nvlz"
+Force one codec instead of probing. Exists for measurements.
 .TP
-.B \-\-utan\-dedup
-Lagra varje kopia för sig. Finns för att kunna mäta vad dedupen är värd.
+.B \-\-portable
+Restrict the archive to the codecs {ra, xz9e, xz9e\-j0} and switch the
+transforms off. Such an archive can be unpacked by the pure-stdlib Python
+tool
+.B portable/nvzpy.py
+on macOS and Windows \(em no libzstd, no nvcm, no deflate-engine
+dependency. Slower and somewhat larger; portability is the point.
 .TP
-.B \-\-utan\-omvandling
-Stäng av PNG\- och JPEG\-omvandlingarna.
+.B \-\-no\-dedup
+Store every copy separately. Exists to measure what deduplication is worth.
 .TP
-.B \-\-utan\-sortering
-Lämna objekten i katalogordning i stället för att lägga lika filer intill
-varandra. Finns för att kunna mäta vad sorteringen \(em och bara den \(em är
-värd; se
+.B \-\-no\-transform
+Switch off the PNG and JPEG transforms.
+.TP
+.B \-\-no\-sort
+Leave objects in directory order. An ablation flag: it isolates what the
+similarity sort \(em and only it \(em is worth; see
 .B experiment/ablation.sh.
 .TP
-.BI \-\-blocktak " MiB"
-Rått tak per block, standard 192. Antalet block styr parallelliteten (ett
-block packas av en tråd) och samtidigt kvoten (ett block är kompressorns
-fönster), så flaggan är avvägningen mellan packtid och storlek. Opaka block
-undantas och berörs inte.
-.TP
-.B \-\-utan\-klassning
-Lägg allt i samma blockström i stället för ett block per innehållsklass.
-Tillsammans med
-.B \-\-utan\-sortering
-ger den nvz utan någon omordning alls, vilket är jämförelsepunkten mot
+.B \-\-no\-classing
+Put everything into one block stream instead of one block per content
+class. Together with
+.B \-\-no\-sort
+this is nvz with no reordering at all, the comparison point against
 .B tar
-i katalogordning.
+in directory order.
 .TP
-.BI \-j " antal" "\fR, \fP" \-\-jobb " antal"
-Antal parallella jobb. Standard är antalet trådar, högst 24.
+.BI \-\-block\-cap " MiB"
+Raw bytes per block, default 192. The number of blocks governs the
+parallelism (one block is compressed by one thread) and the ratio (one
+block is the compressor's window), so this flag is the time/size dial.
+Opaque blocks are exempt.
 .TP
-.BR \-q ", " \-\-tyst
-Säg ingenting.
-.SS packa-upp
+.BI \-j " N" "\fR, \fP" \-\-jobs " N"
+Number of parallel jobs. Default is the number of threads, at most 24.
 .TP
-.BI \-j " antal" "\fR, \fP" \-\-jobb " antal"
-Antal parallella jobb.
+.BR \-q ", " \-\-quiet
+Say nothing.
+.SH THE GZIP SURFACE
+Without a subcommand,
+.B nvz
+behaves like
+.BR gzip :
+\fBnvz file\fR replaces the file with \fIfile\fR.nv (the archive inherits
+its time and permissions), \fBnvz \-d\fR brings it back,
+.B \-c \-k \-l \-t \-r \-S \-f \-v
+and
+.B \-1..\-9
+mean what they mean in gzip. Two deliberate differences: the default level
+is the SMALLEST, and a directory operand becomes ONE archive of the whole
+tree, with the source tree always left in place.
+.SH SWEDISH ALIASES
+The tool was born Swedish, and published reports and scripts use the old
+names. They are permanent aliases: the subcommands
+.BR packa ", " packa\-upp ", " lista ", " prova ;
+the flags
+.BR \-\-läge ", " \-\-kodek ", " \-\-blocktak ", " \-\-jobb ", "
+.BR \-\-utan\-dedup ", " \-\-utan\-omvandling ", " \-\-utan\-sortering ", "
+.BR \-\-utan\-klassning ", " \-\-tyst ;
+and the mode values
+.BR snabb " (fast) and " liten " (small)."
+.SH EXIT STATUS
+0 all well, 1 error, 2 warning. One failing operand does not stop the
+rest.
+.SH FILES
+Scratch space honors
+.BR TMPDIR .
+.SH NOTES
 .TP
-.BR \-q ", " \-\-tyst
-Säg ingenting.
-.SH EXEMPEL
-.RS
-.EX
-nvz packa ~/projekt projekt.nv
-nvz lista projekt.nv
-nvz packa\-upp projekt.nv /tmp/åter
-nvz prova ~/projekt        # packa, packa upp, jämför bit för bit
-.EE
-.RE
-.SH ARKIVFORMATET
-.RS
-.EX
-"NVPACK\\x01" | block 0 | block 1 | ... | register (zstd) | <u64 offset, u64 längd>
-.EE
-.RE
-.PP
-Varje block är en oberoende packad följd av objektkroppar med sin egen
-kodek. Oberoendet är med flit: blocken packas parallellt, och en uppackning
-som bara vill ha en fil behöver bara röra ett block. Registret ligger i
-parallella listor, och objektens platser i blocken räknas fram ur längderna
-i stället för att lagras.
-.SH ANMÄRKNINGAR
+.B No special files.
+Pipes, sockets and devices are skipped with a warning. Hard links are
+recreated as independent files.
 .TP
-.B Inga specialfiler.
-Rör, uttag och enheter hoppas över med varning. Hårda länkar återskapas som
-fristående filer.
+.B Standard input does not stream.
+\fBcat file | nvz\fR works, but lands in a scratch file on the way: the
+register sits at the end of the archive and is read first.
 .TP
-.B Ingen kryptering och ingen redundans.
-En bit som vänder sig i ett block förstör blocket. Arkivet vägrar då packa
-upp i stället för att lämna fel data.
+.B No encryption and no redundancy.
+An archive with secrets should have mode 600; a flipped bit in a block
+ruins the block \(em and is detected, never silently passed through.
 .TP
-.B Blockstorleken är en kompressionsgräns.
-Block är högst 192 MiB och fönstret inuti dem 128 MiB. Två nästan\-identiska
-filer som hamnar i olika block kan inte matcha varandra, och på arkiv av
-arkiv (zip, tar.gz) förlorar nvz därför mot ett rakt
-.BR tar " | " zstd " \-19."
-.TP
-.B GPU\-läget är ett mätinstrument.
-Kodeken nvlz lägger LZ77\-matchningen på grafikkortet. Den vinner 2,5 gånger
-på just den delen, men entropikodningen är seriell och hela packningen blir
-inte snabbare. Läget finns för att resultatet ska gå att räkna om.
-.SH SE ÄVEN
+.B PNG portability.
+A PNG recipe depends on the deflate engine (zlib vs zlib-ng). The recipe
+carries the engine's fingerprint; on a mismatch nvz searches the parameter
+space and otherwise refuses with both fingerprints named. Use
+.B \-\-portable
+or
+.B \-\-no\-transform
+for archives that must open anywhere.
+.SH SEE ALSO
 .BR nvcm (1),
 .BR nvjpg (1),
-.BR tar (1),
-.BR zstd (1),
-.BR xz (1)
+the measurement report in
+.IR rapport/broad-evaluation.md .

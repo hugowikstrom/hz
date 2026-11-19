@@ -1,12 +1,12 @@
-/* nvcm inlänkad i nvz-binären.
+/* nvcm linked into the nvz binary.
  *
- * nvcm.c är ett eget program med main(). Här byts main bort och två
- * funktioner med andra namn exponeras i stället. Allt annat i filen är
- * static, så inget kolliderar med nvjpg-wrappen bredvid — de är varsin
- * översättningsenhet. */
-#define main nvcm_main_oanvand
+ * nvcm.c is a standalone program with a main(). Here main is swapped out
+ * and two functions with other names are exposed instead. Everything else
+ * in the file is static, so nothing collides with the nvjpg wrapper next
+ * door — they are separate translation units. */
+#define main nvcm_main_unused
 #include "../nvcm.c"
 #undef main
 
-int nvz_nvcm_packa(void)    { bygg_stretch(); bygg_takt(); return packa_strom(stdin, stdout); }
-int nvz_nvcm_packaupp(void) { bygg_stretch(); bygg_takt(); return packa_upp_strom(stdin, stdout); }
+int nvz_nvcm_pack(void)   { build_stretch(); build_rates(); return pack_stream(stdin, stdout); }
+int nvz_nvcm_unpack(void) { build_stretch(); build_rates(); return unpack_stream(stdin, stdout); }

@@ -1564,6 +1564,14 @@ int main(int argc, char **argv) {
     if (argc < 2 || !strcmp(argv[1], "--hjälp") || !strcmp(argv[1], "-h")) { hjälp(); return argc < 2 ? 2 : 0; }
 
     const char *kmd = argv[1];
+    /* English aliases for the subcommands and --quiet, so the nvz binary can
+     * speak English to its measurement instrument. The Swedish names remain
+     * the canonical ones inside this file. */
+    if (!strcmp(kmd, "pack")) kmd = "packa";
+    else if (!strcmp(kmd, "unpack")) kmd = "packaupp";
+    else if (!strcmp(kmd, "hash")) kmd = "hasha";
+    else if (!strcmp(kmd, "device")) kmd = "enhet";
+    else if (!strcmp(kmd, "selftest")) kmd = "prov";
     int bara_cpu = 0;
     int trådar = (int)sysconf(_SC_NPROCESSORS_ONLN);
     uint32_t fönster = 32768, kedja = 4096, nog = 258, lz_fönster = 0;
@@ -1579,7 +1587,7 @@ int main(int argc, char **argv) {
         const char *a = argv[i];
         int har_värde = i + 1 < argc;
         if (!strcmp(a, "--cpu")) bara_cpu = 1;
-        else if (!strcmp(a, "--tyst")) TYST = 1;
+        else if (!strcmp(a, "--tyst") || !strcmp(a, "--quiet")) TYST = 1;
         else if (!strcmp(a, "--jobb") && har_värde) trådar = atoi(argv[++i]);
         else if (!strcmp(a, "--fonster") && har_värde) fönster = (uint32_t)strtoul(argv[++i], NULL, 10);
         else if (!strcmp(a, "--kedja") && har_värde) { kedja = (uint32_t)strtoul(argv[++i], NULL, 10); kedja_satt = 1; }

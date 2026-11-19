@@ -1,12 +1,12 @@
-/* nvjpg inlänkad i nvz-binären, på samma sätt som nvcm.
+/* nvjpg linked into the nvz binary, the same way as nvcm.
  *
- * nvjpg:s dö() gör exit(2) — bland annat för progressiv JPEG, som är ett
- * VÄNTAT fall, inte ett fel. Därför körs de här funktionerna aldrig i
- * packarens egen process utan i en arbetare som nvz startar av sig själv
- * (/proc/self/exe nvjpg packa). En exit där är en vägran, inte en krasch. */
-#define main nvjpg_main_oanvand
+ * nvjpg's die() does exit(2) — among other things for progressive JPEG,
+ * which is an EXPECTED case, not an error. These functions therefore never
+ * run in the packer's own process but in a worker nvz starts from itself
+ * (/proc/self/exe nvjpg pack). An exit there is a refusal, not a crash. */
+#define main nvjpg_main_unused
 #include "../nvjpg.c"
 #undef main
 
-int nvz_nvjpg_packa(void)    { return packa(); }
-int nvz_nvjpg_packaupp(void) { return packa_upp(); }
+int nvz_nvjpg_pack(void)   { return pack_main(); }
+int nvz_nvjpg_unpack(void) { return unpack_main(); }

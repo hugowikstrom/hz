@@ -4,30 +4,30 @@
 
 namespace nvz {
 
-// Precis så mycket JSON som v1-registret innehåller: objekt, listor,
-// strängar, heltal, true/false/null. Ingen flyttalsparsning, ingen
-// generisk serialisering — v2 skrivs binärt och behöver ingen.
+// Exactly as much JSON as the v1 register contains: objects, lists, strings,
+// integers, true/false/null. No float parsing, no generic serialization —
+// v2 is written in binary and needs none.
 //
-// Den finns bara för bakåtkompatibiliteten. Arkiv som pythonversionen
-// skrivit ska gå att packa upp med den här binären; annars vore namnbytet
-// till C++ en tyst dataförlust.
-struct Jvarde;
-using Jptr = std::shared_ptr<Jvarde>;
+// It exists only for backward compatibility. Archives written by the Python
+// implementation must unpack with this binary; otherwise the move to C++
+// would have been a silent data loss.
+struct Jvalue;
+using Jptr = std::shared_ptr<Jvalue>;
 
-struct Jvarde {
-    enum class K { Null, Bool, Tal, Strang, Lista, Objekt } k = K::Null;
+struct Jvalue {
+    enum class K { Null, Bool, Num, Str, List, Obj } k = K::Null;
     bool b = false;
-    i64 tal = 0;
+    i64 num = 0;
     std::string s;
-    std::vector<Jptr> lista;
-    std::map<std::string, Jptr> objekt;
+    std::vector<Jptr> list;
+    std::map<std::string, Jptr> obj;
 
-    const Jptr &at(const std::string &nyckel) const;
-    bool har(const std::string &nyckel) const { return objekt.count(nyckel) > 0; }
-    i64 som_tal() const { return k == K::Tal ? tal : 0; }
-    const std::string &som_strang() const { return s; }
+    const Jptr &at(const std::string &key) const;
+    bool has(const std::string &key) const { return obj.count(key) > 0; }
+    i64 as_num() const { return k == K::Num ? num : 0; }
+    const std::string &as_str() const { return s; }
 };
 
-Jptr las_json(const std::string &text);
+Jptr parse_json(const std::string &text);
 
 }  // namespace nvz

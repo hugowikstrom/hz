@@ -1,40 +1,41 @@
-/* nvcm — kontextblandande kompressor för text och källkod.
+/* nvcm — context-mixing compressor for text and source code.
  *
- *     nvcm [flaggor] [fil ...]        (gzip-syntax, se man nvcm)
- *     nvcm packa|packaupp < in > ut  (gamla vägen, som nvpack anropar)
+ *     nvcm [flags] [file ...]        (gzip syntax, see man nvcm)
+ *     nvcm pack|unpack < in > out    (the worker path, called by nvz;
+ *                                     the old names packa|packaupp remain)
  *
- * VARFÖR. xz och zstd är ORDBOKSPACKARE: de letar upp en tidigare förekomst
- * av samma byte-följd och skriver "samma som 4 kB bakåt, 19 byte". Det är en
- * utmärkt idé för upprepningar, men den har ett golv. Varje hänvisning kostar
- * ett antal bitar även när nästa tecken var fullständigt förutsägbart, och
- * bokstaven efter "func" i en js-fil, eller mellanslagen efter ett radbrott i
- * indenterad kod, ÄR fullständigt förutsägbara.
+ * WHY. xz and zstd are DICTIONARY compressors: they find an earlier
+ * occurrence of the same byte sequence and write "same as 4 kB back,
+ * 19 bytes". An excellent idea for repeats, but it has a floor. Every
+ * reference costs bits even when the next character was completely
+ * predictable — and the letter after "func" in a js file, or the spaces
+ * after a newline in indented code, ARE completely predictable.
  *
- * nvcm gissar i stället nästa BIT, och gissar med flera modeller samtidigt:
+ * nvcm instead guesses the next BIT, with several models at once:
  *
- *   ORDNING 0–8   vad som brukar komma efter de senaste 0, 1, 2, 3, 4, 6 och
- *                 8 bytena. Korta ordningar lär sig snabbt, långa blir
- *                 skarpa; blandaren avgör vem man ska tro på.
- *   ORDBOK        vad som brukar komma efter det påbörjade ORDET, oavsett vad
- *                 som stod före. Fångar att "funct" blir "function" var det
- *                 än står.
- *   MATCHNING     om samma 6 byte setts förut: fortsätt som det gjorde då.
- *                 Det är ordbokspackarens trick, inlagt som en röst bland
- *                 andra — så att långa upprepningar fortfarande går snabbt
- *                 men inte tvingar fram en dyr hänvisning för varje träff.
+ *   ORDERS 0–8    what tends to follow the last 0, 1, 2, 3, 4, 6 and 8
+ *                 bytes. Short orders learn fast, long ones become sharp;
+ *                 the mixer decides whom to believe.
+ *   WORD          what tends to follow the word begun so far, regardless of
+ *                 what stood before it. Catches that "funct" becomes
+ *                 "function" wherever it appears.
+ *   MATCH         if the same 6 bytes were seen before: continue the way it
+ *                 did then. That is the dictionary compressor's trick, cast
+ *                 as one vote among others — long repeats still go fast but
+ *                 no expensive reference is forced per hit.
  *
- * Rösterna vägs ihop av en liten blandare som lär sig under tiden vilka
- * modeller som brukar ha rätt i just den här sortens data, och resultatet
- * putsas av två efterjusterare innan det går till den aritmetiska kodaren.
- * Ingen modell behöver stämma: det räcker att blandaren lär sig vilken som
- * gör det.
+ * The votes are weighed by a small mixer that learns, as it goes, which
+ * models tend to be right for this particular kind of data, and the result
+ * is polished by two adaptive probability maps before it reaches the
+ * arithmetic coder. No single model needs to be right: it is enough that
+ * the mixer learns which one is.
  *
- * Priset är hastighet. nvcm packar i ett par MB/s medan zstd gör hundratals.
- * Därför väljer nvpack den bara för block där den faktiskt vinner, och bara
- * när arkivet ska vara litet snarare än snabbt.
+ * The price is speed. nvcm packs at a few MB/s where zstd does hundreds.
+ * nvz therefore picks it only for blocks where it actually wins, and only
+ * when the archive should be small rather than fast.
  *
- * Avkodningen är spegelvänd kodning: samma modeller, samma uppdateringar, i
- * samma ordning. Därför kan koden för båda hållen vara samma funktion.
+ * Decoding is mirrored encoding: the same models, the same updates, in the
+ * same order. That is why one function serves both directions.
  */
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -51,11 +52,12 @@ typedef uint16_t U16;
 typedef uint32_t U32;
 typedef uint64_t U64;
 
-static void dö(const char *m) { fprintf(stderr, "nvcm: %s\n", m); exit(2); }
+static void die(const char *m) { fprintf(stderr, "nvcm: %s\n", m); exit(2); }
 
-/* ------------------------------------------------- logistisk omvandling -- */
-/* Sannolikheter blandas inte linjärt utan i logistisk skala: där motsvarar
- * addition att väga ihop bevis, och en modell som är helt säker kan dra. */
+/* ------------------------------------------------ the logistic transform -- */
+/* Probabilities are mixed not linearly but on the logistic scale: there,
+ * addition means weighing evidence together, and a model that is completely
+ * sure gets to pull hard. */
 
 static int squash(int d) {
     static const int t[33] = {1,2,3,6,10,16,27,45,73,120,194,310,488,747,1101,
@@ -68,7 +70,7 @@ static int squash(int d) {
     return (t[d] * (128 - w) + t[d + 1] * w + 64) >> 7;
 }
 static short STRETCH[4096];
-static void bygg_stretch(void) {
+static void build_stretch(void) {
     int pi = 0;
     for (int x = -2047; x <= 2047; x++) {
         int v = squash(x);
@@ -78,29 +80,29 @@ static void bygg_stretch(void) {
     for (int p = pi; p < 4096; p++) STRETCH[p] = 2047;
 }
 
-/* ------------------------------------------------------ aritmetisk kod -- */
-/* Carryless binär kodare: intervallet [x1,x2] delas i förhållande till
- * sannolikheten, och de översta byten skrivs ut så fort de är bestämda. */
+/* ------------------------------------------------------ arithmetic coder -- */
+/* Carryless binary coder: the interval [x1,x2] is split in proportion to
+ * the probability, and the top bytes are emitted as soon as they settle. */
 
-typedef struct { U32 x1, x2, x; FILE *f; } Kod;
+typedef struct { U32 x1, x2, x; FILE *f; } Coder;
 
-static void kod_init_ut(Kod *k, FILE *f) { k->x1 = 0; k->x2 = 0xffffffff; k->x = 0; k->f = f; }
-static void kod_init_in(Kod *k, FILE *f) {
+static void coder_init_out(Coder *k, FILE *f) { k->x1 = 0; k->x2 = 0xffffffff; k->x = 0; k->f = f; }
+static void coder_init_in(Coder *k, FILE *f) {
     k->x1 = 0; k->x2 = 0xffffffff; k->x = 0; k->f = f;
     for (int i = 0; i < 4; i++) { int c = getc(f); k->x = (k->x << 8) | (U32)(c < 0 ? 0 : c); }
 }
-static void kod_ut(Kod *k, int p, int bit) {          /* p = P(bit=1), 12 bitar */
-    U32 mitt = k->x1 + (U32)(((U64)(k->x2 - k->x1) * (U32)p) >> 12);
-    if (bit) k->x2 = mitt; else k->x1 = mitt + 1;
+static void coder_encode(Coder *k, int p, int bit) {   /* p = P(bit=1), 12 bits */
+    U32 mid = k->x1 + (U32)(((U64)(k->x2 - k->x1) * (U32)p) >> 12);
+    if (bit) k->x2 = mid; else k->x1 = mid + 1;
     while (((k->x1 ^ k->x2) & 0xff000000u) == 0) {
         putc((int)(k->x2 >> 24), k->f);
         k->x1 <<= 8; k->x2 = (k->x2 << 8) | 255;
     }
 }
-static int kod_in(Kod *k, int p) {
-    U32 mitt = k->x1 + (U32)(((U64)(k->x2 - k->x1) * (U32)p) >> 12);
-    int bit = k->x <= mitt;
-    if (bit) k->x2 = mitt; else k->x1 = mitt + 1;
+static int coder_decode(Coder *k, int p) {
+    U32 mid = k->x1 + (U32)(((U64)(k->x2 - k->x1) * (U32)p) >> 12);
+    int bit = k->x <= mid;
+    if (bit) k->x2 = mid; else k->x1 = mid + 1;
     while (((k->x1 ^ k->x2) & 0xff000000u) == 0) {
         k->x1 <<= 8; k->x2 = (k->x2 << 8) | 255;
         int c = getc(k->f);
@@ -108,99 +110,101 @@ static int kod_in(Kod *k, int p) {
     }
     return bit;
 }
-static void kod_töm(Kod *k) { for (int i = 0; i < 4; i++) { putc((int)(k->x1 >> 24), k->f); k->x1 <<= 8; } }
+static void coder_flush(Coder *k) { for (int i = 0; i < 4; i++) { putc((int)(k->x1 >> 24), k->f); k->x1 <<= 8; } }
 
-/* ------------------------------------------------------------- räknare -- */
-/* En sannolikhet med egen takt: de första observationerna i en kontext
- * flyttar skattningen långt, senare bara putsar. Samma idé som i nvjpg. */
+/* ------------------------------------------------------------- counters -- */
+/* A probability with its own learning rate: the first observations in a
+ * context move the estimate far, later ones only polish. Same idea as in
+ * nvjpg. */
 
-typedef struct { U16 p; U16 n; } Räknare;
+typedef struct { U16 p; U16 n; } Counter;
 #define RMAX 60
-/* Takten slås upp i stället för att divideras fram. En division per modell
- * och bit är sju divisioner per bit, och det syns tydligt i klockan. */
-static int RTAKT[RMAX + 1];
-static void bygg_takt(void) { for (int i = 0; i <= RMAX; i++) RTAKT[i] = 65536 * 2 / (i + 3); }
-static inline int r_p(const Räknare *r) { return r->p >> 4; }        /* 16 -> 12 bitar */
-static inline void r_upp(Räknare *r, int bit) {
-    int mål = bit ? 65535 : 0;
-    r->p = (U16)((int)r->p + (((mål - (int)r->p) * RTAKT[r->n]) >> 16));
+/* The rate is looked up instead of divided out. One division per model and
+ * bit is seven divisions per bit, and it shows clearly on the clock. */
+static int RATE[RMAX + 1];
+static void build_rates(void) { for (int i = 0; i <= RMAX; i++) RATE[i] = 65536 * 2 / (i + 3); }
+static inline int ctr_p(const Counter *r) { return r->p >> 4; }       /* 16 -> 12 bits */
+static inline void ctr_update(Counter *r, int bit) {
+    int target = bit ? 65535 : 0;
+    r->p = (U16)((int)r->p + (((target - (int)r->p) * RATE[r->n]) >> 16));
     if (r->n < RMAX) r->n++;
 }
 
-/* ------------------------------------------------------------ modeller -- */
+/* --------------------------------------------------------------- models -- */
 
 #ifndef NORD
-#define NORD   8                 /* antal kontextmodeller (ordningar) */
+#define NORD   8                 /* number of context models (orders) */
 #endif
-#ifndef VERIFIERA
-#define VERIFIERA 1              /* jämför matchningens bytes, lita inte på hashen */
+#ifndef VERIFY
+#define VERIFY 1                 /* compare the match's bytes, do not trust the hash */
 #endif
 #ifndef MIXCTX
-#define MIXCTX 4                 /* 2 = låt matchningens längd välja viktuppsättning */
+#define MIXCTX 4                 /* 2 = let the match length pick the weight set */
 #endif
-#define NMOD   (NORD + 2)        /* antal röster in i blandaren */
-#ifndef TBITAR
-#define TBITAR 24                /* tak: 16 M platser per kontextmodell */
+#define NMOD   (NORD + 2)        /* number of votes into the mixer */
+#ifndef TBITS
+#define TBITS 24                 /* cap: 16 M slots per context model */
 #endif
-/* Tabellerna skalas efter indatans storlek. Ett block på en megabyte fyller
- * aldrig 16 M platser, och att nollställa en halv gigabyte räknare för det
- * tar längre tid än hela packningen. Formeln beror BARA på längden, som
- * står i huvudet — så avkodaren räknar fram samma storlek utan att fråga. */
-static int tbitar_för(U64 n) {
+/* The tables scale with the input size. A one-megabyte block never fills
+ * 16 M slots, and zeroing half a gigabyte of counters for it takes longer
+ * than the whole compression. The formula depends ONLY on the length,
+ * which is in the header — so the decoder derives the same size without
+ * asking. */
+static int table_bits_for(U64 n) {
     int b = 16;
-    while (b < TBITAR && ((U64)1 << (b - 2)) < n) b++;
+    while (b < TBITS && ((U64)1 << (b - 2)) < n) b++;
     return b;
 }
-#ifndef HBITAR
-#define HBITAR 22                /* matchmodellens hashtabell */
+#ifndef HBITS
+#define HBITS 22                 /* the match model's hash table */
 #endif
 #ifndef MORD
-#define MORD 6                   /* hur många byte matchmodellen nycklar på */
+#define MORD 6                   /* how many bytes the match model keys on */
 #endif
 
 typedef struct {
-    Räknare *t[NORD];            /* ordning 1,2,3,4,6(,8) + ordmodell */
-    U32 tmask;                   /* platser per tabell minus ett */
-    U32 hash[NORD];              /* kontexthash vid bytegräns */
-    U32 *mhash;                  /* matchmodell: hash -> position */
+    Counter *t[NORD];            /* order 1,2,3,4,6(,8) + the word model */
+    U32 tmask;                   /* slots per table minus one */
+    U32 hash[NORD];              /* context hash at the byte boundary */
+    U32 *mhash;                  /* match model: hash -> position */
     U8  *buf; size_t bufn, bufcap;
-    size_t mpek; int mlen;       /* pågående matchning */
-    Räknare mp[64][2];           /* matchmodellens egen skattning */
-    short vikt[256 * MIXCTX][NMOD];  /* blandarens vikter, per kontext */
-    Räknare apm1[1024 * 33], apm2[4096 * 33];
-    U32 bas[NORD];               /* radbörjan i varje tabell för pågående nibble */
-    U32 c0;                      /* påbörjad byte, med ledande etta */
-    U32 c0n;                     /* påbörjad NIBBLE, med ledande etta (1..15) */
-    U32 c4;                      /* de fyra senaste byten */
-    U32 ord;                     /* hash av påbörjat ord */
+    size_t mpos; int mlen;       /* the match in progress */
+    Counter mp[64][2];           /* the match model's own estimate */
+    short weight[256 * MIXCTX][NMOD];  /* mixer weights, per context */
+    Counter apm1[1024 * 33], apm2[4096 * 33];
+    U32 base[NORD];              /* row start in each table for the current nibble */
+    U32 c0;                      /* the byte in progress, with a leading one */
+    U32 c0n;                     /* the NIBBLE in progress, with a leading one (1..15) */
+    U32 c4;                      /* the four most recent bytes */
+    U32 word;                    /* hash of the word in progress */
     int bitpos;
-} Modell;
+} Model;
 
-/* 0 = ordmodellen, -1 = ordning noll (ingen historik alls) */
+/* 0 = the word model, -1 = order zero (no history at all) */
 #if NORD == 8
-static const int ORDNING[8] = {-1, 1, 2, 3, 4, 6, 8, 0};
+static const int ORDERS[8] = {-1, 1, 2, 3, 4, 6, 8, 0};
 #elif NORD == 7
-static const int ORDNING[7] = {1, 2, 3, 4, 6, 8, 0};
+static const int ORDERS[7] = {1, 2, 3, 4, 6, 8, 0};
 #else
-static const int ORDNING[6] = {1, 2, 3, 4, 6, 0};
+static const int ORDERS[6] = {1, 2, 3, 4, 6, 0};
 #endif
 
-static Modell *modell_ny(size_t ingång) {
-    Modell *m = calloc(1, sizeof *m);
-    if (!m) dö("slut på minne");
-    U32 tstor = (U32)1 << tbitar_för(ingång);
-    m->tmask = tstor - 1;
+static Model *model_new(size_t input_len) {
+    Model *m = calloc(1, sizeof *m);
+    if (!m) die("out of memory");
+    U32 tsize = (U32)1 << table_bits_for(input_len);
+    m->tmask = tsize - 1;
     for (int i = 0; i < NORD; i++) {
-        m->t[i] = malloc((size_t)tstor * sizeof(Räknare));
-        if (!m->t[i]) dö("slut på minne");
-        for (U32 j = 0; j < tstor; j++) { m->t[i][j].p = 32768; m->t[i][j].n = 0; }
+        m->t[i] = malloc((size_t)tsize * sizeof(Counter));
+        if (!m->t[i]) die("out of memory");
+        for (U32 j = 0; j < tsize; j++) { m->t[i][j].p = 32768; m->t[i][j].n = 0; }
     }
-    m->mhash = calloc((size_t)1 << HBITAR, sizeof(U32));
-    m->bufcap = ingång + 64;
+    m->mhash = calloc((size_t)1 << HBITS, sizeof(U32));
+    m->bufcap = input_len + 64;
     m->buf = malloc(m->bufcap);
-    if (!m->mhash || !m->buf) dö("slut på minne");
+    if (!m->mhash || !m->buf) die("out of memory");
     for (int i = 0; i < 64; i++) for (int j = 0; j < 2; j++) { m->mp[i][j].p = 32768; m->mp[i][j].n = 0; }
-    for (int i = 0; i < 256 * MIXCTX; i++) for (int j = 0; j < NMOD; j++) m->vikt[i][j] = 0;
+    for (int i = 0; i < 256 * MIXCTX; i++) for (int j = 0; j < NMOD; j++) m->weight[i][j] = 0;
     for (size_t i = 0; i < sizeof m->apm1 / sizeof m->apm1[0]; i++) {
         m->apm1[i].p = (U16)(squash(((int)(i % 33) - 16) * 128) * 16);
         m->apm1[i].n = 0;
@@ -213,100 +217,105 @@ static Modell *modell_ny(size_t ingång) {
     m->c0n = 1;
     return m;
 }
-static void modell_fri(Modell *m) {
+static void model_free(Model *m) {
     for (int i = 0; i < NORD; i++) free(m->t[i]);
     free(m->mhash); free(m->buf); free(m);
 }
 
-/* Efterjusterare: tar en färdig sannolikhet och en liten kontext och lär sig
- * hur skattningen brukar vara skev just där. Billig, och tar ofta några
- * procent — särskilt i början av en fil innan modellerna hunnit lära sig. */
-static int apm(Räknare *t, int pr, int cx, int bit, int uppdatera) {
+/* Adaptive probability map: takes a finished probability and a small
+ * context and learns how the estimate tends to be skewed right there.
+ * Cheap, and often worth a few percent — especially early in a file before
+ * the models have had time to learn. */
+static int apm(Counter *t, int pr, int cx, int bit, int update) {
     int s = STRETCH[pr] + 2048;             /* 0..4095 */
     int w = s & 127;
     int i = cx * 33 + (s >> 7);
-    int ut = (r_p(&t[i]) * (128 - w) + r_p(&t[i + 1]) * w) >> 7;
-    if (uppdatera) { r_upp(&t[i], bit); r_upp(&t[i + 1], bit); }
-    return ut;
+    int out = (ctr_p(&t[i]) * (128 - w) + ctr_p(&t[i + 1]) * w) >> 7;
+    if (update) { ctr_update(&t[i], bit); ctr_update(&t[i + 1], bit); }
+    return out;
 }
 
-/* En bit: ta fram alla röster, blanda, koda eller avkoda, och lär upp allt.
- * Kodning och avkodning är samma funktion med samma ordning på uppdateringar
- * — annars kan de inte följas åt. */
-static int bit_steg(Modell *m, Kod *k, int koda, int bit_in) {
-    Räknare *slot[NMOD];
+/* One bit: gather every vote, mix, encode or decode, and train everything.
+ * Encoding and decoding are the same function with the same update order —
+ * otherwise they cannot stay in step. */
+static int bit_step(Model *m, Coder *k, int encode, int bit_in) {
+    Counter *slot[NMOD];
     short st[NMOD];
     int n = 0;
 
-    /* Alla femton bitvägar genom en nibble ligger på samma cache-rad. Det är
-     * skillnaden mellan åtta cachemissar per byte och modell, och två. */
+    /* All fifteen bit paths through a nibble sit on the same cache line.
+     * That is the difference between eight cache misses per byte and model,
+     * and two. */
     for (int i = 0; i < NORD; i++) {
-        U32 idx = m->bas[i] + (m->c0n & 15);
+        U32 idx = m->base[i] + (m->c0n & 15);
         slot[n] = &m->t[i][idx];
-        st[n] = STRETCH[r_p(slot[n])];
+        st[n] = STRETCH[ctr_p(slot[n])];
         n++;
     }
 
-    /* Matchmodellen: om vi följer en tidigare förekomst, vad sa den? */
+    /* The match model: if we are following an earlier occurrence, what did
+     * it say? */
     int mbit = -1;
-    if (m->mlen > 0 && m->mpek < m->bufn) {
-        U32 förutsagd = m->buf[m->mpek];
-        U32 höga = m->c0;                      /* ledande etta + hittills kodade bitar */
-        int bitar = m->bitpos;
-        if ((U32)((förutsagd | 256) >> (8 - bitar)) == höga) {
-            mbit = (int)(förutsagd >> (7 - bitar)) & 1;
+    if (m->mlen > 0 && m->mpos < m->bufn) {
+        U32 predicted = m->buf[m->mpos];
+        U32 high = m->c0;                      /* leading one + the bits coded so far */
+        int bits = m->bitpos;
+        if ((U32)((predicted | 256) >> (8 - bits)) == high) {
+            mbit = (int)(predicted >> (7 - bits)) & 1;
         } else {
-            m->mlen = 0;                       /* matchningen bröts mitt i byten */
+            m->mlen = 0;                       /* the match broke mid-byte */
         }
     }
-    int mhink = m->mlen > 31 ? 31 : m->mlen;
+    int mbucket = m->mlen > 31 ? 31 : m->mlen;
     if (mbit >= 0) {
-        slot[n] = &m->mp[mhink * 2 + mbit][0];
-        st[n] = (short)(mbit ? STRETCH[r_p(slot[n])] : -STRETCH[r_p(slot[n])]);
+        slot[n] = &m->mp[mbucket * 2 + mbit][0];
+        st[n] = (short)(mbit ? STRETCH[ctr_p(slot[n])] : -STRETCH[ctr_p(slot[n])]);
     } else {
         slot[n] = &m->mp[0][1];
         st[n] = 0;
     }
-    int matchplats = n;
+    int match_slot = n;
     n++;
 
-    /* Blandaren. Viktuppsättningen väljs av den påbörjade byten, så att
-     * modellen får olika avvägning i början och slutet av ett tecken. */
+    /* The mixer. The weight set is picked by the byte in progress, so the
+     * model gets a different balance at the start and end of a character. */
 #if MIXCTX > 1
-    /* En lång pågående matchning gör rösterna helt annorlunda värda än när
-     * modellen famlar. Då ska de inte dela viktuppsättning heller. */
-    int vkt = (int)(m->c0 & 255) + 256 * (m->mlen == 0 ? 0 : m->mlen < 8 ? 1 : m->mlen < 24 ? 2 : 3);
+    /* A long running match makes the votes worth something entirely
+     * different than when the model is groping. They should not share a
+     * weight set either. */
+    int wsel = (int)(m->c0 & 255) + 256 * (m->mlen == 0 ? 0 : m->mlen < 8 ? 1 : m->mlen < 24 ? 2 : 3);
 #else
-    int vkt = (int)(m->c0 & 255);
+    int wsel = (int)(m->c0 & 255);
 #endif
-    short *w = m->vikt[vkt];
-    int summa = 0;
-    for (int i = 0; i < n; i++) summa += st[i] * w[i];
-    summa >>= 16;
-    int pr = squash(summa);
+    short *w = m->weight[wsel];
+    int sum = 0;
+    for (int i = 0; i < n; i++) sum += st[i] * w[i];
+    sum >>= 16;
+    int pr = squash(sum);
 
-    /* Två efterjusterare, vägda mot den obearbetade skattningen. */
+    /* Two adaptive maps, weighed against the raw estimate. */
     int pr1 = apm(m->apm1, pr, (int)(m->c0 & 1023), 0, 0);
     int pr2 = apm(m->apm2, pr, (int)((m->c4 & 0xff) << 4 | (m->c0 & 15)), 0, 0);
-    int slutlig = (pr + pr1 + 2 * pr2 + 2) >> 2;
-    if (slutlig < 1) slutlig = 1;
-    if (slutlig > 4094) slutlig = 4094;
+    int final = (pr + pr1 + 2 * pr2 + 2) >> 2;
+    if (final < 1) final = 1;
+    if (final > 4094) final = 4094;
 
     int bit;
-    if (koda) { bit = bit_in; kod_ut(k, slutlig, bit); }
-    else bit = kod_in(k, slutlig);
+    if (encode) { bit = bit_in; coder_encode(k, final, bit); }
+    else bit = coder_decode(k, final);
 
-    /* Lär upp: blandarvikter mot felet, sedan varje röst mot utfallet. */
-    int fel = ((bit << 12) - pr) * 6;
+    /* Train: mixer weights against the error, then every vote against the
+     * outcome. */
+    int err = ((bit << 12) - pr) * 6;
     for (int i = 0; i < n; i++) {
-        int d = (st[i] * fel * 2 >> 16);
-        int ny = w[i] + ((d + 1) >> 1);
-        w[i] = (short)(ny > 32767 ? 32767 : ny < -32768 ? -32768 : ny);
+        int d = (st[i] * err * 2 >> 16);
+        int nw = w[i] + ((d + 1) >> 1);
+        w[i] = (short)(nw > 32767 ? 32767 : nw < -32768 ? -32768 : nw);
     }
     for (int i = 0; i < n; i++) {
-        if (i == matchplats && mbit < 0) continue;
-        if (i == matchplats) r_upp(slot[i], bit == mbit);
-        else r_upp(slot[i], bit);
+        if (i == match_slot && mbit < 0) continue;
+        if (i == match_slot) ctr_update(slot[i], bit == mbit);
+        else ctr_update(slot[i], bit);
     }
     apm(m->apm1, pr, (int)(m->c0 & 1023), bit, 1);
     apm(m->apm2, pr, (int)((m->c4 & 0xff) << 4 | (m->c0 & 15)), bit, 1);
@@ -315,60 +324,61 @@ static int bit_steg(Modell *m, Kod *k, int koda, int bit_in) {
     return bit;
 }
 
-/* Vid varje nibblegräns flyttas raden: andra halvan av byten får en egen rad
- * som beror på vad första halvan blev. */
-static void sätt_rader(Modell *m, U32 nibbel) {
+/* At every nibble boundary the row moves: the second half of the byte gets
+ * its own row, keyed by what the first half turned out to be. */
+static void set_rows(Model *m, U32 nibble) {
     for (int i = 0; i < NORD; i++) {
-        m->bas[i] = (m->hash[i] ^ (nibbel * 0x85EBCA6Bu)) & (m->tmask & ~15u);
-        __builtin_prefetch(&m->t[i][m->bas[i]], 1, 3);
+        m->base[i] = (m->hash[i] ^ (nibble * 0x85EBCA6Bu)) & (m->tmask & ~15u);
+        __builtin_prefetch(&m->t[i][m->base[i]], 1, 3);
     }
 }
 
-/* Efter varje hel byte: flytta fram kontexterna och matchmodellen. */
-static void byte_klar(Modell *m, U8 c) {
+/* After each whole byte: advance the contexts and the match model. */
+static void byte_done(Model *m, U8 c) {
     if (m->bufn + 1 >= m->bufcap) {
         m->bufcap = m->bufcap * 2 + 1024;
         m->buf = realloc(m->buf, m->bufcap);
-        if (!m->buf) dö("slut på minne");
+        if (!m->buf) die("out of memory");
     }
     m->buf[m->bufn++] = c;
     m->c4 = (m->c4 << 8) | c;
 
-    /* Ordmodellen: bokstäver och siffror bygger ett ord, allt annat bryter. */
+    /* The word model: letters and digits build a word, anything else breaks
+     * it. */
     if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')
-        m->ord = m->ord * 0x6F4F2F1Du + c + 1;
+        m->word = m->word * 0x6F4F2F1Du + c + 1;
     else
-        m->ord = 0;
+        m->word = 0;
 
     U64 h = 0;
     for (int i = 0; i < NORD; i++) {
-        int ordning = ORDNING[i];
-        if (ordning == 0) { m->hash[i] = m->ord * 0x2545F491u + 0x9E3779B1u; continue; }
-        if (ordning < 0) { m->hash[i] = 0; continue; }
+        int order = ORDERS[i];
+        if (order == 0) { m->hash[i] = m->word * 0x2545F491u + 0x9E3779B1u; continue; }
+        if (order < 0) { m->hash[i] = 0; continue; }
         h = 0;
-        for (int j = 0; j < ordning && j < (int)m->bufn; j++)
+        for (int j = 0; j < order && j < (int)m->bufn; j++)
             h = h * 0x100000001B3ull + m->buf[m->bufn - 1 - j] + 1;
-        m->hash[i] = (U32)((h ^ (h >> 29)) * (U32)(ordning * 0x9E3779B1u + 1));
+        m->hash[i] = (U32)((h ^ (h >> 29)) * (U32)(order * 0x9E3779B1u + 1));
     }
 
-    /* Matchmodellen: nyckeln är de sex senaste byten. Hittas de igen pekas
-     * mpek på byten EFTER den tidigare förekomsten. */
+    /* The match model: the key is the six most recent bytes. If they are
+     * found again, mpos points at the byte AFTER the earlier occurrence. */
     if (m->bufn >= MORD) {
         U64 mh = 0;
         for (int j = 0; j < MORD; j++) mh = mh * 0x100000001B3ull + m->buf[m->bufn - 1 - j] + 1;
-        U32 idx = (U32)((mh ^ (mh >> 31)) & (((U32)1 << HBITAR) - 1));
-        if (m->mlen > 0 && m->mpek < m->bufn && m->buf[m->mpek] == c) {
-            m->mpek++;
+        U32 idx = (U32)((mh ^ (mh >> 31)) & (((U32)1 << HBITS) - 1));
+        if (m->mlen > 0 && m->mpos < m->bufn && m->buf[m->mpos] == c) {
+            m->mpos++;
             if (m->mlen < 63) m->mlen++;
         } else {
-            U32 kandidat = m->mhash[idx];
-            /* Hashen kan ljuga. En falsk matchning är värre än ingen alls:
-             * den ger blandaren en självsäker röst som har fel. */
-            if (kandidat >= MORD && kandidat < m->bufn
-#if VERIFIERA
-                && memcmp(m->buf + kandidat - MORD, m->buf + m->bufn - MORD, MORD) == 0
+            U32 cand = m->mhash[idx];
+            /* The hash can lie. A false match is worse than none at all: it
+             * gives the mixer a confident vote that is wrong. */
+            if (cand >= MORD && cand < m->bufn
+#if VERIFY
+                && memcmp(m->buf + cand - MORD, m->buf + m->bufn - MORD, MORD) == 0
 #endif
-               ) { m->mpek = kandidat; m->mlen = 1; }
+               ) { m->mpos = cand; m->mlen = 1; }
             else m->mlen = 0;
         }
         m->mhash[idx] = (U32)m->bufn;
@@ -376,24 +386,24 @@ static void byte_klar(Modell *m, U8 c) {
     m->c0 = 1;
     m->c0n = 1;
     m->bitpos = 0;
-    sätt_rader(m, 0);
+    set_rows(m, 0);
 }
 
-/* ---------------------------------------------------------------- main -- */
+/* ------------------------------------------------------------------ main -- */
 
-/* Magin är NVCM1. Under några timmar hette programmet nvcm och skrev NVZ01;
- * den magin läses fortfarande, så att inget som redan packats blir
- * oläsbart av att ett namn vände tillbaka. */
-static const char *MAGI = "NVCM1";
-static const char *MAGI_GAMMAL = "NVZ01";
+/* The magic is NVCM1. For a few hours the program was named nvcm and wrote
+ * NVZ01; that magic is still read, so nothing already packed becomes
+ * unreadable because a name changed back. Both are format constants. */
+static const char *MAGIC = "NVCM1";
+static const char *MAGIC_OLD = "NVZ01";
 
 
-static U8 *läs_allt(FILE *f, size_t *n) {
+static U8 *read_all(FILE *f, size_t *n) {
     size_t cap = 1 << 22, len = 0;
     U8 *d = malloc(cap);
-    if (!d) dö("slut på minne");
+    if (!d) die("out of memory");
     for (;;) {
-        if (len == cap) { cap *= 2; d = realloc(d, cap); if (!d) dö("slut på minne"); }
+        if (len == cap) { cap *= 2; d = realloc(d, cap); if (!d) die("out of memory"); }
         size_t r = fread(d + len, 1, cap - len, f);
         if (!r) break;
         len += r;
@@ -402,199 +412,202 @@ static U8 *läs_allt(FILE *f, size_t *n) {
     return d;
 }
 
-static int packa_strom(FILE *in, FILE *ut) {
+static int pack_stream(FILE *in, FILE *out) {
     size_t n;
-    U8 *d = läs_allt(in, &n);
-    fwrite(MAGI, 1, 5, ut);
+    U8 *d = read_all(in, &n);
+    fwrite(MAGIC, 1, 5, out);
     U64 len = n;
-    fwrite(&len, 8, 1, ut);
-    Modell *m = modell_ny(n);
-    Kod k; kod_init_ut(&k, ut);
+    fwrite(&len, 8, 1, out);
+    Model *m = model_new(n);
+    Coder k; coder_init_out(&k, out);
     for (size_t i = 0; i < n; i++) {
         U8 c = d[i];
         for (int b = 7; b >= 0; b--) {
             int bit = (c >> b) & 1;
-            bit_steg(m, &k, 1, bit);
+            bit_step(m, &k, 1, bit);
             m->c0 = (m->c0 << 1) | (U32)bit;
             m->c0n = (m->c0n << 1) | (U32)bit;
-            if (++m->bitpos == 4) { sätt_rader(m, m->c0n); m->c0n = 1; }
+            if (++m->bitpos == 4) { set_rows(m, m->c0n); m->c0n = 1; }
         }
-        byte_klar(m, c);
+        byte_done(m, c);
     }
-    kod_töm(&k);
-    modell_fri(m); free(d);
+    coder_flush(&k);
+    model_free(m); free(d);
     return 0;
 }
 
-static int packa_upp_strom(FILE *in, FILE *ut) {
-    char magi[5];
-    if (fread(magi, 1, 5, in) != 5 || (memcmp(magi, MAGI, 5) && memcmp(magi, MAGI_GAMMAL, 5)))
-        dö("inte en nvcm-ström");
+static int unpack_stream(FILE *in, FILE *out) {
+    char magic[5];
+    if (fread(magic, 1, 5, in) != 5 || (memcmp(magic, MAGIC, 5) && memcmp(magic, MAGIC_OLD, 5)))
+        die("not an nvcm stream");
     U64 len;
-    if (fread(&len, 8, 1, in) != 1) dö("trasigt huvud");
-    Modell *m = modell_ny((size_t)len);
-    Kod k; kod_init_in(&k, in);
-    U8 *utd = malloc((size_t)len + 1);
-    if (!utd) dö("slut på minne");
+    if (fread(&len, 8, 1, in) != 1) die("broken header");
+    Model *m = model_new((size_t)len);
+    Coder k; coder_init_in(&k, in);
+    U8 *outd = malloc((size_t)len + 1);
+    if (!outd) die("out of memory");
     for (U64 i = 0; i < len; i++) {
         U32 c = 0;
         for (int b = 7; b >= 0; b--) {
-            int bit = bit_steg(m, &k, 0, 0);
+            int bit = bit_step(m, &k, 0, 0);
             m->c0 = (m->c0 << 1) | (U32)bit;
             m->c0n = (m->c0n << 1) | (U32)bit;
-            if (++m->bitpos == 4) { sätt_rader(m, m->c0n); m->c0n = 1; }
+            if (++m->bitpos == 4) { set_rows(m, m->c0n); m->c0n = 1; }
             c = (c << 1) | (U32)bit;
         }
-        byte_klar(m, (U8)c);
-        utd[i] = (U8)c;
+        byte_done(m, (U8)c);
+        outd[i] = (U8)c;
     }
-    fwrite(utd, 1, (size_t)len, ut);
-    free(utd); modell_fri(m);
+    fwrite(outd, 1, (size_t)len, out);
+    free(outd); model_free(m);
     return 0;
 }
 
 
-/* ------------------------------------------------------- gzip-syntaxen -- */
-/* nvcm anropas som gzip:
+/* ------------------------------------------------------ the gzip syntax -- */
+/* nvcm is invoked like gzip:
  *
- *     nvcm fil            -> fil.nvcm, originalet tas bort
- *     nvcm -d fil.nvcm    -> fil, det packade tas bort
- *     nvcm -c fil > ut    -> till stdout, filen rörs inte
- *     nvcm -t fil.nvcm    -> provar att den går att packa upp
- *     nvcm -l fil.nvcm    -> storlekarna utan att packa upp
- *     ... | nvcm | ...    -> utan filargument: stdin till stdout
+ *     nvcm file           -> file.nvcm, the original is removed
+ *     nvcm -d file.nvcm   -> file, the packed one is removed
+ *     nvcm -c file > out  -> to stdout, the file is untouched
+ *     nvcm -t file.nvcm   -> tests that it can be unpacked
+ *     nvcm -l file.nvcm   -> the sizes without unpacking
+ *     ... | nvcm | ...    -> no file arguments: stdin to stdout
  *
- * Varför gzips syntax och inte en egen? För att varje skript, Makefile och
- * benchmark som redan finns talar den. En kodek som kräver
- * `nvcm packa < in > ut` går inte att sätta in i ett befintligt anrop utan
- * att skriva om anropet, och då mäts den inte.
+ * Why gzip's syntax and not its own? Because every script, Makefile and
+ * benchmark that already exists speaks it. A codec that demands
+ * `nvcm pack < in > out` cannot be dropped into an existing invocation
+ * without rewriting the invocation, and then it never gets measured.
  *
- * -1..-9, --fast och --best tas emot och ignoreras: nvcm har inga nivåer,
- * men skript skickar dem, och att vägra starta för en meningslös flagga
- * vore att bråka om ingenting.
+ * -1..-9, --fast and --best are accepted and ignored: nvcm has no levels,
+ * but scripts send them, and refusing to start over a meaningless flag
+ * would be a quarrel about nothing.
  *
- * De gamla underkommandona `packa` och `packaupp` finns kvar oförändrade —
- * nvpack.py anropar dem — men de står inte i hjälptexten.
+ * The worker subcommands `pack` and `unpack` (and their old names `packa`
+ * and `packaupp`) remain — nvz calls them — but they are not in the help.
  */
 
 static const char *SUF = ".nvcm";
 
-typedef struct { int d, c, k, f, t, l, v; } Flaggor;
+typedef struct { int d, c, k, f, t, l, v; } Flags;
 
-static int gnäll(const char *namn, const char *vad) {
-    fprintf(stderr, "nvcm: %s: %s\n", namn, vad);
+static int grumble(const char *name, const char *what) {
+    fprintf(stderr, "nvcm: %s: %s\n", name, what);
     return 1;
 }
 
-static void behåll_metadata(const char *mal, const struct stat *st) {
-    struct timespec tider[2] = { st->st_atim, st->st_mtim };
-    if (chmod(mal, st->st_mode & 07777) != 0) { /* rättigheter är en önskan */ }
-    if (utimensat(AT_FDCWD, mal, tider, 0) != 0) { /* liksom tiderna */ }
+static void keep_metadata(const char *target, const struct stat *st) {
+    struct timespec times[2] = { st->st_atim, st->st_mtim };
+    if (chmod(target, st->st_mode & 07777) != 0) { /* permissions are a wish */ }
+    if (utimensat(AT_FDCWD, target, times, 0) != 0) { /* and so are the times */ }
 }
 
-/* Huvudet bär den opackade längden, så -l behöver inte packa upp något. */
-static int lista_fil(const char *namn) {
-    FILE *f = fopen(namn, "rb");
-    if (!f) return gnäll(namn, strerror(errno));
-    char magi[5]; U64 len = 0;
-    int ok = fread(magi, 1, 5, f) == 5 && !memcmp(magi, "NVCM1", 5)
+/* The header carries the unpacked length, so -l need not unpack anything. */
+static int list_file(const char *name) {
+    FILE *f = fopen(name, "rb");
+    if (!f) return grumble(name, strerror(errno));
+    char magic[5]; U64 len = 0;
+    int ok = fread(magic, 1, 5, f) == 5 && !memcmp(magic, "NVCM1", 5)
              && fread(&len, 8, 1, f) == 1;
     struct stat st;
-    int har_st = stat(namn, &st) == 0;
+    int have_st = stat(name, &st) == 0;
     fclose(f);
-    if (!ok) return gnäll(namn, "inte en nvcm-ström");
-    double packad = har_st ? (double)st.st_size : 0;
-    double kvot = len ? 100.0 * (1.0 - packad / (double)len) : 0;
-    printf("%12.0f %12llu %6.1f%% %s\n", packad, (unsigned long long)len, kvot, namn);
+    if (!ok) return grumble(name, "not an nvcm stream");
+    double packed = have_st ? (double)st.st_size : 0;
+    double ratio = len ? 100.0 * (1.0 - packed / (double)len) : 0;
+    printf("%12.0f %12llu %6.1f%% %s\n", packed, (unsigned long long)len, ratio, name);
     return 0;
 }
 
-static int gör_fil(const char *namn, Flaggor fl) {
-    if (fl.l) return lista_fil(namn);
+static int do_file(const char *name, Flags fl) {
+    if (fl.l) return list_file(name);
 
-    size_t nlen = strlen(namn), slen = strlen(SUF);
-    int har_suffix = nlen > slen && !strcmp(namn + nlen - slen, SUF);
-    if (!fl.d && har_suffix && !fl.c && !fl.t)
-        return gnäll(namn, "har redan ändelsen .nvcm -- lämnas i fred");
-    if ((fl.d || fl.t) && !har_suffix && !fl.c)
-        return gnäll(namn, "okänd ändelse -- lämnas i fred");
+    size_t nlen = strlen(name), slen = strlen(SUF);
+    int has_suffix = nlen > slen && !strcmp(name + nlen - slen, SUF);
+    if (!fl.d && has_suffix && !fl.c && !fl.t)
+        return grumble(name, "already has the suffix .nvcm -- left alone");
+    if ((fl.d || fl.t) && !has_suffix && !fl.c)
+        return grumble(name, "unknown suffix -- left alone");
 
     struct stat st;
-    if (stat(namn, &st) != 0) return gnäll(namn, strerror(errno));
-    if (!S_ISREG(st.st_mode)) return gnäll(namn, "inte en vanlig fil");
+    if (stat(name, &st) != 0) return grumble(name, strerror(errno));
+    if (!S_ISREG(st.st_mode)) return grumble(name, "not a regular file");
 
-    char mal[4096];
-    int till_stdout = fl.c || fl.t;
+    char target[4096];
+    int to_stdout = fl.c || fl.t;
     if (fl.t) {
-        snprintf(mal, sizeof mal, "/dev/null");
+        snprintf(target, sizeof target, "/dev/null");
     } else if (fl.d) {
-        if (nlen - slen >= sizeof mal) return gnäll(namn, "för långt filnamn");
-        snprintf(mal, sizeof mal, "%.*s", (int)(nlen - slen), namn);
+        if (nlen - slen >= sizeof target) return grumble(name, "file name too long");
+        snprintf(target, sizeof target, "%.*s", (int)(nlen - slen), name);
     } else {
-        if (snprintf(mal, sizeof mal, "%s%s", namn, SUF) >= (int)sizeof mal)
-            return gnäll(namn, "för långt filnamn");
+        if (snprintf(target, sizeof target, "%s%s", name, SUF) >= (int)sizeof target)
+            return grumble(name, "file name too long");
     }
-    if (!till_stdout && !fl.f && access(mal, F_OK) == 0)
-        return gnäll(mal, "finns redan -- skrivs inte över (använd -f)");
+    if (!to_stdout && !fl.f && access(target, F_OK) == 0)
+        return grumble(target, "already exists -- not overwritten (use -f)");
 
-    FILE *in = fopen(namn, "rb");
-    if (!in) return gnäll(namn, strerror(errno));
-    FILE *ut = fl.c ? stdout : fopen(fl.t ? "/dev/null" : mal, "wb");
-    if (!ut) { fclose(in); return gnäll(mal, strerror(errno)); }
+    FILE *in = fopen(name, "rb");
+    if (!in) return grumble(name, strerror(errno));
+    FILE *out = fl.c ? stdout : fopen(fl.t ? "/dev/null" : target, "wb");
+    if (!out) { fclose(in); return grumble(target, strerror(errno)); }
 
-    (fl.d || fl.t) ? packa_upp_strom(in, ut) : packa_strom(in, ut);
-    fflush(ut);
-    long packad = fl.c ? -1 : ftell(ut);
+    (fl.d || fl.t) ? unpack_stream(in, out) : pack_stream(in, out);
+    fflush(out);
+    long packed = fl.c ? -1 : ftell(out);
     fclose(in);
-    if (!fl.c) fclose(ut);
+    if (!fl.c) fclose(out);
 
-    if (!till_stdout) {
-        behåll_metadata(mal, &st);
-        if (!fl.k && unlink(namn) != 0) gnäll(namn, strerror(errno));
+    if (!to_stdout) {
+        keep_metadata(target, &st);
+        if (!fl.k && unlink(name) != 0) grumble(name, strerror(errno));
     }
-    if (fl.t) { printf("%s: OK\n", namn); return 0; }
-    if (fl.v && packad > 0) {
-        double före = fl.d ? (double)packad : (double)st.st_size;
-        double efter = fl.d ? (double)st.st_size : (double)packad;
-        fprintf(stderr, "%s:\t%5.1f%% -- %s %s\n", namn,
-                före ? 100.0 * (1.0 - efter / före) : 0.0,
-                fl.k ? "skrev" : "ersatt med", mal);
+    if (fl.t) { printf("%s: OK\n", name); return 0; }
+    if (fl.v && packed > 0) {
+        double before = fl.d ? (double)packed : (double)st.st_size;
+        double after = fl.d ? (double)st.st_size : (double)packed;
+        fprintf(stderr, "%s:\t%5.1f%% -- %s %s\n", name,
+                before ? 100.0 * (1.0 - after / before) : 0.0,
+                fl.k ? "wrote" : "replaced with", target);
     }
     return 0;
 }
 
-static void hjälp(void) {
+static void help(void) {
     printf(
-"bruk: nvcm [flaggor] [fil ...]\n"
+"usage: nvcm [flags] [file ...]\n"
 "\n"
-"  -d, --decompress   packa upp\n"
-"  -c, --stdout       skriv till stdout, lämna filen i fred\n"
-"  -k, --keep         behåll filen i stället för att ersätta den\n"
-"  -f, --force        skriv över en fil som redan finns\n"
-"  -t, --test         prova att det packade går att packa upp\n"
-"  -l, --list         visa packad och opackad storlek\n"
-"  -v, --verbose      berätta vad som hände\n"
-"  -1 .. -9           tas emot och ignoreras (nvcm har inga nivåer)\n"
-"  -h, --help         den här texten\n"
-"  -V, --version      versionen\n"
+"  -d, --decompress   unpack\n"
+"  -c, --stdout       write to stdout, leave the file alone\n"
+"  -k, --keep         keep the file instead of replacing it\n"
+"  -f, --force        overwrite a file that already exists\n"
+"  -t, --test         test that the packed data can be unpacked\n"
+"  -l, --list         show packed and unpacked size\n"
+"  -v, --verbose      say what happened\n"
+"  -1 .. -9           accepted and ignored (nvcm has no levels)\n"
+"  -h, --help         this text\n"
+"  -V, --version      the version\n"
 "\n"
-"Utan filargument går strömmen stdin -> stdout. Ändelsen är .nvcm.\n");
+"With no file arguments the stream goes stdin -> stdout. The suffix is .nvcm.\n");
 }
 
 int main(int argc, char **argv) {
-    bygg_stretch();
-    bygg_takt();
+    build_stretch();
+    build_rates();
 
-    /* Gamla syntaxen först: nvpack.py anropar `nvcm packa|packaupp`. */
-    if (argc >= 2 && !strcmp(argv[1], "packa"))    return packa_strom(stdin, stdout);
-    if (argc >= 2 && !strcmp(argv[1], "packaupp")) return packa_upp_strom(stdin, stdout);
+    /* The worker path first: nvz calls `nvcm pack|unpack`. The old Swedish
+     * names remain as aliases. */
+    if (argc >= 2 && (!strcmp(argv[1], "pack") || !strcmp(argv[1], "packa")))
+        return pack_stream(stdin, stdout);
+    if (argc >= 2 && (!strcmp(argv[1], "unpack") || !strcmp(argv[1], "packaupp")))
+        return unpack_stream(stdin, stdout);
 
-    Flaggor fl = {0};
-    int i = 1, slut_på_flaggor = 0;
+    Flags fl = {0};
+    int i = 1, end_of_flags = 0;
     for (; i < argc; i++) {
         const char *a = argv[i];
-        if (slut_på_flaggor || a[0] != '-' || !a[1]) break;
-        if (!strcmp(a, "--")) { slut_på_flaggor = 1; i++; break; }
+        if (end_of_flags || a[0] != '-' || !a[1]) break;
+        if (!strcmp(a, "--")) { end_of_flags = 1; i++; break; }
         if (a[1] == '-') {
             if (!strcmp(a, "--decompress") || !strcmp(a, "--uncompress")) fl.d = 1;
             else if (!strcmp(a, "--stdout") || !strcmp(a, "--to-stdout")) fl.c = 1;
@@ -603,10 +616,10 @@ int main(int argc, char **argv) {
             else if (!strcmp(a, "--test")) fl.t = 1;
             else if (!strcmp(a, "--list")) fl.l = 1;
             else if (!strcmp(a, "--verbose")) fl.v = 1;
-            else if (!strcmp(a, "--fast") || !strcmp(a, "--best")) { /* inga nivåer */ }
-            else if (!strcmp(a, "--help")) { hjälp(); return 0; }
+            else if (!strcmp(a, "--fast") || !strcmp(a, "--best")) { /* no levels */ }
+            else if (!strcmp(a, "--help")) { help(); return 0; }
             else if (!strcmp(a, "--version")) { printf("nvcm 1.0\n"); return 0; }
-            else { fprintf(stderr, "nvcm: okänd flagga %s\n", a); return 1; }
+            else { fprintf(stderr, "nvcm: unknown flag %s\n", a); return 1; }
             continue;
         }
         for (const char *c = a + 1; *c; c++) {
@@ -622,33 +635,33 @@ int main(int argc, char **argv) {
             case 'n': case 'N': break;
             case '1': case '2': case '3': case '4': case '5':
             case '6': case '7': case '8': case '9': break;
-            case 'h': hjälp(); return 0;
+            case 'h': help(); return 0;
             case 'V': printf("nvcm 1.0\n"); return 0;
             default:
-                fprintf(stderr, "nvcm: okänd flagga -%c\n", *c);
+                fprintf(stderr, "nvcm: unknown flag -%c\n", *c);
                 return 1;
             }
         }
     }
 
     if (i >= argc) {
-        /* Ingen fil: stdin -> stdout, som gzip i ett rör. */
-        if (fl.l) { fprintf(stderr, "nvcm: -l behöver en fil\n"); return 1; }
+        /* No file: stdin -> stdout, like gzip in a pipe. */
+        if (fl.l) { fprintf(stderr, "nvcm: -l needs a file\n"); return 1; }
         if (!fl.d && !fl.t && isatty(1) && !fl.f) {
-            fprintf(stderr, "nvcm: packad data skrivs inte till en terminal. "
-                            "Använd -f om du menar allvar.\n");
+            fprintf(stderr, "nvcm: compressed data is not written to a terminal. "
+                            "Use -f if you mean it.\n");
             return 1;
         }
         if (fl.t) { FILE *n = fopen("/dev/null", "wb");
-                    int r = packa_upp_strom(stdin, n ? n : stdout);
+                    int r = unpack_stream(stdin, n ? n : stdout);
                     if (n) fclose(n);
                     if (!r) printf("stdin: OK\n");
                     return r; }
-        return (fl.d ? packa_upp_strom : packa_strom)(stdin, stdout);
+        return (fl.d ? unpack_stream : pack_stream)(stdin, stdout);
     }
 
-    if (fl.l) printf("%12s %12s %6s %s\n", "packad", "opackad", "kvot", "namn");
-    int fel = 0;
-    for (; i < argc; i++) fel |= gör_fil(argv[i], fl);
-    return fel;
+    if (fl.l) printf("%12s %12s %6s %s\n", "packed", "unpacked", "ratio", "name");
+    int err = 0;
+    for (; i < argc; i++) err |= do_file(argv[i], fl);
+    return err;
 }

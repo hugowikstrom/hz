@@ -4,130 +4,131 @@
 namespace nvz {
 namespace {
 
-struct Las {
-    const char *p, *slut;
-    void hoppa() { while (p < slut && (*p==' '||*p=='\t'||*p=='\n'||*p=='\r')) p++; }
-    char kika() { hoppa(); if (p >= slut) throw Fel("json: oväntat slut"); return *p; }
-    void vanta(char c) { if (kika() != c) throw Fel(strf("json: väntade %c", c)); p++; }
+struct Reader {
+    const char *p, *end;
+    void skip() { while (p < end && (*p==' '||*p=='\t'||*p=='\n'||*p=='\r')) p++; }
+    char peek() { skip(); if (p >= end) throw Error("json: unexpected end"); return *p; }
+    void expect(char c) { if (peek() != c) throw Error(strf("json: expected %c", c)); p++; }
 
-    std::string strang() {
-        vanta('"');
-        std::string ut;
-        while (p < slut && *p != '"') {
+    std::string string() {
+        expect('"');
+        std::string out;
+        while (p < end && *p != '"') {
             if (*p == '\\') {
                 p++;
-                if (p >= slut) throw Fel("json: trasig sträng");
+                if (p >= end) throw Error("json: broken string");
                 switch (*p) {
-                case 'n': ut += '\n'; break;  case 't': ut += '\t'; break;
-                case 'r': ut += '\r'; break;  case 'b': ut += '\b'; break;
-                case 'f': ut += '\f'; break;  case '/': ut += '/';  break;
-                case '"': ut += '"';  break;  case '\\': ut += '\\'; break;
+                case 'n': out += '\n'; break;  case 't': out += '\t'; break;
+                case 'r': out += '\r'; break;  case 'b': out += '\b'; break;
+                case 'f': out += '\f'; break;  case '/': out += '/';  break;
+                case '"': out += '"';  break;  case '\\': out += '\\'; break;
                 case 'u': {
-                    // \uXXXX, med surrogatpar. Python skriver dem bara för
-                    // styrtecken och (om ensure_ascii) för allt över ascii.
-                    auto hexfyra = [&]() {
-                        if (p + 4 >= slut) throw Fel("json: trasig \\u");
+                    // \uXXXX, with surrogate pairs. Python only writes them
+                    // for control characters and (with ensure_ascii) for
+                    // everything above ASCII.
+                    auto hex4 = [&]() {
+                        if (p + 4 >= end) throw Error("json: broken \\u");
                         char buf[5] = {p[1], p[2], p[3], p[4], 0};
                         p += 4;
                         return (unsigned)strtoul(buf, nullptr, 16);
                     };
-                    unsigned kod = hexfyra();
-                    if (kod >= 0xd800 && kod < 0xdc00 && p + 6 < slut &&
+                    unsigned code = hex4();
+                    if (code >= 0xd800 && code < 0xdc00 && p + 6 < end &&
                         p[1] == '\\' && p[2] == 'u') {
                         p += 2;
-                        unsigned lag = hexfyra();
-                        kod = 0x10000 + ((kod - 0xd800) << 10) + (lag - 0xdc00);
+                        unsigned low = hex4();
+                        code = 0x10000 + ((code - 0xd800) << 10) + (low - 0xdc00);
                     }
-                    if (kod < 0x80) ut += (char)kod;
-                    else if (kod < 0x800) {
-                        ut += (char)(0xc0 | (kod >> 6));
-                        ut += (char)(0x80 | (kod & 0x3f));
-                    } else if (kod < 0x10000) {
-                        ut += (char)(0xe0 | (kod >> 12));
-                        ut += (char)(0x80 | ((kod >> 6) & 0x3f));
-                        ut += (char)(0x80 | (kod & 0x3f));
+                    if (code < 0x80) out += (char)code;
+                    else if (code < 0x800) {
+                        out += (char)(0xc0 | (code >> 6));
+                        out += (char)(0x80 | (code & 0x3f));
+                    } else if (code < 0x10000) {
+                        out += (char)(0xe0 | (code >> 12));
+                        out += (char)(0x80 | ((code >> 6) & 0x3f));
+                        out += (char)(0x80 | (code & 0x3f));
                     } else {
-                        ut += (char)(0xf0 | (kod >> 18));
-                        ut += (char)(0x80 | ((kod >> 12) & 0x3f));
-                        ut += (char)(0x80 | ((kod >> 6) & 0x3f));
-                        ut += (char)(0x80 | (kod & 0x3f));
+                        out += (char)(0xf0 | (code >> 18));
+                        out += (char)(0x80 | ((code >> 12) & 0x3f));
+                        out += (char)(0x80 | ((code >> 6) & 0x3f));
+                        out += (char)(0x80 | (code & 0x3f));
                     }
                     break;
                 }
-                default: throw Fel("json: okänd escape");
+                default: throw Error("json: unknown escape");
                 }
                 p++;
             } else {
-                ut += *p++;
+                out += *p++;
             }
         }
-        vanta('"');
-        return ut;
+        expect('"');
+        return out;
     }
 
-    Jptr varde() {
-        char c = kika();
-        auto v = std::make_shared<Jvarde>();
+    Jptr value() {
+        char c = peek();
+        auto v = std::make_shared<Jvalue>();
         if (c == '{') {
-            v->k = Jvarde::K::Objekt;
+            v->k = Jvalue::K::Obj;
             p++;
-            if (kika() == '}') { p++; return v; }
+            if (peek() == '}') { p++; return v; }
             for (;;) {
-                std::string nyckel = strang();
-                vanta(':');
-                v->objekt[nyckel] = varde();
-                char n = kika(); p++;
+                std::string key = string();
+                expect(':');
+                v->obj[key] = value();
+                char n = peek(); p++;
                 if (n == '}') break;
-                if (n != ',') throw Fel("json: väntade , eller }");
+                if (n != ',') throw Error("json: expected , or }");
             }
         } else if (c == '[') {
-            v->k = Jvarde::K::Lista;
+            v->k = Jvalue::K::List;
             p++;
-            if (kika() == ']') { p++; return v; }
+            if (peek() == ']') { p++; return v; }
             for (;;) {
-                v->lista.push_back(varde());
-                char n = kika(); p++;
+                v->list.push_back(value());
+                char n = peek(); p++;
                 if (n == ']') break;
-                if (n != ',') throw Fel("json: väntade , eller ]");
+                if (n != ',') throw Error("json: expected , or ]");
             }
         } else if (c == '"') {
-            v->k = Jvarde::K::Strang;
-            v->s = strang();
+            v->k = Jvalue::K::Str;
+            v->s = string();
         } else if (c == 't' || c == 'f') {
-            v->k = Jvarde::K::Bool;
+            v->k = Jvalue::K::Bool;
             v->b = (c == 't');
             p += (c == 't') ? 4 : 5;
         } else if (c == 'n') {
-            v->k = Jvarde::K::Null;
+            v->k = Jvalue::K::Null;
             p += 4;
         } else {
-            v->k = Jvarde::K::Tal;
-            char *efter = nullptr;
-            v->tal = (i64)strtoll(p, &efter, 10);
-            if (efter == p) throw Fel("json: väntade ett tal");
-            // Flyttal förekommer inte i registret, men hoppa förbi en
-            // decimaldel hellre än att stanna mitt i den.
-            while (efter < slut && (*efter=='.'||*efter=='e'||*efter=='E'||
-                                    *efter=='+'||*efter=='-'||(*efter>='0'&&*efter<='9')))
-                efter++;
-            p = efter;
+            v->k = Jvalue::K::Num;
+            char *after = nullptr;
+            v->num = (i64)strtoll(p, &after, 10);
+            if (after == p) throw Error("json: expected a number");
+            // Floats do not occur in the register, but skip past a decimal
+            // part rather than stopping in the middle of one.
+            while (after < end && (*after=='.'||*after=='e'||*after=='E'||
+                                   *after=='+'||*after=='-'||(*after>='0'&&*after<='9')))
+                after++;
+            p = after;
         }
         return v;
     }
 };
 
-const Jptr NOLL = std::make_shared<Jvarde>();
+const Jptr NIL = std::make_shared<Jvalue>();
 
 }  // namespace
 
-const Jptr &Jvarde::at(const std::string &nyckel) const {
-    auto i = objekt.find(nyckel);
-    return i == objekt.end() ? NOLL : i->second;
+const Jptr &Jvalue::at(const std::string &key) const {
+    auto i = obj.find(key);
+    return i == obj.end() ? NIL : i->second;
 }
 
-Jptr las_json(const std::string &text) {
-    Las l{text.data(), text.data() + text.size()};
-    return l.varde();
+Jptr parse_json(const std::string &text) {
+    Reader r{text.data(), text.data() + text.size()};
+    return r.value();
 }
 
 }  // namespace nvz

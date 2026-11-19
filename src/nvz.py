@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""nvz — en innehållsmedveten arkivpackare.
+"""RETIRED. This is the original Python implementation of nvz, kept
+verbatim as the v1 archive-format reference: the C++ implementation reads
+its archives bit for bit, and the test suite holds the two to the same
+bytes. It is built by nothing and called by nothing, and it is the one
+file in this repository that was deliberately left in Swedish when the
+source went English on 2026-11-19 — translating retired reference code
+only risks drift.
+
+nvz — en innehållsmedveten arkivpackare.
 
 Kommandoraden är gzips — samma flaggor, samma standardbeteende:
 
