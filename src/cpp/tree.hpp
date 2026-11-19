@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 // Tree scan, content classification, and metadata restore.
 #pragma once
-#include "nvz.hpp"
+#include "hz.hpp"
 
-namespace nvz {
+namespace hz {
 
 // The class decides three things: which transform is attempted, which block
 // the entry ends up in, and which codec that block gets. An extension is a
@@ -21,4 +21,4 @@ std::vector<Entry> scan_tree(const std::string &root, size_t *skipped);
 // written by whoever holds the content; this only sets metadata.
 void set_metadata(const std::string &path, u32 mode, i64 mtime_ns, bool is_link);
 
-}  // namespace nvz
+}  // namespace hz

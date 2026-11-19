@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-only
-"""nvzpy — the portable nvz: pure standard-library Python, slow but correct.
+"""hzpy — the portable hz: pure standard-library Python, slow but correct.
 
-    python3 nvzpy.py pack   <dir> <archive.nv>
-    python3 nvzpy.py unpack <archive.nv> <target-dir>
-    python3 nvzpy.py list   <archive.nv>
-    python3 nvzpy.py test   <archive.nv>
+    python3 hzpy.py pack   <dir> <archive.nv>
+    python3 hzpy.py unpack <archive.nv> <target-dir>
+    python3 hzpy.py list   <archive.nv>
+    python3 hzpy.py test   <archive.nv>
 
-WHY THIS EXISTS. The real nvz is a Linux binary, fully optimized: libzstd
+WHY THIS EXISTS. The real hz is a Linux binary, fully optimized: libzstd
 and liblzma in process, fork-based workers, its own context-mixing codec.
 None of that exists on a stock macOS or Windows machine. This file is the
 other end of the trade: nothing but the Python standard library (lzma,
@@ -17,12 +17,12 @@ paid on purpose.
 
 WHAT IT GUARANTEES, exactly:
 
-  * Archives IT writes are ordinary nvz v3 archives restricted to the
-    codecs {ra, xz9e, xz9e-j0}, with no transforms. The Linux nvz unpacks
+  * Archives IT writes are ordinary hz v3 archives restricted to the
+    codecs {ra, xz9e, xz9e-j0}, with no transforms. The Linux hz unpacks
     them bit for bit, and so does this tool itself.
-  * Archives the Linux nvz writes WITH `--portable` use the same
+  * Archives the Linux hz writes WITH `--portable` use the same
     restriction and unpack here bit for bit.
-  * Any other nvz archive is read as far as its codecs allow: ra and xz
+  * Any other hz archive is read as far as its codecs allow: ra and xz
     blocks always; zstd blocks if the optional `zstandard` pip package is
     installed; nvcm/nvlz blocks and PNG/JPEG-transformed objects are
     refused with a message that says exactly what to do (repack with
@@ -54,7 +54,7 @@ OPAQUE_CAP = 16 << 30
 DICT_CAP = 256 << 20          # python builds the dict in RAM; stay modest
 PROBE = 4 << 20
 
-# Format strings (Swedish, frozen — see the language note in src/cpp/nvz.hpp).
+# Format strings (Swedish, frozen — see the language note in src/cpp/hz.hpp).
 TEXT_EXTS = {
     ".txt", ".md", ".json", ".jsonl", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx",
     ".py", ".rs", ".go", ".c", ".h", ".cpp", ".hpp", ".java", ".sh", ".bash", ".zsh",
@@ -103,7 +103,7 @@ def compress(codec, data):
         return lzma.compress(data, format=lzma.FORMAT_XZ,
                              check=lzma.CHECK_CRC64,
                              filters=xz_filters(len(data), 0))
-    raise NvzError("nvzpy never writes codec %r" % codec)
+    raise NvzError("hzpy never writes codec %r" % codec)
 
 
 def decompress(codec, data):
@@ -118,12 +118,12 @@ def decompress(codec, data):
             raise NvzError(
                 "this archive has a %s block; install the optional package "
                 "(`pip install zstandard`) or repack it on Linux with "
-                "`nvz pack --portable`" % codec)
+                "`hz pack --portable`" % codec)
         return zstandard.ZstdDecompressor(max_window_size=1 << 31).decompress(data)
-    if codec in ("nvcm", "nvcm-p", "nvz", "nvlz"):
+    if codec in ("nvcm", "nvcm-p", "hz", "nvlz"):
         raise NvzError(
-            "this archive has a %s block, which only the Linux nvz can "
-            "decode; repack it there with `nvz pack --portable`" % codec)
+            "this archive has a %s block, which only the Linux hz can "
+            "decode; repack it there with `hz pack --portable`" % codec)
     raise NvzError("unknown codec: %s" % codec)
 
 
@@ -166,10 +166,10 @@ class Writer:
 def read_register(path):
     size = os.path.getsize(path)
     if size < len(MAGIC) + 16:
-        raise NvzError("not an nvz archive")
+        raise NvzError("not an hz archive")
     with open(path, "rb") as f:
         if f.read(len(MAGIC)) != MAGIC:
-            raise NvzError("not an nvz archive")
+            raise NvzError("not an hz archive")
         f.seek(-16, io.SEEK_END)
         reg_off, raw_len = struct.unpack("<QQ", f.read(16))
         if reg_off + 16 > size:
@@ -181,8 +181,8 @@ def read_register(path):
     else:
         raw = decompress("zstd19", packed)      # zstd magic or bust
     if raw[:1] == b"{":
-        raise NvzError("v1 (Python/JSON) archives are read by the Linux nvz, "
-                       "not by nvzpy")
+        raise NvzError("v1 (Python/JSON) archives are read by the Linux hz, "
+                       "not by hzpy")
     if raw[:8] != REG2:
         raise NvzError("unknown register format")
     r = Reader(raw[8:])
@@ -238,7 +238,7 @@ def write_register(reg):
         w.raw(ob["hash"][:4]); w.u64(ob["size"])
     for ob in reg["objects"]:
         w.u32(ob["blk"]); w.u64(ob["off"]); w.u64(ob["len"])
-    w.u32(0)                      # no transformed objects, ever, in nvzpy
+    w.u32(0)                      # no transformed objects, ever, in hzpy
     w.u32(len(reg["entries"]))
     for e in reg["entries"]:
         w.s(e["path"]); w.u8(ord(e["kind"]))
@@ -362,7 +362,7 @@ def pack(root, archive, quiet=False, flat=False):
               % skipped, file=sys.stderr)
     files = [e for e in entries if e["kind"] == "f"]
     raw_bytes = sum(e["size"] for e in files)
-    say("  %d entries, %.1f MiB (nvzpy, portable codecs only)"
+    say("  %d entries, %.1f MiB (hzpy, portable codecs only)"
         % (len(entries), raw_bytes / 1048576))
 
     # Hash, classify, dedup.
@@ -460,7 +460,7 @@ def unpack(archive, target, quiet=False):
         if ob["transform"]:
             raise NvzError(
                 "the archive holds PNG/JPEG-transformed objects, which only "
-                "the Linux nvz can rebuild; repack with `nvz pack --portable`")
+                "the Linux hz can rebuild; repack with `hz pack --portable`")
     with open(archive, "rb") as f:
         block_data = []
         for b in reg["blocks"]:
@@ -494,7 +494,7 @@ def unpack(archive, target, quiet=False):
             except OSError as ex:
                 # Windows without developer mode lands here. A skipped link
                 # with a warning beats a crashed unpack; status 2 says it.
-                print("nvzpy: %s: could not create symlink (%s) -- skipped"
+                print("hzpy: %s: could not create symlink (%s) -- skipped"
                       % (path, ex), file=sys.stderr)
                 status = max(status, 2)
             continue
@@ -518,7 +518,7 @@ def unpack(archive, target, quiet=False):
 
 def list_archive(archive):
     reg = read_register(archive)
-    print("nvz v%d  root=%s  created %s" % (reg["version"], reg["root"], reg["created"]))
+    print("hz v%d  root=%s  created %s" % (reg["version"], reg["root"], reg["created"]))
     print("%d entries, %d objects, %d blocks"
           % (len(reg["entries"]), len(reg["objects"]), len(reg["blocks"])))
     for b in reg["blocks"]:
@@ -532,7 +532,7 @@ def test_archive(archive):
     """Unpack to scratch and let the per-file hash check judge."""
     import shutil
     import tempfile
-    d = tempfile.mkdtemp(prefix="nvzpy-test-")
+    d = tempfile.mkdtemp(prefix="hzpy-test-")
     try:
         unpack(archive, d, quiet=True)
         print("%s: OK" % archive)
@@ -560,7 +560,7 @@ def main(argv):
         if cmd in ("test", "prova") and len(args) == 1:
             return test_archive(args[0])
     except NvzError as e:
-        print("nvzpy: %s" % e, file=sys.stderr)
+        print("hzpy: %s" % e, file=sys.stderr)
         return 1
     print(__doc__.strip().split("\n\n")[0])
     return 1

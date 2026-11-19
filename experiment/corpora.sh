@@ -13,7 +13,7 @@
 set -euo pipefail
 export LC_ALL=C
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-NVZ="$ROOT/src/nvz"
+NVZ="$ROOT/src/hz"
 WORK="${1:-${NVPACK_SKRAP:-$ROOT/.skrap}/corpora}"
 mkdir -p "$WORK"; cd "$WORK"
 [ -d corpora ] || git clone --depth 1 -q https://github.com/zlib-ng/corpora corpora

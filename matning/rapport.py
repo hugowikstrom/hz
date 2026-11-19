@@ -22,10 +22,14 @@ ORDER = ['tar (okomprimerad)', 'tar.gz -6', 'tar.gz -9 (pigz)', 'tar.bz2 -9',
          'tar.xz -9e', 'nvz snabb', 'nvz utan knep', 'nvz normal',
          'nvz liten']
 # Display names per language. The Swedish keys stay as the identifiers.
+# The tool was renamed nvz -> hz on 2026-11-19; the row keys are frozen
+# measurement identifiers and keep the old name, the display does not.
 ROW_EN = {'tar (okomprimerad)': 'tar (uncompressed)',
           'tar.zst -3 (dagens)': 'tar.zst -3 (the baseline)',
-          'nvz snabb': 'nvz fast', 'nvz utan knep': 'nvz, tricks off',
-          'nvz liten': 'nvz small'}
+          'nvz snabb': 'hz fast', 'nvz normal': 'hz normal',
+          'nvz utan knep': 'hz, tricks off', 'nvz liten': 'hz small'}
+ROW_SV = {'nvz snabb': 'hz snabb', 'nvz normal': 'hz normal',
+          'nvz utan knep': 'hz utan knep', 'nvz liten': 'hz liten'}
 CORPUS_SV = {'kod': 'Programkod', 'png': 'Bilder (PNG)', 'foto': 'Foton (JPEG)',
              'gif': 'Bilder (GIF)', 'film': 'Film (h264/VP9)',
              'arkiv': 'Arkiv (zip/tar.gz)', 'logg': 'Loggfiler',
@@ -75,7 +79,7 @@ def table(data, sv, md=True):
         if m['byte'] == smallest: size = f'**{size}**'
         pt = f'{m["packsek"]:.0f} s'
         if m['packsek'] == fastest: pt = f'**{pt}**'
-        label = name if sv else ROW_EN.get(name, name)
+        label = ROW_SV.get(name, name) if sv else ROW_EN.get(name, name)
         rows.append((label, size,
                      num(raw/m['byte'], 2, sv) + '×', vs,
                      pt, f'{m["uppacksek"]:.0f} s',
@@ -85,7 +89,7 @@ def table(data, sv, md=True):
         out = ['| ' + ' | '.join(head) + ' |',
                '|' + '|'.join([':--'] + ['--:'] * 5 + [':-:']) + '|']
         for r in rows:
-            bold = r[0].startswith('nvz')
+            bold = r[0].startswith('hz')
             out.append('| ' + ' | '.join(f'**{c}**' if bold and i == 0 else c
                                          for i, c in enumerate(r)) + ' |')
         return '\n'.join(out)

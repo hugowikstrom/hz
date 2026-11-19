@@ -28,28 +28,28 @@
 #include <unistd.h>
 
 extern "C" {
-int nvz_nvcm_pack(void);
-int nvz_nvcm_unpack(void);
-int nvz_nvjpg_pack(void);
-int nvz_nvjpg_unpack(void);
+int hz_nvcm_pack(void);
+int hz_nvcm_unpack(void);
+int hz_nvjpg_pack(void);
+int hz_nvjpg_unpack(void);
 }
 
 namespace {
 
 void help() {
     printf(
-"usage: nvz <command> ...\n"
+"usage: hz <command> ...\n"
 "\n"
-"  nvz pack    <dir> <archive.nv>    pack a tree\n"
-"  nvz unpack  <archive.nv> <target> unpack\n"
-"  nvz list    <archive.nv>          show the contents\n"
-"  nvz test    <dir>                 pack, unpack, compare bit for bit\n"
+"  hz pack    <dir> <archive.nv>    pack a tree\n"
+"  hz unpack  <archive.nv> <target> unpack\n"
+"  hz list    <archive.nv>          show the contents\n"
+"  hz test    <dir>                 pack, unpack, compare bit for bit\n"
 "\n"
 "flags for pack:\n"
 "  --mode M     fast | normal | small   (default small — the smallest archive)\n"
 "  --codec C    force zstd3|zstd19|zstd22|xz9e|nvcm|nvlz\n"
 "  --portable   restrict to ra/xz and no transforms: the archive can then be\n"
-"               unpacked by the stdlib Python tool (portable/nvzpy.py) on\n"
+"               unpacked by the stdlib Python tool (portable/hzpy.py) on\n"
 "               macOS and Windows\n"
 "  --no-dedup --no-transform\n"
 "  --no-sort --no-classing   (ablation flags: switch off one trick at a time)\n"
@@ -61,25 +61,25 @@ void help() {
 "--utan-klassning, and the mode values snabb/liten.\n");
 }
 
-int roundtrip_test(const std::string &dir, const nvz::PackOpts &o) {
+int roundtrip_test(const std::string &dir, const hz::PackOpts &o) {
     // Packs to a scratch file, unpacks next to it, compares via hashes.
-    std::string tmpl_s = nvz::temp_dir() + "/nvz-roundtrip-XXXXXX";
+    std::string tmpl_s = hz::temp_dir() + "/nvz-roundtrip-XXXXXX";
     std::vector<char> tmpl(tmpl_s.begin(), tmpl_s.end()); tmpl.push_back(0);
-    if (!mkdtemp(tmpl.data())) { fprintf(stderr, "nvz: could not create scratch space\n"); return 1; }
+    if (!mkdtemp(tmpl.data())) { fprintf(stderr, "hz: could not create scratch space\n"); return 1; }
     std::string d = tmpl.data();
     std::string ark = d + "/test.nv", up = d + "/up";
     int failed = 0;
     try {
-        nvz::pack(dir, ark, o);
+        hz::pack(dir, ark, o);
         mkdir(up.c_str(), 0700);
-        nvz::unpack(ark, up, o);
+        hz::unpack(ark, up, o);
         // The unpack itself does the comparison: every file is checked
         // against its blake2b in the register before it is accepted, so
         // reaching this point proves the content. Tree completeness is
         // covered by the entry count having matched.
         printf("Test ok: every file identical bit for bit.\n");
     } catch (const std::exception &e) {
-        fprintf(stderr, "nvz: %s\n", e.what());
+        fprintf(stderr, "hz: %s\n", e.what());
         failed = 1;
     }
     std::string clean = "rm -rf '" + d + "'";
@@ -102,17 +102,17 @@ int main(int argc, char **argv) {
     // exit status is 1, nvz's convention for errors. A deliberate
     // deviation from gzip, the only one on the error path.
     signal(SIGXFSZ, SIG_IGN);
-    if (argc < 2) return nvz::main_gzip(argc, argv);
+    if (argc < 2) return hz::main_gzip(argc, argv);
     std::string cmd = argv[1];
 
     // The workers first: they touch stdin/stdout and nothing else.
     if (cmd == "nvcm" && argc >= 3)
-        return is_sub(argv[2], "pack", "packa") ? nvz_nvcm_pack() : nvz_nvcm_unpack();
+        return is_sub(argv[2], "pack", "packa") ? hz_nvcm_pack() : hz_nvcm_unpack();
     if (cmd == "nvjpg" && argc >= 3)
-        return is_sub(argv[2], "pack", "packa") ? nvz_nvjpg_pack() : nvz_nvjpg_unpack();
+        return is_sub(argv[2], "pack", "packa") ? hz_nvjpg_pack() : hz_nvjpg_unpack();
 
     if (cmd == "-h" || cmd == "--help") { help(); return 0; }
-    if (cmd == "-V" || cmd == "--version") { printf("nvz 2.0 (c++)\n"); return 0; }
+    if (cmd == "-V" || cmd == "--version") { printf("hz 2.0 (c++)\n"); return 0; }
 
     // No subcommand: the gzip surface. `nvz file` packs, `nvz -d file.nv`
     // unpacks, and the flags mean what they mean in gzip.
@@ -121,14 +121,14 @@ int main(int argc, char **argv) {
     const bool is_list   = is_sub(cmd.c_str(), "list", "lista");
     const bool is_test   = is_sub(cmd.c_str(), "test", "prova");
     if (!is_pack && !is_unpack && !is_list && !is_test)
-        return nvz::main_gzip(argc, argv);
+        return hz::main_gzip(argc, argv);
 
-    nvz::PackOpts o;
+    hz::PackOpts o;
     std::vector<std::string> free_args;
     for (int i = 2; i < argc; i++) {
         std::string a = argv[i];
         auto value = [&](const char *name) -> std::string {
-            if (i + 1 >= argc) { fprintf(stderr, "nvz: %s needs a value\n", name); exit(1); }
+            if (i + 1 >= argc) { fprintf(stderr, "hz: %s needs a value\n", name); exit(1); }
             return argv[++i];
         };
         auto eat = [&](const char *flag, const char *alias, std::string *out) {
@@ -144,37 +144,37 @@ int main(int argc, char **argv) {
         else if (a == "-j" || a == "--jobs" || a == "--jobb") o.jobs = atoi(value("-j").c_str());
         else if (eat("mode", "läge", &v) || eat("mode", "lage", &v)) o.mode = v;
         else if (eat("codec", "kodek", &v)) o.codec = v;
-        else if (eat("block-cap", "blocktak", &v)) o.block_cap = (nvz::u64)atoll(v.c_str()) << 20;
+        else if (eat("block-cap", "blocktak", &v)) o.block_cap = (hz::u64)atoll(v.c_str()) << 20;
         else if (a == "--no-dedup" || a == "--utan-dedup") o.dedup = false;
         else if (a == "--no-transform" || a == "--utan-omvandling") o.transform = false;
         else if (a == "--no-sort" || a == "--utan-sortering") o.sort = false;
         else if (a == "--no-classing" || a == "--utan-klassning") o.class_blocks = false;
         else if (a == "--portable") o.portable = true;
         else if (a == "-h" || a == "--help") { help(); return 0; }
-        else if (a[0] == '-') { fprintf(stderr, "nvz: unknown flag %s\n", a.c_str()); return 1; }
+        else if (a[0] == '-') { fprintf(stderr, "hz: unknown flag %s\n", a.c_str()); return 1; }
         else free_args.push_back(a);
     }
-    std::string mode = nvz::canonical_mode(o.mode);
+    std::string mode = hz::canonical_mode(o.mode);
     if (mode.empty()) {
-        fprintf(stderr, "nvz: unknown mode %s\n", o.mode.c_str()); return 1;
+        fprintf(stderr, "hz: unknown mode %s\n", o.mode.c_str()); return 1;
     }
     o.mode = mode;
     if (o.mode == "fast") o.transform = false;
 
     try {
         if (is_pack && free_args.size() == 2) {
-            nvz::pack(free_args[0], free_args[1], o);
+            hz::pack(free_args[0], free_args[1], o);
         } else if (is_unpack && free_args.size() == 2) {
-            nvz::unpack(free_args[0], free_args[1], o);
+            hz::unpack(free_args[0], free_args[1], o);
         } else if (is_list && free_args.size() == 1) {
-            nvz::list_archive(free_args[0]);
+            hz::list_archive(free_args[0]);
         } else if (is_test && free_args.size() == 1) {
             return roundtrip_test(free_args[0], o);
         } else {
             help(); return 1;
         }
     } catch (const std::exception &e) {
-        fprintf(stderr, "nvz: %s\n", e.what());
+        fprintf(stderr, "hz: %s\n", e.what());
         return 1;
     }
     return 0;

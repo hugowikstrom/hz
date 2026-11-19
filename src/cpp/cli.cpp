@@ -24,7 +24,7 @@
 #include <dirent.h>
 #include <algorithm>
 
-namespace nvz {
+namespace hz {
 namespace {
 
 struct Flags {
@@ -34,9 +34,9 @@ struct Flags {
     PackOpts opts;                   // mode defaults to "small" — the smallest archive
 };
 
-int err(const std::string &m) { fprintf(stderr, "nvz: %s\n", m.c_str()); return 1; }
+int err(const std::string &m) { fprintf(stderr, "hz: %s\n", m.c_str()); return 1; }
 int warn(const Flags &o, const std::string &m) {
-    if (!o.q) fprintf(stderr, "nvz: %s\n", m.c_str());
+    if (!o.q) fprintf(stderr, "hz: %s\n", m.c_str());
     return 2;
 }
 
@@ -67,10 +67,10 @@ const LongFlag LONG_FLAGS[] = {
 
 void help_surface() {
     printf(
-"usage: nvz [FLAG]... [FILE]...\n"
+"usage: hz [FLAG]... [FILE]...\n"
 "Packs and unpacks files and directory trees. With no flags each FILE is\n"
 "packed and the original replaced, just like gzip — but the default mode is\n"
-"`small`, the smallest nvz can make. A directory becomes ONE archive of the\n"
+"`small`, the smallest hz can make. A directory becomes ONE archive of the\n"
 "whole tree.\n"
 "\n"
 "  -c, --stdout       write to standard out, leave the files alone\n"
@@ -84,14 +84,14 @@ void help_surface() {
 "  -t, --test         verify the archive: unpack and compare to the register\n"
 "  -v, --verbose      say what happens\n"
 "  -1 .. -9           fast .. small: -1..-3 fast, -4..-6 normal, -7..-9 small\n"
-"                     (no digit: small, i.e. the smallest nvz can make)\n"
+"                     (no digit: small, i.e. the smallest hz can make)\n"
 "      --mode=M       fast | normal | small (beats -1..-9; default small)\n"
 "      --codec=C      force zstd3 | zstd19 | zstd22 | xz9e | nvcm | nvlz\n"
 "      --portable     archive readable by the stdlib Python tool on any OS\n"
 "      --no-dedup --no-transform -j N\n"
 "\n"
 "Swedish flag names (--läge, --kodek, --utan-dedup, ...) remain as aliases.\n"
-"Subcommands: nvz pack|unpack|list|test — see `nvz pack --help`.\n");
+"Subcommands: hz pack|unpack|list|test — see `hz pack --help`.\n");
 }
 
 // Returns 0 on ok, otherwise an exit status.
@@ -104,8 +104,8 @@ int apply(Flags &o, char shortc, const char *value) {
     case 'r': o.r = true; break;         case 'v': o.v++; break;
     case 'n': o.N = false; break;        case 'N': o.N = true; break;
     case 'h': help_surface(); exit(0);
-    case 'V': printf("nvz 2.0 (c++)\n"); exit(0);
-    case 'L': printf("nvz: original code; no terms beyond the source tree's.\n"); exit(0);
+    case 'V': printf("hz 2.0 (c++)\n"); exit(0);
+    case 'L': printf("hz: original code; no terms beyond the source tree's.\n"); exit(0);
     case 'S': o.suffix = value && value[0] == '.' ? value : std::string(".") + (value ? value : ""); break;
     case 'M': o.opts.mode = value ? value : ""; break;
     case 'K': o.opts.codec = value ? value : ""; break;
@@ -144,7 +144,7 @@ bool ends_with(const std::string &s, const std::string &suffix) {
 bool may_write(const Flags &o, const std::string &target, int *status) {
     if (o.f || !exists(target)) return true;
     if (isatty(0) && isatty(2)) {
-        fprintf(stderr, "nvz: %s already exists; overwrite (y/n)? ", target.c_str());
+        fprintf(stderr, "hz: %s already exists; overwrite (y/n)? ", target.c_str());
         char line[16] = {0};
         if (fgets(line, sizeof line, stdin) && (line[0] == 'y' || line[0] == 'j')) return true;
         fprintf(stderr, "\tnot overwritten\n");
@@ -228,7 +228,7 @@ u64 tree_size(const std::string &root) {
     return tot;
 }
 
-std::string scratch_template() { return temp_dir() + "/nvz-out-XXXXXX"; }
+std::string scratch_template() { return temp_dir() + "/hz-out-XXXXXX"; }
 
 // --- pack -------------------------------------------------------------------
 int pack_operand(const Flags &o, const std::string &p) {
@@ -386,7 +386,7 @@ int stream(const Flags &o) {
     if (!o.d && !o.t && !o.l && isatty(1) && !o.f)
         return err("compressed data is not written to a terminal. "
                    "Use -f if you mean it, or give a file.");
-    std::string tmpl_s = temp_dir() + "/nvz-stream-XXXXXX";
+    std::string tmpl_s = temp_dir() + "/hz-stream-XXXXXX";
     std::vector<char> tmpl(tmpl_s.begin(), tmpl_s.end()); tmpl.push_back(0);
     if (!mkdtemp(tmpl.data())) return err("could not create scratch space");
     std::string d = tmpl.data();
@@ -456,7 +456,7 @@ int main_gzip(int argc, char **argv) {
                 if (name == lf.name) { hits = {&lf}; break; }
                 if (strncmp(lf.name, name.c_str(), name.size()) == 0) hits.push_back(&lf);
             }
-            if (hits.empty()) return err("unknown flag -- '--" + name + "'\nTry nvz --help.");
+            if (hits.empty()) return err("unknown flag -- '--" + name + "'\nTry hz --help.");
             if (hits.size() > 1) {
                 std::string options;
                 for (auto *lf : hits) options += std::string(options.empty() ? "" : ", ") + "--" + lf->name;
@@ -483,7 +483,7 @@ int main_gzip(int argc, char **argv) {
                 break;
             }
             if (apply(o, ch, nullptr))
-                return err(strf("unknown flag -- '%c'\nTry nvz --help.", ch));
+                return err(strf("unknown flag -- '%c'\nTry hz --help.", ch));
         }
     }
     std::string mode = canonical_mode(o.opts.mode);
@@ -531,4 +531,4 @@ int main_gzip(int argc, char **argv) {
     return status;
 }
 
-}  // namespace nvz
+}  // namespace hz

@@ -14,7 +14,7 @@
 set -uo pipefail
 export LC_ALL=C
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-NVZ="$ROOT/src/nvz"
+NVZ="$ROOT/src/hz"
 WORK="$(mktemp -d /tmp/nvz-flaws-XXXXXX)"
 failed=0
 cleanup() { chmod -R u+rwX "$WORK" 2>/dev/null; rm -rf "$WORK"; }

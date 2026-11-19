@@ -34,14 +34,14 @@ visa "tar.zst -3 (dagens)" "$bas" "$(echo "$t1-$t0"|bc)" "$bas"
 
 for lage in normal liten; do
     t0=$(sek)
-    "$rot/src/nvz" packa "$malkat" "$skrap/nv-$lage.nv" -q --läge "$lage" || continue
+    "$rot/src/hz" packa "$malkat" "$skrap/nv-$lage.nv" -q --läge "$lage" || continue
     t1=$(sek)
     visa "nvz $lage" "$(storlek "$skrap/nv-$lage.nv")" "$(echo "$t1-$t0"|bc)" "$bas"
 done
 
 printf '\n  kontrollerar att allt kommer tillbaka ... '
 rm -rf "$skrap/upp"; mkdir -p "$skrap/upp"
-"$rot/src/nvz" packa-upp "$skrap/nv-normal.nv" "$skrap/upp" -q
+"$rot/src/hz" packa-upp "$skrap/nv-normal.nv" "$skrap/upp" -q
 if diff -rq --no-dereference "$malkat" "$skrap/upp/$(basename "$malkat")" > "$skrap/diff.txt" 2>&1; then
     printf 'bit för bit identiskt\n\n'
 else

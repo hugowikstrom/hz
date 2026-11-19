@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <set>
 
-namespace nvz {
+namespace hz {
 namespace {
 
 const std::set<std::string> TEXT_EXTS = {
@@ -119,4 +119,4 @@ void set_metadata(const std::string &path, u32 mode, i64 mtime_ns, bool is_link)
     utimensat(AT_FDCWD, path.c_str(), times, 0);
 }
 
-}  // namespace nvz
+}  // namespace hz

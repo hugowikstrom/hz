@@ -8,7 +8,7 @@
 #include <thread>
 #include <cstring>
 
-namespace nvz {
+namespace hz {
 
 std::string sibling_binary(const std::string &name) {
     char self[4096];
@@ -94,4 +94,4 @@ Byte run_self(const std::vector<std::string> &arg, const u8 *in, size_t n, int *
     return out;
 }
 
-}  // namespace nvz
+}  // namespace hz

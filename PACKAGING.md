@@ -1,8 +1,8 @@
-# Packaging nvz for a Linux distribution
+# Packaging hz for a Linux distribution
 
-## What nvz is, packaging-wise
+## What hz is, packaging-wise
 
-nvz is a **userspace** archiver — three C/C++ binaries and their man
+hz is a **userspace** archiver — three C/C++ binaries and their man
 pages. The road into a distribution is an ordinary package (deb/rpm),
 not the kernel tree: nothing here runs in kernel space, and a
 compression tool with half-gigabyte model tables has no business there.
@@ -27,26 +27,26 @@ make test               # self-test against the bundled code corpus
 
 * No network access at build or test time.
 * No bundled copies of libraries: zstd and lzma are linked from the
-  system (`-lzstd -llzma`), the deflate side is nvz's own code.
+  system (`-lzstd -llzma`), the deflate side is hz's own code.
 * Reproducible: the archive format stores mtimes from the input only;
   the binaries embed no timestamps.
-* `make dist` produces `dist/nvz-<version>.tar.gz` from `git archive` —
+* `make dist` produces `dist/hz-<version>.tar.gz` from `git archive` —
   the tarball a package should be built from.
 
 ## What a package should ship
 
 | path | contents |
 |:--|:--|
-| `%{_bindir}/nvz` `nvcm` `nvjpg` | the three tools |
+| `%{_bindir}/hz` `nvcm` `nvjpg` | the three tools |
 | `%{_mandir}/man1/*.1` | man pages |
 | `%{_defaultdocdir}` | README.md |
 
 `src/nvgpu` (CUDA) is deliberately **not** packaged: it requires a
 non-free toolchain and loses to the CPU codecs on ratio (report §6).
-`portable/nvzpy.py` targets macOS/Windows and is not for the Linux
+`portable/hzpy.py` targets macOS/Windows and is not for the Linux
 package either.
 
-A starting-point RPM spec is in `packaging/nvz.spec`; the Debian
+A starting-point RPM spec is in `packaging/hz.spec`; the Debian
 equivalent is a stock `debhelper` rules file over the same
 `make install` interface.
 
@@ -56,13 +56,13 @@ equivalent is a stock `debhelper` rules file over the same
 into `dist/` — a macOS tarball with installer, a Windows zip with
 `install.ps1`, and a run-anywhere `nvz.pyz` zipapp — deterministically:
 the same commit yields the same bytes, so the published `SHA256SUMS`
-stays true. `packaging/nvz.rb` is a Homebrew formula over the macOS
-tarball. Published at <https://nattviken.com/filer/nvz/>.
+stays true. `packaging/hz.rb` is a Homebrew formula over the macOS
+tarball. Published at <https://nattviken.com/filer/hz/>.
 
 ## Format stability contract
 
-Archives written by any released nvz are readable by every later
+Archives written by any released hz are readable by every later
 release (v1 Python-JSON, v2 and v3 binary registers all still unpack).
 The format strings inside archives are Swedish and frozen — see the
-note at the top of `src/cpp/nvz.hpp`. A distribution upgrade never
+note at the top of `src/cpp/hz.hpp`. A distribution upgrade never
 orphans a user's archives.

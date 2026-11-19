@@ -13,7 +13,7 @@
 #include <cstring>
 #include <algorithm>
 
-namespace nvz {
+namespace hz {
 namespace {
 
 // --- zstd -------------------------------------------------------------------
@@ -527,4 +527,4 @@ std::string xz_variant(const u8 *d, size_t n) {
     return b < a ? "xz9e-j0" : "xz9e";
 }
 
-}  // namespace nvz
+}  // namespace hz

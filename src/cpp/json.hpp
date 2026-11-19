@@ -1,8 +1,8 @@
 #pragma once
-#include "nvz.hpp"
+#include "hz.hpp"
 #include <memory>
 
-namespace nvz {
+namespace hz {
 
 // Exactly as much JSON as the v1 register contains: objects, lists, strings,
 // integers, true/false/null. No float parsing, no generic serialization —
@@ -30,4 +30,4 @@ struct Jvalue {
 
 Jptr parse_json(const std::string &text);
 
-}  // namespace nvz
+}  // namespace hz

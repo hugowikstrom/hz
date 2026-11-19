@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 // Shared helpers: string utilities, blake2b-128, checked file I/O.
-#include "nvz.hpp"
+#include "hz.hpp"
 #include <cerrno>
 #include <cstring>
 #include <cstdlib>
@@ -9,7 +9,7 @@
 #include <cstdarg>
 #include <algorithm>
 
-namespace nvz {
+namespace hz {
 
 std::string lower(std::string s) {
     std::transform(s.begin(), s.end(), s.begin(),
@@ -198,4 +198,4 @@ std::string strf(const char *fmt, ...) {
     return out;
 }
 
-}  // namespace nvz
+}  // namespace hz

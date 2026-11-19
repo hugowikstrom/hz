@@ -2,9 +2,9 @@
 // Worker processes: run code from this binary, or a sibling binary, in a
 // separate process so its failures stay its own.
 #pragma once
-#include "nvz.hpp"
+#include "hz.hpp"
 
-namespace nvz {
+namespace hz {
 
 // Run our own binary as a worker: /proc/self/exe <arg...> with *in* on
 // stdin. Returns the worker's output; *exit_code* receives its status.
@@ -21,4 +21,4 @@ Byte run_program(const std::string &binary, const std::vector<std::string> &arg,
                  const u8 *in, size_t n, int *exit_code);
 std::string sibling_binary(const std::string &name);
 
-}  // namespace nvz
+}  // namespace hz

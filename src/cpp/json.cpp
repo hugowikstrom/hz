@@ -1,7 +1,7 @@
 #include "json.hpp"
 #include <cstdlib>
 
-namespace nvz {
+namespace hz {
 namespace {
 
 struct Reader {
@@ -131,4 +131,4 @@ Jptr parse_json(const std::string &text) {
     return r.value();
 }
 
-}  // namespace nvz
+}  // namespace hz

@@ -28,7 +28,7 @@
 #include <optional>
 #include <stdexcept>
 
-namespace nvz {
+namespace hz {
 
 using u8 = uint8_t;  using u16 = uint16_t;
 using u32 = uint32_t; using u64 = uint64_t;
@@ -115,4 +115,4 @@ std::string temp_dir();
 // printf-style formatting into a std::string.
 std::string strf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
-}  // namespace nvz
+}  // namespace hz

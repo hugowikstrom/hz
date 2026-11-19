@@ -1,25 +1,25 @@
-.TH NVZ 1 "November 2026" "nvz 2.0" "User commands"
+.TH HZ 1 "November 2026" "hz 2.0" "User commands"
 .SH NAME
-nvz \- content-aware archiver that knows what it is packing
+hz \- content-aware archiver that knows what it is packing
 .SH SYNOPSIS
-.B nvz pack
+.B hz pack
 .I dir archive.nv
 .RI [ flags ]
 .br
-.B nvz unpack
+.B hz unpack
 .I archive.nv target
 .br
-.B nvz list
+.B hz list
 .I archive.nv
 .br
-.B nvz test
+.B hz test
 .I dir
 .br
-.B nvz
+.B hz
 .RI [ FLAG ]...
 .RI [ FILE ]...
 .SH DESCRIPTION
-.B nvz
+.B hz
 classifies its content and applies content-specific, lossless transforms —
 deduplication, similarity sorting, PNG unfolding with recipe search,
 lossless JPEG recoding and context-mixing compression — before choosing a
@@ -60,7 +60,7 @@ nvcm.
 .TP
 .BI \-\-mode " fast|normal|small|gpu"
 .B small
-(the default) is the smallest archive nvz can make;
+(the default) is the smallest archive hz can make;
 .B normal
 skips the most expensive re-checks and is the mode that beats the best
 established tool on both size and time on most corpora;
@@ -81,7 +81,7 @@ percent larger and three to four times faster in both directions.
 Restrict the archive to the codecs {ra, xz9e, xz9e\-j0} and switch the
 transforms off. Such an archive can be unpacked by the pure-stdlib Python
 tool
-.B portable/nvzpy.py
+.B portable/hzpy.py
 on macOS and Windows \(em no libzstd, no nvcm, no deflate-engine
 dependency. Slower and somewhat larger; portability is the point.
 .TP
@@ -100,7 +100,7 @@ similarity sort \(em and only it \(em is worth; see
 Put everything into one block stream instead of one block per content
 class. Together with
 .B \-\-no\-sort
-this is nvz with no reordering at all, the comparison point against
+this is hz with no reordering at all, the comparison point against
 .B tar
 in directory order.
 .TP
@@ -117,20 +117,21 @@ Number of parallel jobs. Default is the number of threads, at most 24.
 Say nothing.
 .SH THE GZIP SURFACE
 Without a subcommand,
-.B nvz
+.B hz
 behaves like
 .BR gzip :
-\fBnvz file\fR replaces the file with \fIfile\fR.nv (the archive inherits
-its time and permissions), \fBnvz \-d\fR brings it back,
+\fBhz file\fR replaces the file with \fIfile\fR.nv (the archive inherits
+its time and permissions), \fBhz \-d\fR brings it back,
 .B \-c \-k \-l \-t \-r \-S \-f \-v
 and
 .B \-1..\-9
 mean what they mean in gzip. Two deliberate differences: the default level
 is the SMALLEST, and a directory operand becomes ONE archive of the whole
 tree, with the source tree always left in place.
-.SH SWEDISH ALIASES
-The tool was born Swedish, and published reports and scripts use the old
-names. They are permanent aliases: the subcommands
+.SH HISTORY AND ALIASES
+The tool was born Swedish, named nvz until 2026-11-19, and published
+reports and scripts use the old names. Archives are unchanged: every hz
+reads every nvz archive and vice versa. They are permanent aliases: the subcommands
 .BR packa ", " packa\-upp ", " lista ", " prova ;
 the flags
 .BR \-\-läge ", " \-\-kodek ", " \-\-blocktak ", " \-\-jobb ", "
@@ -151,7 +152,7 @@ Pipes, sockets and devices are skipped with a warning. Hard links are
 recreated as independent files.
 .TP
 .B Standard input does not stream.
-\fBcat file | nvz\fR works, but lands in a scratch file on the way: the
+\fBcat file | hz\fR works, but lands in a scratch file on the way: the
 register sits at the end of the archive and is read first.
 .TP
 .B No encryption and no redundancy.
@@ -160,7 +161,7 @@ ruins the block \(em and is detected, never silently passed through.
 .TP
 .B PNG portability.
 A PNG recipe depends on the deflate engine (zlib vs zlib-ng). The recipe
-carries the engine's fingerprint; on a mismatch nvz searches the parameter
+carries the engine's fingerprint; on a mismatch hz searches the parameter
 space and otherwise refuses with both fingerprints named. Use
 .B \-\-portable
 or

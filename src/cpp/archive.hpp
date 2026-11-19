@@ -2,9 +2,9 @@
 // nvz archive front end: pack/unpack entry points, options, and the
 // single-file (gzip-surface) variants.
 #pragma once
-#include "nvz.hpp"
+#include "hz.hpp"
 
-namespace nvz {
+namespace hz {
 
 struct PackOpts {
     std::string mode = "small";     // fast | normal | small | gpu
@@ -54,4 +54,4 @@ std::string canonical_mode(const std::string &mode);
 
 constexpr u64 BLOCK_CAP = 192ull << 20;
 
-}  // namespace nvz
+}  // namespace hz

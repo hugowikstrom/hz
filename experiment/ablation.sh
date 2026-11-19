@@ -16,7 +16,7 @@
 set -euo pipefail
 export LC_ALL=C
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-NVZ="$ROOT/src/nvz"
+NVZ="$ROOT/src/hz"
 CORPUS="${1:-kod}"
 CODEC="${2:-xz9e}"
 WORK="${NVPACK_SKRAP:-$ROOT/.skrap}/ablation"

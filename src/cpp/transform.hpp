@@ -2,9 +2,9 @@
 // PNG and JPEG transforms: split a file into rest + body so the body can
 // be compressed in a block of its own kind.
 #pragma once
-#include "nvz.hpp"
+#include "hz.hpp"
 
-namespace nvz {
+namespace hz {
 
 // A successful transform: the rest (skeleton/header) and the body (raw
 // data/stream), plus the recipe for PNG. Everything is proven reproducible
@@ -24,4 +24,4 @@ Byte jpeg_rebuild(const Byte &rest, const Byte &body);
 
 constexpr double PNG_INFLATION_CAP = 150.0;
 
-}  // namespace nvz
+}  // namespace hz

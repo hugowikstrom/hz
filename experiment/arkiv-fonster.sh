@@ -57,11 +57,11 @@ mät 'zstd -22 --ultra --long=31'   zstd -22 --ultra -T0 --long=31 -q -c
 for kodek in zstd19 zstd22; do
     ark="$skrap/nv-$kodek.nv"; rm -f "$ark"
     t0=$(date +%s.%N)
-    "$rot/src/nvz" packa "$k" "$ark" -q --kodek "$kodek"
+    "$rot/src/hz" packa "$k" "$ark" -q --kodek "$kodek"
     t1=$(date +%s.%N)
     awk -v n="nvz --kodek $kodek" -v b="$(stat -c%s "$ark")" -v t0="$t0" -v t1="$t1" \
         'BEGIN { printf "  %-34s %8.1f MiB  %6.1f s\n", n, b/1048576, t1-t0 }'
 
-    printf '\n'; "$rot/src/nvz" lista "$ark" | sed 's/^/    /'; printf '\n'
+    printf '\n'; "$rot/src/hz" lista "$ark" | sed 's/^/    /'; printf '\n'
     rm -f "$ark"
 done

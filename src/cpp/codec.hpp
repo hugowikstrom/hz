@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 // Block codecs: compression, decompression and codec selection.
 #pragma once
-#include "nvz.hpp"
+#include "hz.hpp"
 
-namespace nvz {
+namespace hz {
 
 // Codec names are archive format constants, shared with the Python-era
 // archives so a register means the same thing in both: ra, zstd3, zstd3L,
@@ -36,4 +36,4 @@ std::string choose_codec(const u8 *d, size_t n, bool with_cm, bool with_gpu, int
 
 constexpr size_t PROBE_BYTES = 4u << 20;
 
-}  // namespace nvz
+}  // namespace hz

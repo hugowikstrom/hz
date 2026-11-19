@@ -12,7 +12,7 @@
 #include <array>
 #include <deque>
 
-namespace nvz {
+namespace hz {
 namespace {
 
 constexpr size_t STEP = 1 << 18;
@@ -344,4 +344,4 @@ Byte jpeg_rebuild(const Byte &rest, const Byte &body) {
     return out;
 }
 
-}  // namespace nvz
+}  // namespace hz

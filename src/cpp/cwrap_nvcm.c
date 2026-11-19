@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * nvcm linked into the nvz binary.
+ * nvcm linked into the hz binary.
  *
  * nvcm.c is a standalone program with a main(). Its main is renamed away
  * here and two functions with other names are exposed instead. Everything
@@ -11,5 +11,5 @@
 #include "../nvcm.c"
 #undef main
 
-int nvz_nvcm_pack(void)   { build_stretch(); build_rates(); return pack_stream(stdin, stdout); }
-int nvz_nvcm_unpack(void) { build_stretch(); build_rates(); return unpack_stream(stdin, stdout); }
+int hz_nvcm_pack(void)   { build_stretch(); build_rates(); return pack_stream(stdin, stdout); }
+int hz_nvcm_unpack(void) { build_stretch(); build_rates(); return unpack_stream(stdin, stdout); }

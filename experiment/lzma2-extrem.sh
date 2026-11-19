@@ -51,12 +51,12 @@ for k in "${korpusar[@]}"; do
   # --- nvz, standardläget --------------------------------------------------
   arknv="$skrap/$k.nv"; rm -f "$arknv"
   t4=$(date +%s.%N)
-  "$rot/src/nvz" packa "$kat" "$arknv" -q
+  "$rot/src/hz" packa "$kat" "$arknv" -q
   t5=$(date +%s.%N)
   bnv=$(stat -c%s "$arknv")
   upp="$skrap/upp-$k"; rm -rf "$upp"; mkdir -p "$upp"
   t6=$(date +%s.%N)
-  "$rot/src/nvz" packa-upp "$arknv" "$upp" -q
+  "$rot/src/hz" packa-upp "$arknv" "$upp" -q
   t7=$(date +%s.%N)
   if diff -rq "$kat" "$upp/$k" >/dev/null; then oknv=true; else oknv=false; fi
   rm -rf "$upp" "$arknv"

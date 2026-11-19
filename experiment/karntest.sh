@@ -16,7 +16,7 @@
 set -euo pipefail
 export LC_ALL=C
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-NVZ="$ROOT/src/nvz"
+NVZ="$ROOT/src/hz"
 WORK="${1:-${NVPACK_SKRAP:-$ROOT/.skrap}/karntest}"
 VER="${KARNA_VERSION:-6.12}"
 URL="https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-$VER.tar.xz"

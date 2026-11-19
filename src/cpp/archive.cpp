@@ -39,7 +39,7 @@
 #include <chrono>
 #include <cerrno>
 
-namespace nvz {
+namespace hz {
 namespace {
 
 const u8 MAGIC[7] = {'N','V','P','A','C','K',1};
@@ -315,12 +315,12 @@ u64 file_size(const std::string &p) {
 
 Register read_register(const std::string &archive) {
     u64 n = file_size(archive);
-    if (n < sizeof MAGIC + 16) throw Error("Not an nvz archive.");
+    if (n < sizeof MAGIC + 16) throw Error("Not an hz archive.");
     FILE *f = fopen(archive.c_str(), "rb");
     if (!f) throw Error(archive + ": cannot open");
     u8 magic[sizeof MAGIC];
     if (fread(magic, 1, sizeof magic, f) != sizeof magic || memcmp(magic, MAGIC, sizeof MAGIC)) {
-        fclose(f); throw Error("Not an nvz archive.");
+        fclose(f); throw Error("Not an hz archive.");
     }
     u8 tail[16];
     if (fseeko(f, -16, SEEK_END) != 0 || fread(tail, 1, 16, f) != 16) {
@@ -934,7 +934,7 @@ u64 pack_file(const std::string &file, const std::string &archive, const PackOpt
     std::string dir = archive.substr(0, archive.find_last_of('/') + 1);
     if (dir.empty()) dir = ".";
     char tmpl[4096];
-    snprintf(tmpl, sizeof tmpl, "%s/nvz-one-XXXXXX", dir.c_str());
+    snprintf(tmpl, sizeof tmpl, "%s/hz-one-XXXXXX", dir.c_str());
     if (!mkdtemp(tmpl)) throw Error("could not create scratch space");
     std::string d = tmpl;
     std::string base = name.empty() ? file.substr(file.find_last_of('/') + 1) : name;
@@ -961,7 +961,7 @@ void unpack_file(const std::string &archive, const std::string &target, const Pa
     std::string dir = target.substr(0, target.find_last_of('/') + 1);
     if (dir.empty()) dir = ".";
     char tmpl[4096];
-    snprintf(tmpl, sizeof tmpl, "%s/nvz-one-XXXXXX", dir.c_str());
+    snprintf(tmpl, sizeof tmpl, "%s/hz-one-XXXXXX", dir.c_str());
     if (!mkdtemp(tmpl)) throw Error("could not create scratch space");
     std::string d = tmpl;
     try {
@@ -1015,7 +1015,7 @@ bool verify(const std::string &archive, const PackOpts &o) {
 
 void list_archive(const std::string &archive) {
     Register reg = read_register(archive);
-    printf("nvz v%u  root=%s  created %s\n", reg.version, reg.root.c_str(), reg.created.c_str());
+    printf("hz v%u  root=%s  created %s\n", reg.version, reg.root.c_str(), reg.created.c_str());
     std::map<std::string, int> tf;
     for (const Object &ob : reg.objects) if (!ob.transform.empty()) tf[ob.transform]++;
     std::string tf_text;
@@ -1030,4 +1030,4 @@ void list_archive(const std::string &archive) {
                b.clen ? (double)b.raw_len / b.clen : 0.0);
 }
 
-}  // namespace nvz
+}  // namespace hz

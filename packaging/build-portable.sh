@@ -4,11 +4,11 @@
 #
 #   bash packaging/build-portable.sh
 #
-# Three artifacts, all wrapping portable/nvzpy.py (pure stdlib Python):
+# Three artifacts, all wrapping portable/hzpy.py (pure stdlib Python):
 #
-#   nvz-$V.pyz          zipapp, runs anywhere:  python3 nvz-2.0.pyz pack ...
-#   nvz-$V-macos.tar.gz nvz script + install.sh (-> /usr/local/bin or ~/.local/bin)
-#   nvz-$V-windows.zip  nvzpy.py + nvz.cmd + install.ps1 (-> %LOCALAPPDATA%\Programs\nvz)
+#   hz-$V.pyz          zipapp, runs anywhere:  python3 hz-2.0.pyz pack ...
+#   hz-$V-macos.tar.gz hz script + install.sh (-> /usr/local/bin or ~/.local/bin)
+#   hz-$V-windows.zip  hzpy.py + hz.cmd + install.ps1 (-> %LOCALAPPDATA%\Programs\hz)
 #
 # Deterministic: file timestamps inside the archives are fixed to the
 # release date, entries are sorted, so a rebuild of the same commit is
@@ -19,5 +19,5 @@ V=2.0
 STAMP="2026-11-19 00:00:00"
 mkdir -p dist
 python3 packaging/build-portable.py "$V" "$STAMP"
-(cd dist && sha256sum nvz-$V.pyz nvz-$V-macos.tar.gz nvz-$V-windows.zip nvz-$V.tar.gz 2>/dev/null > SHA256SUMS)
+(cd dist && sha256sum hz-$V.pyz hz-$V-macos.tar.gz hz-$V-windows.zip hz-$V.tar.gz 2>/dev/null > SHA256SUMS)
 cat dist/SHA256SUMS

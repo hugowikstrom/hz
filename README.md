@@ -1,4 +1,9 @@
-# nvz — an archiver that knows what it is packing
+# hz — an archiver that knows what it is packing
+
+> hz was published as **nvz** until 2026-11-19. Only the name changed:
+> every hz reads every nvz archive bit for bit, and the Swedish command
+> aliases remain.
+
 
 `tar | zstd` is two programs that know nothing about each other. tar emits
 files in whatever order the directory tree happens to hold them; the
@@ -6,7 +11,7 @@ compressor sees the stream through a window and is never told that file
 4000 is a copy of file 12, or that the nine megabytes of "noise" it just
 gave up on are really a PNG stream that can be unfolded.
 
-nvz knows. It classifies the content, stores duplicates once, sorts similar
+hz knows. It classifies the content, stores duplicates once, sorts similar
 files next to each other, unfolds PNG deflate layers and finds the recipe
 that stitches them back bit-exactly, recodes JPEG Huffman layers to
 arithmetic coding without touching a pixel — and lets every block choose
@@ -15,7 +20,7 @@ at pack time: whatever cannot be reproduced exactly is stored raw.
 
 Measured against the **best established tool per corpus** (whichever of
 gzip, bzip2, zstd and xz produced the smallest archive, with its own pack
-time on the same machine), nvz is **both smaller and faster on six of nine
+time on the same machine), hz is **both smaller and faster on six of nine
 corpora** — source code −0.57 % and 15 % faster than `xz -9e`, PNG −10.4 %
 and 18 % faster than `zstd -22`, logs −15.4 % and 79 % faster than
 `xz -9e` — and never meaningfully larger on the other three. The full
@@ -25,17 +30,17 @@ evaluation, with every number regenerable from `resultat/*.json`:
   report in English
 * **[rapport/bred-provning.md](rapport/bred-provning.md)** — the same
   report in Swedish
-* **<https://nattviken.com/projekt/nvz/>** — project page with FAQ
-  (Swedish; English at [/en/projects/nvz/](https://nattviken.com/en/projects/nvz/))
+* **<https://nattviken.com/projekt/hz/>** — project page with FAQ
+  (Swedish; English at [/en/projects/hz/](https://nattviken.com/en/projects/hz/))
 
 *README på svenska: [README.sv.md](README.sv.md).*
 
 ```bash
-make                       # builds nvz, nvcm, nvjpg (needs libzstd-dev,
+make                       # builds hz, nvcm, nvjpg (needs libzstd-dev,
                            # liblzma-dev, zlib1g-dev; g++ with C++17)
-./src/nvz mytree           # -> mytree.nv, ONE archive of the whole tree
-./src/nvz -d mytree.nv     # the tree back, bit for bit
-./src/nvz -t mytree.nv     # verify: every file against its hash
+./src/hz mytree           # -> mytree.nv, ONE archive of the whole tree
+./src/hz -d mytree.nv     # the tree back, bit for bit
+./src/hz -t mytree.nv     # verify: every file against its hash
 ```
 
 ---
@@ -47,25 +52,25 @@ already know. Same flags, same default behavior: a packed file is replaced
 by `file.nv`.
 
 ```
-nvz file                # -> file.nv, original gone
-nvz -d file.nv          # -> file, archive gone
-nvz -c file > out.nv    # to standard out, file untouched
-nvz -k -9 file          # keep the file, pack as small as possible
-nvz -l ark.nv           # packed, unpacked, ratio
-nvz -t ark.nv           # unpack and compare against the register
-cat file | nvz | ...    # no file name: standard in -> standard out
+hz file                # -> file.nv, original gone
+hz -d file.nv          # -> file, archive gone
+hz -c file > out.nv    # to standard out, file untouched
+hz -k -9 file          # keep the file, pack as small as possible
+hz -l ark.nv           # packed, unpacked, ratio
+hz -t ark.nv           # unpack and compare against the register
+cat file | hz | ...    # no file name: standard in -> standard out
 ```
 
 `-c -d -f -k -l -q -r -S -t -v -V` and `-1`…`-9` mean what they mean in
 gzip. `-1`–`-3` is mode **fast**, `-4`–`-6` **normal**, `-7`–`-9`
 **small**. Exit status is gzip's: 0 all well, 1 error, 2 warning.
 
-nvz's own flags: `-j/--jobs=N`, `--mode=`, `--codec=`, `--no-dedup`,
+hz's own flags: `-j/--jobs=N`, `--mode=`, `--codec=`, `--no-dedup`,
 `--no-transform`, `--block-cap=MiB`, `--portable`, and the ablation flags
 `--no-sort` and `--no-classing`.
 
 **One deliberate deviation.** gzip says `is a directory -- ignored` for a
-directory. A directory is exactly what nvz is for, so a directory operand
+directory. A directory is exactly what hz is for, so a directory operand
 is packed into **one** archive of the whole tree — with deduplication and
 sorting between the files, which is most of the win. The source tree is
 **always** left in place; `-r` instead does gzip's literal thing, one file
@@ -74,10 +79,10 @@ at a time.
 **The subcommands** do the same work with explicit targets:
 
 ```
-nvz pack   <dir> <archive.nv> [--mode fast|normal|small] [--codec ...] [-j N]
-nvz unpack <archive.nv> <target>
-nvz list   <archive.nv>
-nvz test   <dir>            # pack, unpack, compare bit for bit
+hz pack   <dir> <archive.nv> [--mode fast|normal|small] [--codec ...] [-j N]
+hz unpack <archive.nv> <target>
+hz list   <archive.nv>
+hz test   <dir>            # pack, unpack, compare bit for bit
 ```
 
 **Swedish aliases are permanent.** The tool was born Swedish and the
@@ -98,7 +103,7 @@ block. tar stores every copy and hopes the compressor finds them, which it
 only does if they happen to sit within the window. In the PNG corpus
 28.7 % of the bytes are duplicates — in the code corpus 0.7 %, where
 deduplication accordingly does nothing. Both numbers are in the tables:
-the row **nvz, tricks off** is the same packer with deduplication and
+the row **hz, tricks off** is the same packer with deduplication and
 transforms disabled.
 
 ### 2. Similar files are placed next to each other
@@ -117,7 +122,7 @@ and the window **small**: the same 5 974 code files thrown into 200 random
 directories give −8.0 % through a 2 MiB window and −2.2 % through a 64 MiB
 dictionary (`experiment/sortering.sh`). This is also exactly what the
 prior art says (gwern.net/sort): the method is old, and its value is a
-function of the window. nvz's measured wins come from items 3, 4 and nvcm
+function of the window. hz's measured wins come from items 3, 4 and nvcm
 — not from this one.
 
 One sorting rule did survive measurement: within a group, files larger
@@ -128,17 +133,17 @@ corpora with multi-volume scans (zlib-ng's `neuro`), neutral elsewhere.
 ### 3. PNGs are unfolded and recompressed
 
 A PNG is already deflate-compressed, and 1996-vintage deflate is a poor
-shell around image data: a 32 kB window, one file at a time. nvz unfolds
+shell around image data: a 32 kB window, one file at a time. hz unfolds
 the IDAT stream to raw filter rows and compresses them together with every
 other image's raw data.
 
 The way back is the hard part. Deflate is not canonical — the same input
 gives different output depending on level, memory level, strategy **and
-implementation** — so nvz finds the **recipe**: the zlib parameter set that
+implementation** — so hz finds the **recipe**: the zlib parameter set that
 reproduces exactly the stream the file already has, and stores it together
 with a behavioral fingerprint of the deflate engine. On unpack every IDAT
 chunk is verified against its CRC; on an engine mismatch the parameter
-space is searched, and if nothing reproduces the stream nvz refuses with
+space is searched, and if nothing reproduces the stream hz refuses with
 both engines named — never wrong data. (This portability hole, and two
 more, came out of an external code review; see *The three flaws* below.)
 
@@ -154,7 +159,7 @@ recodes the *same* coefficients with an adaptive binary arithmetic coder
 whose contexts are the neighbouring blocks and slots: −15.1 % on 1 143
 real photos, bit-exact, proven per file by re-encoding to Huffman and
 comparing before the transform is accepted. Not a new idea — packJPG
-(2006) and Lepton (2016) publish −20 to −22 % — but nvz's is 762 lines of
+(2006) and Lepton (2016) publish −20 to −22 % — but hz's is 762 lines of
 C you can read in an afternoon.
 
 ### 5. Nothing is assumed — everything is probed
@@ -175,14 +180,14 @@ None of the five is new. That belongs here, not just in a comment thread,
 because the question "isn't this all known technique?" has an honest
 answer: yes.
 
-| part | known since | nvz vs the prior art |
+| part | known since | hz vs the prior art |
 |:--|:--|:--|
 | similarity sorting | *Sort Before Compression* (<https://gwern.net/sort>), solid archives in RAR/7-Zip, lrzip | same idea; its contribution measured separately with `--no-sort` |
 | dedup | borg, restic, ZFS; chunking since LBFS (2001) | weaker — whole files, not chunks |
 | deflate back to raw + recipe | precomp, preflate, reflate | narrower — only streams zlib itself wrote |
-| lossless JPEG recoding | packJPG, Lepton (Dropbox 2016), brunsli → JPEG XL | **worse** — nvz −15.1 %, published −20 to −22 % |
+| lossless JPEG recoding | packJPG, Lepton (Dropbox 2016), brunsli → JPEG XL | **worse** — hz −15.1 %, published −20 to −22 % |
 | context mixing (nvcm) | PAQ (Matt Mahoney), lpaq, zpaq, cmix | smaller model — paq8px beats nvcm on enwik8, 15.8 vs 20.4 MB |
-| content-aware filter choice | FreeArc, zpaq method strings | same thought; nvz probes the data instead of trusting the extension |
+| content-aware filter choice | FreeArc, zpaq method strings | same thought; hz probes the data instead of trusting the extension |
 
 What is original is the packaging — the parts in one format with one
 reconstruction guarantee, codec choice settled by probing — and the
@@ -223,7 +228,7 @@ the established tools, and `small` the one that wins on SIZE.
 
 ## Results
 
-The row `tar.zst -3 (the baseline)` is the pipeline nvz replaces. Tables
+The row `tar.zst -3 (the baseline)` is the pipeline hz replaces. Tables
 regenerate with `python3 matning/rapport.py --in-i-readme`; never edit them
 by hand.
 
@@ -241,10 +246,10 @@ by hand.
 | tar.zst -19 --long | 8.53 | 6.49× | −25.6 % | 35 s | 0 s | yes |
 | tar.zst -22 --ultra | 8.45 | 6.55× | −26.2 % | 56 s | 0 s | yes |
 | tar.xz -9e | 8.23 | 6.73× | −28.2 % | 47 s | 1 s | yes |
-| **nvz fast** | 11.34 | 4.88× | −1.0 % | 1 s | 0 s | yes |
-| **nvz, tricks off** | 8.18 | 6.77× | −28.6 % | 40 s | 1 s | yes |
-| **nvz normal** | 8.18 | 6.77× | −28.6 % | 40 s | 1 s | yes |
-| **nvz small** | **7.20** | 7.69× | −37.1 % | 64 s | 62 s | yes |
+| **hz fast** | 11.34 | 4.88× | −1.0 % | 1 s | 0 s | yes |
+| **hz, tricks off** | 8.18 | 6.77× | −28.6 % | 40 s | 1 s | yes |
+| **hz normal** | 8.18 | 6.77× | −28.6 % | 40 s | 1 s | yes |
+| **hz small** | **7.20** | 7.69× | −37.1 % | 64 s | 62 s | yes |
 
 ### Images (PNG) — 431.1 MiB in 4 618 files
 
@@ -258,10 +263,10 @@ by hand.
 | tar.zst -19 --long | 252.73 | 1.71× | −30.3 % | 40 s | 1 s | yes |
 | tar.zst -22 --ultra | 245.22 | 1.76× | −32.4 % | 156 s | 1 s | yes |
 | tar.xz -9e | 266.41 | 1.62× | −26.6 % | 128 s | 5 s | yes |
-| **nvz fast** | 279.29 | 1.54× | −23.0 % | 2 s | 1 s | yes |
-| **nvz, tricks off** | 256.46 | 1.68× | −29.3 % | 42 s | 1 s | yes |
-| **nvz normal** | 219.78 | 1.96× | −39.4 % | 127 s | 8 s | yes |
-| **nvz small** | **207.24** | 2.08× | −42.9 % | 280 s | 11 s | yes |
+| **hz fast** | 279.29 | 1.54× | −23.0 % | 2 s | 1 s | yes |
+| **hz, tricks off** | 256.46 | 1.68× | −29.3 % | 42 s | 1 s | yes |
+| **hz normal** | 219.78 | 1.96× | −39.4 % | 127 s | 8 s | yes |
+| **hz small** | **207.24** | 2.08× | −42.9 % | 280 s | 11 s | yes |
 
 ### Photos (JPEG) — 408.5 MiB in 1 143 files
 
@@ -275,10 +280,10 @@ by hand.
 | tar.zst -19 --long | 405.09 | 1.01× | −0.3 % | 53 s | 0 s | yes |
 | tar.zst -22 --ultra | 405.09 | 1.01× | −0.3 % | 225 s | 0 s | yes |
 | tar.xz -9e | 405.43 | 1.01× | −0.2 % | 157 s | 4 s | yes |
-| **nvz fast** | 408.50 | 1.00× | +0.5 % | 2 s | 1 s | yes |
-| **nvz, tricks off** | 406.43 | 1.01× | +0.0 % | 4 s | 1 s | yes |
-| **nvz normal** | **345.07** | 1.18× | −15.1 % | 48 s | 18 s | yes |
-| **nvz small** | **345.07** | 1.18× | −15.1 % | 55 s | 17 s | yes |
+| **hz fast** | 408.50 | 1.00× | +0.5 % | 2 s | 1 s | yes |
+| **hz, tricks off** | 406.43 | 1.01× | +0.0 % | 4 s | 1 s | yes |
+| **hz normal** | **345.07** | 1.18× | −15.1 % | 48 s | 18 s | yes |
+| **hz small** | **345.07** | 1.18× | −15.1 % | 55 s | 17 s | yes |
 
 ### Images (GIF) — 27.4 MiB in 105 files
 
@@ -292,10 +297,10 @@ by hand.
 | tar.zst -19 --long | 14.18 | 1.93× | −47.6 % | 4 s | 0 s | yes |
 | tar.zst -22 --ultra | 14.18 | 1.93× | −47.6 % | 5 s | 0 s | yes |
 | tar.xz -9e | 14.19 | 1.93× | −47.5 % | 8 s | 0 s | yes |
-| **nvz fast** | 14.44 | 1.90× | −46.6 % | 0 s | 0 s | yes |
-| **nvz, tricks off** | 14.18 | 1.93× | −47.6 % | 4 s | 0 s | yes |
-| **nvz normal** | **14.18** | 1.93× | −47.6 % | 6 s | 0 s | yes |
-| **nvz small** | **14.18** | 1.93× | −47.6 % | 6 s | 0 s | yes |
+| **hz fast** | 14.44 | 1.90× | −46.6 % | 0 s | 0 s | yes |
+| **hz, tricks off** | 14.18 | 1.93× | −47.6 % | 4 s | 0 s | yes |
+| **hz normal** | **14.18** | 1.93× | −47.6 % | 6 s | 0 s | yes |
+| **hz small** | **14.18** | 1.93× | −47.6 % | 6 s | 0 s | yes |
 
 ### Film (h264/VP9) — 536.7 MiB in 67 files
 
@@ -309,10 +314,10 @@ by hand.
 | tar.zst -19 --long | **532.02** | 1.01× | −0.3 % | 57 s | 0 s | yes |
 | tar.zst -22 --ultra | 532.03 | 1.01× | −0.3 % | 266 s | 1 s | yes |
 | tar.xz -9e | 532.86 | 1.01× | −0.2 % | 154 s | 5 s | yes |
-| **nvz fast** | 536.75 | 1.00× | +0.5 % | 3 s | 1 s | yes |
-| **nvz, tricks off** | 532.04 | 1.01× | −0.3 % | 57 s | 1 s | yes |
-| **nvz normal** | 532.04 | 1.01× | −0.3 % | 56 s | 1 s | yes |
-| **nvz small** | 532.04 | 1.01× | −0.3 % | 57 s | 1 s | yes |
+| **hz fast** | 536.75 | 1.00× | +0.5 % | 3 s | 1 s | yes |
+| **hz, tricks off** | 532.04 | 1.01× | −0.3 % | 57 s | 1 s | yes |
+| **hz normal** | 532.04 | 1.01× | −0.3 % | 56 s | 1 s | yes |
+| **hz small** | 532.04 | 1.01× | −0.3 % | 57 s | 1 s | yes |
 
 ### Archives (zip/tar.gz) — 391.8 MiB in 133 files
 
@@ -326,10 +331,10 @@ by hand.
 | tar.zst -19 --long | 261.37 | 1.50× | −31.5 % | 47 s | 0 s | yes |
 | tar.zst -22 --ultra | 242.77 | 1.61× | −36.4 % | 154 s | 1 s | yes |
 | tar.xz -9e | 251.75 | 1.56× | −34.1 % | 144 s | 7 s | yes |
-| **nvz fast** | 329.03 | 1.19× | −13.8 % | 2 s | 1 s | yes |
-| **nvz, tricks off** | 242.51 | 1.62× | −36.5 % | 146 s | 1 s | yes |
-| **nvz normal** | 242.51 | 1.62× | −36.5 % | 153 s | 1 s | yes |
-| **nvz small** | **237.00** | 1.65× | −37.9 % | 323 s | 8 s | yes |
+| **hz fast** | 329.03 | 1.19× | −13.8 % | 2 s | 1 s | yes |
+| **hz, tricks off** | 242.51 | 1.62× | −36.5 % | 146 s | 1 s | yes |
+| **hz normal** | 242.51 | 1.62× | −36.5 % | 153 s | 1 s | yes |
+| **hz small** | **237.00** | 1.65× | −37.9 % | 323 s | 8 s | yes |
 
 ### Log files — 238.3 MiB in 76 files
 
@@ -343,10 +348,10 @@ by hand.
 | tar.zst -19 --long | 13.09 | 18.21× | −41.5 % | 113 s | 0 s | yes |
 | tar.zst -22 --ultra | 12.92 | 18.45× | −42.3 % | 986 s | 0 s | yes |
 | tar.xz -9e | 11.84 | 20.12× | −47.1 % | 897 s | 1 s | yes |
-| **nvz fast** | 22.41 | 10.63× | +0.1 % | 2 s | 1 s | yes |
-| **nvz, tricks off** | 11.87 | 20.08× | −47.0 % | 854 s | 2 s | yes |
-| **nvz normal** | 11.87 | 20.08× | −47.0 % | 851 s | 2 s | yes |
-| **nvz small** | **10.23** | 23.30× | −54.3 % | 73 s | 42 s | yes |
+| **hz fast** | 22.41 | 10.63× | +0.1 % | 2 s | 1 s | yes |
+| **hz, tricks off** | 11.87 | 20.08× | −47.0 % | 854 s | 2 s | yes |
+| **hz normal** | 11.87 | 20.08× | −47.0 % | 851 s | 2 s | yes |
+| **hz small** | **10.23** | 23.30× | −54.3 % | 73 s | 42 s | yes |
 
 ### Mixed project tree (symbios-3d) — 1 814.4 MiB in 15 139 files
 
@@ -360,9 +365,9 @@ by hand.
 | tar.zst -19 --long | 319.30 | 5.68× | −29.5 % | 149 s | 4 s | yes |
 | tar.zst -22 --ultra | 301.21 | 6.02× | −33.5 % | 623 s | 4 s | yes |
 | tar.xz -9e | 297.54 | 6.10× | −34.3 % | 289 s | 5 s | yes |
-| **nvz fast** | 407.37 | 4.45× | −10.0 % | 14 s | 4 s | yes |
-| **nvz normal** | 282.25 | 6.43× | −37.7 % | 315 s | 8 s | yes |
-| **nvz small** | **279.10** | 6.50× | −38.4 % | 325 s | 207 s | yes |
+| **hz fast** | 407.37 | 4.45× | −10.0 % | 14 s | 4 s | yes |
+| **hz normal** | 282.25 | 6.43× | −37.7 % | 315 s | 8 s | yes |
+| **hz small** | **279.10** | 6.50× | −38.4 % | 325 s | 207 s | yes |
 
 ### Silesia (standard corpus) — 202.1 MiB in 12 files
 
@@ -376,10 +381,10 @@ by hand.
 | tar.zst -19 --long | 50.17 | 4.03× | −20.6 % | 63 s | 0 s | yes |
 | tar.zst -22 --ultra | 49.82 | 4.06× | −21.1 % | 179 s | 0 s | yes |
 | tar.xz -9e | 46.17 | 4.38× | −26.9 % | 158 s | 3 s | yes |
-| **nvz fast** | 63.17 | 3.20× | +0.0 % | 1 s | 1 s | yes |
-| **nvz, tricks off** | 46.14 | 4.38× | −26.9 % | 92 s | 2 s | yes |
-| **nvz normal** | 46.14 | 4.38× | −26.9 % | 92 s | 2 s | yes |
-| **nvz small** | **43.62** | 4.63× | −30.9 % | 94 s | 38 s | yes |
+| **hz fast** | 63.17 | 3.20× | +0.0 % | 1 s | 1 s | yes |
+| **hz, tricks off** | 46.14 | 4.38× | −26.9 % | 92 s | 2 s | yes |
+| **hz normal** | 46.14 | 4.38× | −26.9 % | 92 s | 2 s | yes |
+| **hz small** | **43.62** | 4.63× | −30.9 % | 94 s | 38 s | yes |
 
 ### enwik8 (standard corpus) — 95.4 MiB in 1 files
 
@@ -393,20 +398,20 @@ by hand.
 | tar.zst -19 --long | 25.18 | 3.79× | −25.5 % | 61 s | 0 s | yes |
 | tar.zst -22 --ultra | 24.11 | 3.96× | −28.7 % | 118 s | 0 s | yes |
 | tar.xz -9e | 23.68 | 4.03× | −29.9 % | 121 s | 1 s | yes |
-| **nvz fast** | 33.80 | 2.82× | +0.0 % | 1 s | 1 s | yes |
-| **nvz, tricks off** | 23.59 | 4.04× | −30.2 % | 122 s | 2 s | yes |
-| **nvz normal** | 23.59 | 4.04× | −30.2 % | 122 s | 2 s | yes |
-| **nvz small** | **20.81** | 4.58× | −38.4 % | 50 s | 43 s | yes |
+| **hz fast** | 33.80 | 2.82× | +0.0 % | 1 s | 1 s | yes |
+| **hz, tricks off** | 23.59 | 4.04× | −30.2 % | 122 s | 2 s | yes |
+| **hz normal** | 23.59 | 4.04× | −30.2 % | 122 s | 2 s | yes |
+| **hz small** | **20.81** | 4.58× | −38.4 % | 50 s | 43 s | yes |
 
 <!-- SLUT TABELLER -->
 
 ### Smaller AND faster: six corpora of nine
 
-The harder question than either column alone: does nvz beat the **same**
+The harder question than either column alone: does hz beat the **same**
 opponent on both axes at once? (`python3 experiment/dominans.py`)
 
 ```
-corpus     best established              bytes   sec | nvz            bytes   sec | outcome
+corpus     best established              bytes   sec | hz            bytes   sec | outcome
 kod        tar.xz -9e               8 629 516    47 | normal     8 580 323    40 | DOMINATES (-0.57 % size, -15 % time)
 png        tar.zst -22 --ultra    257 132 369   156 | normal   230 452 176   127 | DOMINATES (-10.38 %, -18 %)
 foto       tar.bz2 -9             424 611 032    57 | normal   361 834 581    48 | DOMINATES (-14.78 %, -16 %)
@@ -420,7 +425,7 @@ enwik8     tar.xz -9e              24 831 492   121 | small     21 417 335   129
 
 The three that do not dominate are the three with nothing to win: gif and
 film are already entropy-coded (0.02 % and 0.00 % available), and enwik8
-is a single file — which nvz cannot even split, since a block is filled by
+is a single file — which hz cannot even split, since a block is filled by
 whole objects. The boundary runs not between data types but between
 exploitable structure and none.
 
@@ -435,7 +440,7 @@ gain −3.8 %. Know what your data is before you swap your pipeline.
 
 ## How fast can it get? The floor is not the codec
 
-`nvz fast` already beats zip soundly — 29.5 % smaller and 3× faster than
+`hz fast` already beats zip soundly — 29.5 % smaller and 3× faster than
 `zip -6` on the code corpus — but making it faster *by compressing worse*
 buys nothing: with compression disabled entirely (`--codec ra`) the mode
 takes 660 of its 740 ms. The codec is eleven percent of the time; the rest
@@ -466,7 +471,7 @@ own codec, `nvlz`):
    coding is serial by construction. Amdahl wins. `zstd -6` gives a better
    ratio in an eighth of the time.
 4. **The archive.** Mode `gpu` lets nvlz compete for every block; the
-   probe — nvz's own mechanism for not assuming — rejects it by itself.
+   probe — hz's own mechanism for not assuming — rejects it by itself.
 
 The code stays in the repo as a measurement instrument. Unpacking nvlz is
 pure CPU: an archive must never be hostage to a graphics driver.
@@ -476,20 +481,20 @@ pure CPU: an archive must never be hostage to a graphics driver.
 ## Portable: macOS and Windows
 
 The Linux binary is the optimized implementation. For everywhere else
-there is **`portable/nvzpy.py`** — pure standard-library Python (3.8+), no
+there is **`portable/hzpy.py`** — pure standard-library Python (3.8+), no
 build, no dependencies:
 
 ```bash
-python3 portable/nvzpy.py pack   mytree mytree.nv
-python3 portable/nvzpy.py unpack mytree.nv out/
-python3 portable/nvzpy.py list   mytree.nv
-python3 portable/nvzpy.py test   mytree.nv
+python3 portable/hzpy.py pack   mytree mytree.nv
+python3 portable/hzpy.py unpack mytree.nv out/
+python3 portable/hzpy.py list   mytree.nv
+python3 portable/hzpy.py test   mytree.nv
 ```
 
-It writes ordinary nvz v3 archives restricted to the codecs
-{ra, xz9e, xz9e-j0} with no transforms — the Linux nvz unpacks them bit
-for bit, and vice versa for archives made with **`nvz pack --portable`**.
-Other nvz archives are read as far as their codecs allow: xz and raw
+It writes ordinary hz v3 archives restricted to the codecs
+{ra, xz9e, xz9e-j0} with no transforms — the Linux hz unpacks them bit
+for bit, and vice versa for archives made with **`hz pack --portable`**.
+Other hz archives are read as far as their codecs allow: xz and raw
 blocks always, zstd blocks if the optional `zstandard` package is
 installed, and nvcm/nvlz blocks or transformed objects are refused with a
 message that says what to do — never with wrong data. It is deliberately
@@ -516,7 +521,7 @@ src/cpp/worker.cpp     fork/exec workers (the three traps are commented)
 src/nvcm.c             the context mixer (also a standalone binary)
 src/nvjpg.c            the JPEG recoder (also a standalone binary)
 src/nvgpu.c            the Vulkan measurement instrument
-portable/nvzpy.py      the stdlib-Python portable implementation
+portable/hzpy.py      the stdlib-Python portable implementation
 src/nvz.py             RETIRED Python implementation, kept verbatim as the
                        v1 format reference (deliberately untranslated)
 ```
@@ -551,7 +556,7 @@ failures could cost data because no write was checked while the gzip
 surface deletes originals; an unreadable file crashed the process with a
 core dump. All three fixed, all three regression-tested in
 `prov/brister.sh`, all three documented in report §6. They shared a cause
-worth stating: nvz's own self-check packs and unpacks on the same machine,
+worth stating: hz's own self-check packs and unpacks on the same machine,
 in a successful flow, with readable files and free disk — all three lived
 outside that boundary.
 

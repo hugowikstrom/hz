@@ -113,11 +113,11 @@ fi
 
 for lage in $lagen; do
     ark="$arbete/prov-$lage.nv"; upp="$arbete/upp-$lage"
-    if ! "$rot/src/nvz" packa "$t" "$ark" -q --läge "$lage" 2>"$arbete/fel.txt"; then
+    if ! "$rot/src/hz" packa "$t" "$ark" -q --läge "$lage" 2>"$arbete/fel.txt"; then
         brist "lage $lage: packningen misslyckades"; sed 's/^/        /' "$arbete/fel.txt"; continue
     fi
     mkdir -p "$upp"
-    if ! "$rot/src/nvz" packa-upp "$ark" "$upp" -q 2>"$arbete/fel.txt"; then
+    if ! "$rot/src/hz" packa-upp "$ark" "$upp" -q 2>"$arbete/fel.txt"; then
         brist "lage $lage: uppackningen misslyckades"; sed 's/^/        /' "$arbete/fel.txt"; continue
     fi
     if diff -rq --no-dereference "$t" "$upp/$(basename "$t")" > "$arbete/diff.txt" 2>&1; then
@@ -209,13 +209,13 @@ PYEOF
     else brist "nvlz: cpu-fallbacket packar inte"; fi
 
     # Ett helt arkiv med kodeken tvingad, och registret ska säga nvlz.
-    if "$rot/src/nvz" packa "$t" "$arbete/nvlz.nv" -q --kodek nvlz 2>"$arbete/fel.txt" \
-       && "$rot/src/nvz" packa-upp "$arbete/nvlz.nv" "$arbete/upp-nvlz" -q 2>>"$arbete/fel.txt" \
+    if "$rot/src/hz" packa "$t" "$arbete/nvlz.nv" -q --kodek nvlz 2>"$arbete/fel.txt" \
+       && "$rot/src/hz" packa-upp "$arbete/nvlz.nv" "$arbete/upp-nvlz" -q 2>>"$arbete/fel.txt" \
        && diff -rq --no-dereference "$t" "$arbete/upp-nvlz/$(basename "$t")" >/dev/null 2>&1
     then pass "nvz --kodek nvlz: arkivet går fram och tillbaka"
     else brist "nvz --kodek nvlz: arkivet går inte fram och tillbaka"
          head -3 "$arbete/fel.txt" | sed 's/^/        /'; fi
-    if "$rot/src/nvz" lista "$arbete/nvlz.nv" 2>/dev/null | grep -q nvlz
+    if "$rot/src/hz" lista "$arbete/nvlz.nv" 2>/dev/null | grep -q nvlz
     then pass "nvz lista: blocken redovisas som nvlz"
     else brist "nvz lista: kodeken syns inte i registret"; fi
 fi
@@ -225,7 +225,7 @@ printf '\nTrasiga arkiv\n'
 ark="$arbete/prov-normal.nv"
 cp "$ark" "$arbete/trasig.nv"
 printf 'FEL' | dd of="$arbete/trasig.nv" bs=1 seek=2 conv=notrunc status=none
-if "$rot/src/nvz" packa-upp "$arbete/trasig.nv" "$arbete/upp-trasig" -q 2>/dev/null; then
+if "$rot/src/hz" packa-upp "$arbete/trasig.nv" "$arbete/upp-trasig" -q 2>/dev/null; then
     brist "skadad magi godtogs"
 else
     pass "skadad magi avvisas"
@@ -238,7 +238,7 @@ fi
 # eftersom hela poängen med ytan är att den skriver i katalogen den står i.
 printf '\nKommandoradens gzip-yta\n'
 
-nv="$rot/src/nvz"
+nv="$rot/src/hz"
 y="$arbete/yta"; mkdir -p "$y/trad/under"
 python3 - "$y" <<'PYEOF'
 import os, random, sys
