@@ -26,7 +26,7 @@ CORPORA = ['kod', 'png', 'foto', 'gif', 'film', 'arkiv', 'logg', 'silesia', 'enw
 def main():
     chosen = sys.argv[1:] or CORPORA
     print(f"{'corpus':<10} {'best established':<24} {'bytes':>13} {'sec':>6} | "
-          f"{'nvz':<8} {'bytes':>13} {'sec':>6} | outcome")
+          f"{"hz":<8} {'bytes':>13} {'sec':>6} | outcome")
     dominated = total = 0
     for k in chosen:
         f = ROOT / 'resultat' / f'{k}.json'
