@@ -119,7 +119,7 @@ def decompress(codec, data):
                 "(`pip install zstandard`) or repack it on Linux with "
                 "`nvz pack --portable`" % codec)
         return zstandard.ZstdDecompressor(max_window_size=1 << 31).decompress(data)
-    if codec in ("nvcm", "nvz", "nvlz"):
+    if codec in ("nvcm", "nvcm-p", "nvz", "nvlz"):
         raise NvzError(
             "this archive has a %s block, which only the Linux nvz can "
             "decode; repack it there with `nvz pack --portable`" % codec)

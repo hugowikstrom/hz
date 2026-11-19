@@ -639,6 +639,15 @@ u64 pack(const std::string &root_in, const std::string &archive, const PackOpts 
         // point, see PackOpts.
         if (o.portable && cod != "ra" && cod.rfind("xz9e", 0) != 0)
             cod = xz_variant(b.raw.data(), b.raw.size());
+        // nvcm is single-threaded per stream, and that made it the whole
+        // price of mode `small` on text — in BOTH directions. Blocks that
+        // hold at least two 32 MiB shards are upgraded to nvcm-p: the same
+        // model in parallel independent shards (codec.cpp has the measured
+        // trade-off: +1.88 % on enwik8 for 3-4x pack AND unpack). A forced
+        // --codec nvcm is left alone — the forced name is the single-stream
+        // minimum and stays what it says.
+        if (cod == "nvcm" && o.codec.empty() && b.raw.size() >= (64u << 20))
+            cod = "nvcm-p";
         if (cod == "opak-eskalera") {
             // TWO QUESTIONS, AND THE FIRST ONE MUST BE CHEAP.
             //

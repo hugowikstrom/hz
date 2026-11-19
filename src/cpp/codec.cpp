@@ -1,6 +1,9 @@
 #include "codec.hpp"
 #include "worker.hpp"
 #include <condition_variable>
+#include <thread>
+#include <atomic>
+#include <functional>
 #include <zstd.h>
 #include <lzma.h>
 #include <cstring>
@@ -271,28 +274,119 @@ Byte xz_decompress(const u8 *d, size_t n, u64 raw_len) {
 
 // --- nvcm -------------------------------------------------------------------
 // The code is linked into the binary but runs in a worker process
-// (run_self): a broken stream may kill the worker, never the packer. The
-// gate admits four at a time — nvcm takes half a gigabyte of model tables
-// apiece.
-class Gate {
-    int slots;
-    std::mutex m;
-    std::condition_variable cv;
-public:
-    explicit Gate(int n) : slots(n) {}
-    void take()    { std::unique_lock<std::mutex> l(m); cv.wait(l, [&]{ return slots > 0; }); slots--; }
-    void release() { { std::lock_guard<std::mutex> l(m); slots++; } cv.notify_one(); }
-};
-Gate nvcm_gate(4);
+// (run_self): a broken stream may kill the worker, never the packer.
+//
+// The gate is budgeted in MEMORY, not in slots. A worker's model tables
+// cost ~550 MB for any input above ~4 MiB (the table size formula caps at
+// 2^24 counters), plus about twice the input for its buffers. The old
+// fixed gate of four underused a 28 GB machine and would overuse a 4 GB
+// one; a budget does the right thing on both, and a lone request always
+// passes so the gate cannot deadlock.
+u64 nvcm_mem_needed(size_t n) {
+    return (550ull << 20) + 2 * (u64)n + (16ull << 20);
+}
+MemoryGate nvcm_gate(std::max<u64>(free_memory() / 2, (u64)1200 << 20));
 
 Byte nvcm_run(const char *cmd, const u8 *d, size_t n) {
-    nvcm_gate.take();
+    const u64 need = nvcm_mem_needed(n);
+    nvcm_gate.take(need);
+    struct Release { MemoryGate &g; u64 n; ~Release() { g.release(n); } } rel{nvcm_gate, need};
     int exit_code = 0;
-    Byte out;
-    try { out = run_self({"nvcm", cmd}, d, n, &exit_code); }
-    catch (...) { nvcm_gate.release(); throw; }
-    nvcm_gate.release();
+    Byte out = run_self({"nvcm", cmd}, d, n, &exit_code);
     if (exit_code != 0) throw Error(strf("nvcm %s: exit status %d", cmd, exit_code));
+    return out;
+}
+
+// --- nvcm-p: nvcm in parallel shards ------------------------------------------
+// nvcm is single-threaded per stream, and that is the WHOLE price of mode
+// `small` on text: 23 cores watch one core grind at ~1 MB/s, in both
+// directions. nvcm-p splits the block into independent shards, each a
+// complete nvcm stream with a cold model, coded and decoded in parallel.
+//
+// The shard size is measured, not guessed (enwik8, 12 threads):
+//
+//      8 MiB shards   +5.59 % size   15.0 s   (8.5x vs the single stream)
+//     16 MiB shards   +3.48 %        20.7 s   (6.2x)
+//     32 MiB shards   +1.88 %        37.4 s   (3.4x)
+//
+// 32 MiB keeps the loss under two percent while both pack and unpack gain
+// 3-4x — and the unpack gain is what retires the "100x slower to unpack"
+// objection against mode `small`. Anyone who wants the absolute minimum
+// still has the single stream via --codec nvcm.
+//
+// Container: "NVCMP1" | u32 shard count | u64 raw total | u64 clen per
+// shard | the shards, each an ordinary nvcm stream. Shards are defined by
+// RAW offsets (i*SHARD), so the decoder knows every shard's raw size from
+// the header alone. The codec name "nvcm-p" is a format string: archives
+// using it need an nvz from 2026-11-19 or later (or any version, if the
+// block was small enough to stay plain "nvcm").
+constexpr size_t NVCM_SHARD = 32u << 20;
+constexpr char NVCMP_MAGIC[6] = {'N','V','C','M','P','1'};
+
+void shard_parallel(size_t count, const std::function<void(size_t)> &fn) {
+    int t = std::max(1, std::min<int>((int)count,
+            (int)std::max(1u, std::thread::hardware_concurrency())));
+    std::atomic<size_t> next{0};
+    std::vector<std::thread> pool;
+    std::mutex err_m; std::string first_err;
+    for (int i = 0; i < t; i++)
+        pool.emplace_back([&] {
+            for (;;) {
+                size_t k = next.fetch_add(1);
+                if (k >= count) return;
+                try { fn(k); }
+                catch (const std::exception &e) {
+                    std::lock_guard<std::mutex> l(err_m);
+                    if (first_err.empty()) first_err = e.what();
+                    next.store(count); return;
+                }
+            }
+        });
+    for (auto &x : pool) x.join();
+    if (!first_err.empty()) throw Error(first_err);
+}
+
+Byte nvcmp_compress(const u8 *d, size_t n) {
+    const size_t K = (n + NVCM_SHARD - 1) / NVCM_SHARD;
+    std::vector<Byte> shards(K);
+    shard_parallel(K, [&](size_t i) {
+        size_t off = i * NVCM_SHARD;
+        size_t len = std::min(NVCM_SHARD, n - off);
+        shards[i] = nvcm_run("pack", d + off, len);
+    });
+    Byte out;
+    out.insert(out.end(), NVCMP_MAGIC, NVCMP_MAGIC + 6);
+    auto u32v = [&](u32 v) { for (int i = 0; i < 4; i++) out.push_back((u8)(v >> (8*i))); };
+    auto u64v = [&](u64 v) { for (int i = 0; i < 8; i++) out.push_back((u8)(v >> (8*i))); };
+    u32v((u32)K);
+    u64v((u64)n);
+    for (const Byte &s : shards) u64v((u64)s.size());
+    for (Byte &s : shards) { out.insert(out.end(), s.begin(), s.end()); Byte().swap(s); }
+    return out;
+}
+
+Byte nvcmp_decompress(const u8 *d, size_t n) {
+    if (n < 18 || memcmp(d, NVCMP_MAGIC, 6)) throw Error("nvcm-p: broken container");
+    size_t i = 6;
+    auto u32v = [&]() { u32 v = 0; for (int k = 0; k < 4; k++) v |= (u32)d[i+k] << (8*k); i += 4; return v; };
+    auto u64v = [&]() { u64 v = 0; for (int k = 0; k < 8; k++) v |= (u64)d[i+k] << (8*k); i += 8; return v; };
+    const u32 K = u32v();
+    const u64 raw_total = u64v();
+    if (i + (size_t)K * 8 > n) throw Error("nvcm-p: truncated header");
+    std::vector<u64> clen(K);
+    for (u32 k = 0; k < K; k++) clen[k] = u64v();
+    std::vector<u64> coff(K);
+    u64 pos = i;
+    for (u32 k = 0; k < K; k++) { coff[k] = pos; pos += clen[k]; }
+    if (pos != n) throw Error("nvcm-p: lengths do not match the container");
+    Byte out(raw_total);
+    shard_parallel(K, [&](size_t k) {
+        size_t roff = k * NVCM_SHARD;
+        size_t rlen = std::min<size_t>(NVCM_SHARD, raw_total - roff);
+        Byte piece = nvcm_run("unpack", d + coff[k], clen[k]);
+        if (piece.size() != rlen) throw Error("nvcm-p: shard has the wrong length");
+        memcpy(out.data() + roff, piece.data(), rlen);
+    });
     return out;
 }
 
@@ -304,6 +398,7 @@ Byte compress(const std::string &codec, const u8 *d, size_t n, int threads,
     if (codec == "xz9e")    return xz_compress(d, n, threads, 2, concurrent);
     if (codec == "xz9e-j0") return xz_compress(d, n, threads, 0, concurrent);
     if (codec == "nvcm") return nvcm_run("pack", d, n);
+    if (codec == "nvcm-p") return nvcmp_compress(d, n);
     if (codec == "nvlz") {
         // The GPU codec lives in nvgpu — a separate program, because the
         // Vulkan dependency must not get into nvz. A measurement
@@ -322,6 +417,7 @@ Byte decompress(const std::string &codec, const u8 *d, size_t n, u64 raw_len) {
     if (codec.rfind("xz9e", 0) == 0) return xz_decompress(d, n, raw_len);
     if (codec == "nvcm" || codec == "nvz")   // "nvz" was written during the renaming hours
         return nvcm_run("unpack", d, n);
+    if (codec == "nvcm-p") return nvcmp_decompress(d, n);
     if (codec == "nvlz") {
         int exit_code = 0;
         Byte out = run_program(sibling_binary("nvgpu"), {"unpack", "--quiet"}, d, n, &exit_code);
