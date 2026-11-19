@@ -54,7 +54,7 @@ def main():
             outcome = 'worse on both'
         spaced = lambda n: f'{n:,}'.replace(',', ' ')
         print(f'{k:<10} {bn:<24} {spaced(bb):>13} {bs:>6.0f} | '
-              f'{label.replace("nvz ", ""):<8} {spaced(b):>13} {t:>6.0f} | '
+              f'{label.replace("nvz ", "").replace("hz ", ""):<8} {spaced(b):>13} {t:>6.0f} | '
               f'{outcome} ({(b-bb)/bb*100:+.2f} % size, {(t-bs)/bs*100:+.0f} % time)')
     print(f'\ndominates on {dominated} of {total} corpora')
 

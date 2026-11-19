@@ -20,7 +20,7 @@ mkdir -p "$WORK"; cd "$WORK"
 rm -rf corpora/.git
 
 printf '%-14s %9s %10s %10s %10s %10s %10s %10s %10s  %s\n' \
-       corpus raw gzip-9 bzip2-9 zstd-19 xz-9e "nvz fast" "nvz normal" "nvz small" roundtrip
+       corpus raw gzip-9 bzip2-9 zstd-19 xz-9e "hz fast" "hz normal" "hz small" roundtrip
 for d in corpora/*/; do
     n=$(basename "$d")
     raw=$(du -sb "$d" | cut -f1)
