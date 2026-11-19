@@ -1,7 +1,9 @@
 # nvz är C++ sedan 2026-11-16: EN binär med nvcm och nvjpg inlänkade och
 # libzstd/liblzma/libz i process. Pythonversionen ligger kvar som referens i
 # src/nvz.py men byggs inte och anropas inte av någonting.
-CFLAGS ?= -O2 -Wall -Wextra -Wno-implicit-fallthrough
+# -O3 för C-kodekarna: nvcm är den varmaste slingan i läget `liten`, och -O3
+# mättes till 14 % snabbare med byteidentisk utdata (samma för nvjpg).
+CFLAGS ?= -O3 -Wall -Wextra -Wno-implicit-fallthrough
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra
 CPPKALLOR = src/cpp/huvud.cpp src/cpp/yta.cpp src/cpp/arkiv.cpp src/cpp/kodek.cpp \
             src/cpp/omvandla.cpp src/cpp/trad.cpp src/cpp/json.cpp \

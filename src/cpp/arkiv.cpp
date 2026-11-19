@@ -497,6 +497,14 @@ u64 packa(const std::string &rot_in, const std::string &arkiv, const Val &v) {
             nb.b.i = (u32)block.size();
             nb.b.klass = klass;
             nb.b.kodek = kodekar.count(klass) ? kodekar[klass] : "prova";
+            // Reservera blockets tak direkt. Utan det växer vektorn i steg,
+            // och varje steg kopierar om allt som redan ligger där — för ett
+            // block på väg mot 192 MiB är det ungefär en extra genomkopiering
+            // av hela innehållet, plus en minnestopp på det dubbla under
+            // själva omallokeringen. Reservationen är virtuellt minne tills
+            // sidorna rörs, så ett block som stannar litet kostar inget.
+            // Opaka block (tak 16 GiB) får ett försiktigare förskott.
+            nb.ra.reserve((size_t)std::min<u64>(tak_for(klass), 256u << 20));
             block.push_back(std::move(nb));
             oppet[klass] = block.size() - 1;
             it = oppet.find(klass);
@@ -659,6 +667,11 @@ u64 packa(const std::string &rot_in, const std::string &arkiv, const Val &v) {
                     kod = "zstd19";
                 }
             }
+        } else if (kod == "ra") {
+            // Rått är rått: flytta blocket i stället för att kopiera det.
+            // Filmkorpusen är 537 MB som annars memcpy:as en gång i onödan,
+            // med motsvarande minnestopp.
+            packade[k] = std::move(b.ra);
         } else {
             packade[k] = komprimera(kod, b.ra.data(), b.ra.size(), per_block, samtidiga);
             // STICKPROVETS BLINDA FLÄCK, och varför den kostar procent.

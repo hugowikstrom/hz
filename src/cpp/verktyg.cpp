@@ -1,6 +1,7 @@
 #include "nvz.hpp"
 #include <cerrno>
 #include <cstring>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <cstdarg>
 #include <cstring>
@@ -114,7 +115,19 @@ void blake2b128(const u8 *data, size_t n, u8 ut[16]) {
 Byte las_fil(const std::string &sokvag) {
     FILE *f = fopen(sokvag.c_str(), "rb");
     if (!f) throw Fel(sokvag + ": går inte att öppna");
+    // En allokering, en läsning. Den gamla vägen läste i 64 kB-bitar och lät
+    // vektorn växa, vilket kopierar om datan ungefär en gång till på vägen —
+    // mätbart i en packare vars snabba läge domineras av just svepen över
+    // datan. Storleken från fstat är ett antagande, inte en sanning (filen
+    // kan växa mellan stat och läsning), så svansen läses med den gamla
+    // vägen om filen visar sig större.
+    struct stat st;
     Byte d;
+    if (fstat(fileno(f), &st) == 0 && S_ISREG(st.st_mode) && st.st_size > 0) {
+        d.resize((size_t)st.st_size);
+        size_t fick = fread(d.data(), 1, d.size(), f);
+        d.resize(fick);
+    }
     u8 buf[1 << 16];
     size_t r;
     while ((r = fread(buf, 1, sizeof buf, f)) > 0) d.insert(d.end(), buf, buf + r);
