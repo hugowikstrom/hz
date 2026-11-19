@@ -4,7 +4,7 @@
 set -u
 in=0; ut=0; n=0
 while read -r f; do
-    s=$(./src/nvjpg packa < "$f" 2>/dev/null | wc -c) || continue
+    s=$(./src/hzjpg packa < "$f" 2>/dev/null | wc -c) || continue
     [ "$s" -gt 0 ] || continue
     in=$((in+$(stat -c%s "$f"))); ut=$((ut+s)); n=$((n+1))
 done

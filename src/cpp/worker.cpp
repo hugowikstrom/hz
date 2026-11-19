@@ -39,7 +39,7 @@ Byte run_self(const std::vector<std::string> &arg, const u8 *in, size_t n, int *
     // execv, _exit.
     static char self[] = "/proc/self/exe";
     bool external = !arg.empty() &&
-        (arg[0].find('/') != std::string::npos || arg[0] == "nvgpu");
+        (arg[0].find('/') != std::string::npos || arg[0] == "hzgpu");
     std::vector<char*> argv;
     if (!external) argv.push_back(self);
     for (const auto &a : arg) argv.push_back(const_cast<char*>(a.c_str()));

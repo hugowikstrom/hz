@@ -24,7 +24,7 @@ WHAT IT GUARANTEES, exactly:
     restriction and unpack here bit for bit.
   * Any other hz archive is read as far as its codecs allow: ra and xz
     blocks always; zstd blocks if the optional `zstandard` pip package is
-    installed; nvcm/nvlz blocks and PNG/JPEG-transformed objects are
+    installed; hzcm/hzlz blocks (register strings "nvcm"/"nvlz") and PNG/JPEG-transformed objects are
     refused with a message that says exactly what to do (repack with
     --portable), never with wrong data.
 

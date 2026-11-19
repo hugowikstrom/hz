@@ -3,7 +3,7 @@
 # Packs and unpacks EVERY jpeg in a directory and demands identical bytes.
 set -u
 root="${1:?directory}"
-export NV="$(cd "$(dirname "$0")/.." && pwd)/src/nvjpg"
+export NV="$(cd "$(dirname "$0")/.." && pwd)/src/hzjpg"
 check() {
     f="$1"; t=$(mktemp -d)
     if ! "$NV" pack < "$f" > "$t/a.nvj" 2>/dev/null; then echo "RAWCASE $f"; rm -rf "$t"; return; fi

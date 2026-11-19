@@ -320,7 +320,7 @@ Byte png_rebuild(const Byte &skeleton, const Byte &raw, const std::string &recip
 
 std::optional<Unfolded> jpeg_unfold(const Byte &b) {
     int exit_code = 0;
-    Byte d = run_self({"nvjpg", "pack"}, b.data(), b.size(), &exit_code);
+    Byte d = run_self({"hzjpg", "pack"}, b.data(), b.size(), &exit_code);
     if (exit_code != 0 || d.size() < 18 || memcmp(d.data(), "NVJ1", 4))
         return std::nullopt;             // progressive, broken, or not recodable
     u32 head_len, tail_len;
@@ -339,8 +339,8 @@ Byte jpeg_rebuild(const Byte &rest, const Byte &body) {
     Byte joined(rest);
     joined.insert(joined.end(), body.begin(), body.end());
     int exit_code = 0;
-    Byte out = run_self({"nvjpg", "unpack"}, joined.data(), joined.size(), &exit_code);
-    if (exit_code != 0) throw Error("nvjpg unpack failed");
+    Byte out = run_self({"hzjpg", "unpack"}, joined.data(), joined.size(), &exit_code);
+    if (exit_code != 0) throw Error("hzjpg unpack failed");
     return out;
 }
 

@@ -2,7 +2,7 @@
 
 > hZ was published as **nvz** until 2026-11-19. Only the name changed:
 > every hZ reads every nvz archive bit for bit, and the Swedish command
-> aliases remain.
+> aliases remain. The codec tools were born nvcm/nvjpg/nvgpu and were renamed hzcm/hzjpg/hzgpu on 2026-11-20; stream formats and register strings are unchanged.
 
 
 `tar | zstd` is two programs that know nothing about each other. tar emits
@@ -36,7 +36,7 @@ evaluation, with every number regenerable from `resultat/*.json`:
 *README på svenska: [README.sv.md](README.sv.md).*
 
 ```bash
-make                       # builds hz, nvcm, nvjpg (needs libzstd-dev,
+make                       # builds hz, hzcm, hzjpg (needs libzstd-dev,
                            # liblzma-dev, zlib1g-dev; g++ with C++17)
 ./src/hz mytree           # -> mytree.nv, ONE archive of the whole tree
 ./src/hz -d mytree.nv     # the tree back, bit for bit
@@ -125,7 +125,7 @@ and the window **small**: the same 5 974 code files thrown into 200 random
 directories give −8.0 % through a 2 MiB window and −2.2 % through a 64 MiB
 dictionary (`experiment/sortering.sh`). This is also exactly what the
 prior art says (gwern.net/sort): the method is old, and its value is a
-function of the window. hZ's measured wins come from items 3, 4 and nvcm
+function of the window. hZ's measured wins come from items 3, 4 and hzcm
 — not from this one.
 
 One sorting rule did survive measurement: within a group, files larger
@@ -157,7 +157,7 @@ of 4 618 real PNGs.
 ### 4. JPEGs are recoded without touching a pixel
 
 A JPEG is DCT coefficients entropy-coded with Huffman, and Huffman cannot
-put a symbol in less than one whole bit. nvjpg decodes the stream and
+put a symbol in less than one whole bit. hzjpg decodes the stream and
 recodes the *same* coefficients with an adaptive binary arithmetic coder
 whose contexts are the neighbouring blocks and slots: −15.1 % on 1 143
 real photos, bit-exact, proven per file by re-encoding to Huffman and
@@ -189,7 +189,7 @@ answer: yes.
 | dedup | borg, restic, ZFS; chunking since LBFS (2001) | weaker — whole files, not chunks |
 | deflate back to raw + recipe | precomp, preflate, reflate | narrower — only streams zlib itself wrote |
 | lossless JPEG recoding | packJPG, Lepton (Dropbox 2016), brunsli → JPEG XL | **worse** — hZ −15.1 %, published −20 to −22 % |
-| context mixing (nvcm) | PAQ (Matt Mahoney), lpaq, zpaq, cmix | smaller model — paq8px beats nvcm on enwik8, 15.8 vs 20.4 MB |
+| context mixing (hzcm) | PAQ (Matt Mahoney), lpaq, zpaq, cmix | smaller model — paq8px beats hzcm on enwik8, 15.8 vs 20.4 MB |
 | content-aware filter choice | FreeArc, zpaq method strings | same thought; hZ probes the data instead of trusting the extension |
 
 What is original is the packaging — the parts in one format with one
@@ -199,10 +199,10 @@ report §7.
 
 ---
 
-## nvcm: an in-house compressor for text and source code
+## hzcm: an in-house compressor for text and source code
 
 Dictionary compressors pay bits for a reference even when the next
-character was completely predictable. nvcm predicts the next **bit** with
+character was completely predictable. hzcm predicts the next **bit** with
 eight models voting at once — byte contexts of order 0–8, a word model, a
 match model — weighed by a mixer that learns which model to trust in this
 kind of data. It beats `xz -9e` on both standard corpora: 1.677 bits/byte
@@ -219,8 +219,8 @@ built-in dictionaries at all. Its price is ~1 MB/s, which is why only mode
 |:--|:--|:--|
 | `fast` | zstd −3, no transforms | matches a plain `tar \| zstd -3` script (`-1`) |
 | `normal` | transforms on; zstd −19 or covering-dictionary xz by probe; opaque blocks settled by the two-step rule | `-4` .. `-6` |
-| `small` | plus nvcm where it wins (in parallel 32 MiB shards, `nvcm-p`, on blocks of 64 MiB and up), LZMA with a covering dictionary as an extra candidate on opaque blocks, and a whole-block re-check when the probe's lead was thin | **default** |
-| `gpu` | plus nvlz (GPU LZ77) in the probe | never — see the GPU section |
+| `small` | plus hzcm where it wins (in parallel 32 MiB shards, `hzcm-p`, on blocks of 64 MiB and up), LZMA with a covering dictionary as an extra candidate on opaque blocks, and a whole-block re-check when the probe's lead was thin | **default** |
+| `gpu` | plus hzlz (GPU LZ77) in the probe | never — see the GPU section |
 
 The difference between `normal` and `small` is time, not just codec
 choice: `small` pays entire extra compressions to settle questions the
@@ -459,8 +459,8 @@ Details and measurements: report §8 and `resultat/hastighetsgolv.json`.
 
 The question was whether a GPU mode makes packing faster. The answer is
 **no on this machine** — measured at four levels rather than argued
-(`src/nvgpu.c` is a real Vulkan compute host with three kernels and its
-own codec, `nvlz`):
+(`src/hzgpu.c` is a real Vulkan compute host with three kernels and its
+own codec, `hzlz`):
 
 1. **The ceiling.** The GPU is integrated and shares the memory bus:
    34 881 MiB/s for the GPU against 31 349 for 24 CPU threads — 1.11×.
@@ -469,14 +469,14 @@ own codec, `nvlz`):
 2. **The kernels.** blake2b hashing: the GPU loses. LZ77 matching: the GPU
    wins 2.1–2.7×, with zero deviations over 16.8 million positions — the
    only broadly parallel part of a packer.
-3. **The codec.** nvlz with the GPU matcher and with the CPU matcher take
+3. **The codec.** hzlz with the GPU matcher and with the CPU matcher take
    the same time: the parallel half is a quarter of the codec, and entropy
    coding is serial by construction. Amdahl wins. `zstd -6` gives a better
    ratio in an eighth of the time.
-4. **The archive.** Mode `gpu` lets nvlz compete for every block; the
+4. **The archive.** Mode `gpu` lets hzlz compete for every block; the
    probe — hZ's own mechanism for not assuming — rejects it by itself.
 
-The code stays in the repo as a measurement instrument. Unpacking nvlz is
+The code stays in the repo as a measurement instrument. Unpacking hzlz is
 pure CPU: an archive must never be hostage to a graphics driver.
 
 ---
@@ -499,7 +499,7 @@ It writes ordinary hZ v3 archives restricted to the codecs
 for bit, and vice versa for archives made with **`hz pack --portable`**.
 Other hZ archives are read as far as their codecs allow: xz and raw
 blocks always, zstd blocks if the optional `zstandard` package is
-installed, and nvcm/nvlz blocks or transformed objects are refused with a
+installed, and hzcm/hzlz blocks or transformed objects are refused with a
 message that says what to do — never with wrong data. It is deliberately
 slow and slightly larger: that is the price of running everywhere, and the
 measured trade is stated rather than hidden. Windows cannot always create
@@ -509,7 +509,7 @@ symlinks; those are skipped with a warning and exit status 2.
 
 ## How it is built
 
-**One C++17 binary** (`src/cpp/`, ~430 kB): nvcm and nvjpg are linked in
+**One C++17 binary** (`src/cpp/`, ~430 kB): hzcm and hzjpg are linked in
 and executed as worker processes via `/proc/self/exe`; zstd, xz and zlib
 are called as libraries in process. `liten`/`small` is the default mode.
 
@@ -517,13 +517,13 @@ are called as libraries in process. `liten`/`small` is the default mode.
 src/cpp/main.cpp       command line and worker dispatch
 src/cpp/cli.cpp        the gzip surface
 src/cpp/archive.cpp    blocks, register (v1/v2/v3), pack/unpack
-src/cpp/codec.cpp      zstd/xz/nvcm/nvlz + the probe
+src/cpp/codec.cpp      zstd/xz/hzcm/hzlz + the probe
 src/cpp/transform.cpp  PNG recipes and the JPEG worker calls
 src/cpp/tree.cpp       classification and the tree walk
 src/cpp/worker.cpp     fork/exec workers (the three traps are commented)
-src/nvcm.c             the context mixer (also a standalone binary)
-src/nvjpg.c            the JPEG recoder (also a standalone binary)
-src/nvgpu.c            the Vulkan measurement instrument
+src/hzcm.c             the context mixer (also a standalone binary)
+src/hzjpg.c            the JPEG recoder (also a standalone binary)
+src/hzgpu.c            the Vulkan measurement instrument
 portable/hzpy.py      the stdlib-Python portable implementation
 src/hz.py             RETIRED Python implementation, kept verbatim as the
                        v1 format reference (deliberately untranslated)
@@ -567,14 +567,14 @@ outside that boundary.
 
 ## What does not work
 
-* **Progressive JPEG** is stored raw (nvjpg covers baseline sequential).
+* **Progressive JPEG** is stored raw (hzjpg covers baseline sequential).
 * **PNG from unknown deflate engines** (zlib-ng, libdeflate, Chrome) is
   stored raw at pack time; at unpack time a foreign-engine archive is
   rescued by parameter search or refused — never corrupted.
-* **nvcm is slow** (~1 MB/s per stream) and only mode `small` uses it.
-  Blocks of 64 MiB and up are coded as `nvcm-p` — independent 32 MiB
+* **hzcm is slow** (~1 MB/s per stream) and only mode `small` uses it.
+  Blocks of 64 MiB and up are coded as `hzcm-p` — independent 32 MiB
   shards in parallel — which cut enwik8 from 129/132 s (pack/unpack) to
-  49/43 s for +1.9 % size. `--codec nvcm` still forces the single-stream
+  49/43 s for +1.9 % size. `--codec hzcm` still forces the single-stream
   minimum. Shard curve measured in `src/cpp/codec.cpp`.
 * **Memory scales with the whole tree** (~1.4× raw data), and the xz
   dictionary budget depends on free memory at start — measure on an

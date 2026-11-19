@@ -93,7 +93,7 @@ if [ -f "$WORK/full/big.txt" ] && ( cd "$WORK/full" && md5sum -c before.md5 >/de
 else
     bad "the original was lost when the archive could not be finished"
 fi
-[ -f "$WORK/full/big.txt.nv" ] && bad "a truncated archive was left behind" \
+[ -f "$WORK/full/big.txt.hz" ] && bad "a truncated archive was left behind" \
                                || ok "the half-written archive was cleaned away"
 
 echo "flaw 3: an unreadable file does not stop the rest"
@@ -101,10 +101,10 @@ mkdir -p "$WORK/several"; cd "$WORK/several"
 printf 'aaa\n' > a.txt; printf 'bbb\n' > b.txt; printf 'ccc\n' > c.txt; chmod 000 b.txt
 output=$("$HZ" a.txt b.txt c.txt 2>&1); status=$?
 chmod 644 b.txt
-if [ $status -eq 1 ] && [ -f a.txt.nv ] && [ -f c.txt.nv ] && [ -f b.txt ]; then
+if [ $status -eq 1 ] && [ -f a.txt.hz ] && [ -f c.txt.hz ] && [ -f b.txt ]; then
     ok "a warning, the rest are packed, exit status 1 — gzip's contract, no core dump"
 else
-    bad "exit status $status (134 = SIGABRT), a.txt.nv=$([ -f a.txt.nv ] && echo yes || echo no) c.txt.nv=$([ -f c.txt.nv ] && echo yes || echo no)"
+    bad "exit status $status (134 = SIGABRT), a.txt.hz=$([ -f a.txt.hz ] && echo yes || echo no) c.txt.hz=$([ -f c.txt.hz ] && echo yes || echo no)"
 fi
 
 echo

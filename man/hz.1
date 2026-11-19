@@ -49,13 +49,13 @@ chunk is verified against its CRC.
 .TP
 .B 4. JPEGs are recoded without touching a pixel.
 The Huffman entropy layer is replaced by an adaptive arithmetic coder
-(nvjpg); the DCT coefficients themselves are untouched and the original
+(hzjpg); the DCT coefficients themselves are untouched and the original
 bytes are proven reproducible before the transform is accepted.
 .TP
 .B 5. Nothing is assumed \(em everything is probed.
 Each block chooses its codec by compressing a sample with every candidate:
 zstd, xz with a dictionary that covers the block, or the context mixer
-nvcm.
+hzcm.
 .SH SUBCOMMAND FLAGS
 .TP
 .BI \-\-mode " fast|normal|small|gpu"
@@ -68,12 +68,12 @@ established tool on both size and time on most corpora;
 is deduplication and sorting with zstd \-3, matching a plain
 \fBtar | zstd \-3\fR pipeline in speed.
 .TP
-.BI \-\-codec " zstd3|zstd19|zstd22|xz9e|nvcm|nvcm\-p|nvlz"
+.BI \-\-codec " zstd3|zstd19|zstd22|xz9e|hzcm|hzcm\-p|hzlz"
 Force one codec instead of probing. Exists for measurements.
-.B nvcm
+.B hzcm
 forces the single-stream minimum; without the flag, blocks of 64 MiB and
-up that choose nvcm are coded as
-.B nvcm\-p
+up that choose hzcm are coded as
+.B hzcm\-p
 \(em independent 32 MiB shards packed and unpacked in parallel, under two
 percent larger and three to four times faster in both directions.
 .TP
@@ -82,7 +82,7 @@ Restrict the archive to the codecs {ra, xz9e, xz9e\-j0} and switch the
 transforms off. Such an archive can be unpacked by the pure-stdlib Python
 tool
 .B portable/hzpy.py
-on macOS and Windows \(em no libzstd, no nvcm, no deflate-engine
+on macOS and Windows \(em no libzstd, no hzcm, no deflate-engine
 dependency. Slower and somewhat larger; portability is the point.
 .TP
 .B \-\-no\-dedup
@@ -175,7 +175,7 @@ or
 .B \-\-no\-transform
 for archives that must open anywhere.
 .SH SEE ALSO
-.BR nvcm (1),
-.BR nvjpg (1),
+.BR hzcm (1),
+.BR hzjpg (1),
 the measurement report in
 .IR rapport/broad-evaluation.md .

@@ -15,7 +15,7 @@
 // wants it small, and nvz's transforms are expensive once and cheap to
 // unpack.
 //
-// The hidden subcommands `nvcm pack|unpack` and `nvjpg pack|unpack` are
+// The hidden subcommands `hzcm pack|unpack` and `hzjpg pack|unpack` are
 // worker entry points: nvz starts itself with them (see worker.cpp). They
 // exist for machines and are left out of the help text.
 #include "archive.hpp"
@@ -28,10 +28,10 @@
 #include <unistd.h>
 
 extern "C" {
-int hz_nvcm_pack(void);
-int hz_nvcm_unpack(void);
-int hz_nvjpg_pack(void);
-int hz_nvjpg_unpack(void);
+int hzcm_pack(void);
+int hzcm_unpack(void);
+int hzjpg_pack(void);
+int hzjpg_unpack(void);
 }
 
 namespace {
@@ -47,7 +47,7 @@ void help() {
 "\n"
 "flags for pack:\n"
 "  --mode M     fast | normal | small   (default small — the smallest archive)\n"
-"  --codec C    force zstd3|zstd19|zstd22|xz9e|nvcm|nvlz\n"
+"  --codec C    force zstd3|zstd19|zstd22|xz9e|hzcm|hzlz\n"
 "  --portable   restrict to ra/xz and no transforms: the archive can then be\n"
 "               unpacked by the stdlib Python tool (portable/hzpy.py) on\n"
 "               macOS and Windows\n"
@@ -106,10 +106,10 @@ int main(int argc, char **argv) {
     std::string cmd = argv[1];
 
     // The workers first: they touch stdin/stdout and nothing else.
-    if (cmd == "nvcm" && argc >= 3)
-        return is_sub(argv[2], "pack", "packa") ? hz_nvcm_pack() : hz_nvcm_unpack();
-    if (cmd == "nvjpg" && argc >= 3)
-        return is_sub(argv[2], "pack", "packa") ? hz_nvjpg_pack() : hz_nvjpg_unpack();
+    if (cmd == "hzcm" || cmd == "nvcm" && argc >= 3)
+        return is_sub(argv[2], "pack", "packa") ? hzcm_pack() : hzcm_unpack();
+    if (cmd == "hzjpg" || cmd == "nvjpg" && argc >= 3)
+        return is_sub(argv[2], "pack", "packa") ? hzjpg_pack() : hzjpg_unpack();
 
     if (cmd == "-h" || cmd == "--help") { help(); return 0; }
     if (cmd == "-V" || cmd == "--version") { printf("hZ 2.0 (c++)\n"); return 0; }
@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
         if (a == "-q" || a == "--quiet" || a == "--tyst") o.quiet = true;
         else if (a == "-j" || a == "--jobs" || a == "--jobb") o.jobs = atoi(value("-j").c_str());
         else if (eat("mode", "läge", &v) || eat("mode", "lage", &v)) o.mode = v;
-        else if (eat("codec", "kodek", &v)) o.codec = v;
+        else if (eat("codec", "kodek", &v)) o.codec = hz::canonical_codec(v);
         else if (eat("block-cap", "blocktak", &v)) o.block_cap = (hz::u64)atoll(v.c_str()) << 20;
         else if (a == "--no-dedup" || a == "--utan-dedup") o.dedup = false;
         else if (a == "--no-transform" || a == "--utan-omvandling") o.transform = false;

@@ -299,6 +299,27 @@ void parallel_for(size_t n, int threads, const std::function<void(size_t)> &fn) 
 
 }  // namespace
 
+// --codec accepts the hz-era tool names as input; the register keeps the
+// frozen format strings (hz.hpp), so hzcm maps to "nvcm" and so on. The
+// frozen name is also still accepted.
+
+// The register stores the frozen nv-era codec strings; the listing shows
+// today's tool names. Data unchanged, display honest about what runs.
+std::string display_codec(const std::string &c) {
+    if (c == "nvcm")   return "hzcm";
+    if (c == "nvcm-p") return "hzcm-p";
+    if (c == "nvlz")   return "hzlz";
+    if (c == "nvz")    return "hzcm";      // pre-rename register spelling
+    return c;
+}
+
+std::string canonical_codec(const std::string &c) {
+    if (c == "hzcm")   return "nvcm";
+    if (c == "hzcm-p") return "nvcm-p";
+    if (c == "hzlz")   return "nvlz";
+    return c;
+}
+
 std::string canonical_mode(const std::string &mode) {
     if (mode == "fast"   || mode == "snabb") return "fast";
     if (mode == "normal")                    return "normal";
@@ -1026,7 +1047,7 @@ void list_archive(const std::string &archive) {
            tf_text.empty() ? "" : (tf_text + "}").c_str());
     for (const Block &b : reg.blocks)
         printf("  block %3u  %-11s %-7s %9.2f -> %8.2f MiB  x%.2f\n", b.index, b.cls.c_str(),
-               b.codec.c_str(), b.raw_len / 1048576.0, b.clen / 1048576.0,
+               display_codec(b.codec).c_str(), b.raw_len / 1048576.0, b.clen / 1048576.0,
                b.clen ? (double)b.raw_len / b.clen : 0.0);
 }
 

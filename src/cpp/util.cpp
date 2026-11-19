@@ -45,7 +45,7 @@ std::string temp_dir() {
 // --- blake2b-128 ------------------------------------------------------------
 // The same hash the Python implementation used (hashlib.blake2b,
 // digest_size=16), so archives from both carry the same object keys.
-// Lifted from src/nvgpu.c, where it already serves as the oracle for the
+// Lifted from src/hzgpu.c, where it already serves as the oracle for the
 // GPU kernel.
 namespace {
 const u64 IV[8] = {

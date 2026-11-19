@@ -37,11 +37,11 @@ make test               # self-test against the bundled code corpus
 
 | path | contents |
 |:--|:--|
-| `%{_bindir}/hz` `nvcm` `nvjpg` | the three tools |
+| `%{_bindir}/hz` `hzcm` `hzjpg` | the three tools |
 | `%{_mandir}/man1/*.1` | man pages |
 | `%{_defaultdocdir}` | README.md |
 
-`src/nvgpu` (CUDA) is deliberately **not** packaged: it requires a
+`src/hzgpu` (CUDA) is deliberately **not** packaged: it requires a
 non-free toolchain and loses to the CPU codecs on ratio (report §6).
 `portable/hzpy.py` targets macOS/Windows and is not for the Linux
 package either.

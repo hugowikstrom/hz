@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * nvjpg - bit-exact lossless repacking of baseline JPEG.
+ * hzjpg - bit-exact lossless repacking of baseline JPEG.
  *
- *     nvjpg pack   < image.jpg > image.nvj     exit 2 = cannot, store raw
- *     nvjpg unpack < image.nvj > image.jpg
- *     (the old names packa|packaupp remain as aliases; hz runs nvjpg as a
+ *     hzjpg pack   < image.jpg > image.nvj     exit 2 = cannot, store raw
+ *     hzjpg unpack < image.nvj > image.jpg
+ *     (the old names packa|packaupp remain as aliases; hz runs hzjpg as a
  *     worker process)
  *
  * A JPEG is DCT coefficients Huffman-coded with tables carried in the
@@ -14,7 +14,7 @@
  * blocks, and a coefficient's magnitude by the same coefficient in the
  * blocks to the left and above.
  *
- * nvjpg decodes the Huffman stream into coefficients and recodes them with
+ * hzjpg decodes the Huffman stream into coefficients and recodes them with
  * an adaptive arithmetic coder over exactly those contexts. The pixels are
  * never touched; only the entropy layer is recoded. Unpacking encodes the
  * same coefficients back through the file's own Huffman tables and
@@ -38,7 +38,7 @@
 
 /* --------------------------------------------------------------- helpers -- */
 
-static void die(const char *m) { fprintf(stderr, "nvjpg: %s\n", m); exit(2); }
+static void die(const char *m) { fprintf(stderr, "hzjpg: %s\n", m); exit(2); }
 
 typedef struct { uint8_t *d; size_t n, cap; } Buf;
 static void buf_append(Buf *b, const void *p, size_t n) {
@@ -788,7 +788,7 @@ static int unpack_main(void) {
 }
 
 int main(int argc, char **argv) {
-    if (argc < 2) { fprintf(stderr, "usage: nvjpg pack|unpack < in > out\n"); return 1; }
+    if (argc < 2) { fprintf(stderr, "usage: hzjpg pack|unpack < in > out\n"); return 1; }
     if (!strcmp(argv[1], "pack") || !strcmp(argv[1], "packa")) return pack_main();
     if (!strcmp(argv[1], "unpack") || !strcmp(argv[1], "packaupp")) return unpack_main();
     fprintf(stderr, "unknown command\n");

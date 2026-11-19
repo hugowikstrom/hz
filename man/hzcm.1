@@ -1,20 +1,20 @@
-.TH NVCM 1 "November 2026" "nvcm 1.0" "User commands"
+.TH HZCM 1 "November 2026" "hzcm 1.0" "User commands"
 .SH NAME
-nvcm \- context-mixing compressor for text and source code
+hzcm \- context-mixing compressor for text and source code
 .SH SYNOPSIS
-.B nvcm
+.B hzcm
 .RI [ flags ]
 .RI [ file ...]
 .br
-.B nvcm pack
+.B hzcm pack
 < in > out
 .br
-.B nvcm unpack
+.B hzcm unpack
 < in > out
 .SH DESCRIPTION
 Dictionary compressors (xz, zstd) pay bits for a reference even when the
 next character was completely predictable.
-.B nvcm
+.B hzcm
 instead predicts the next BIT with several models at once \(em byte
 contexts of order 0\-8, a word model, and a match model \(em weighed
 together by a mixer that learns which model tends to be right in this kind
@@ -32,10 +32,10 @@ On the Silesia and enwik8 corpora it beats \fBxz \-9e\fR
 The surface is gzip's:
 .B \-d \-c \-k \-f \-t \-l \-v
 mean what they mean there, the suffix is
-.IR .nvcm ,
+.IR .hzcm ,
 and with no file arguments the stream runs stdin to stdout.
 .B \-1..\-9
-are accepted and ignored \(em nvcm has no levels.
+are accepted and ignored \(em hzcm has no levels.
 .PP
 The worker subcommands
 .BR pack / unpack
@@ -48,5 +48,8 @@ calls; they are listed here for completeness.
 Streams begin with NVCM1. The older magic NVZ01 is still read.
 .SH EXIT STATUS
 0 all well, 1 error, 2 refusal (broken stream, out of memory).
+.SH HISTORY
+Born as nvcm; renamed hzcm on 2026-11-20. The stream format and its
+magic are unchanged \(em every stream the old tool wrote, this one reads.
 .SH SEE ALSO
 .BR hz (1)

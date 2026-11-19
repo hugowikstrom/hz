@@ -288,8 +288,8 @@ Byte nvcm_run(const char *cmd, const u8 *d, size_t n) {
     nvcm_gate.take(need);
     struct Release { MemoryGate &g; u64 n; ~Release() { g.release(n); } } rel{nvcm_gate, need};
     int exit_code = 0;
-    Byte out = run_self({"nvcm", cmd}, d, n, &exit_code);
-    if (exit_code != 0) throw Error(strf("nvcm %s: exit status %d", cmd, exit_code));
+    Byte out = run_self({"hzcm", cmd}, d, n, &exit_code);
+    if (exit_code != 0) throw Error(strf("hzcm %s: exit status %d", cmd, exit_code));
     return out;
 }
 
@@ -396,12 +396,12 @@ Byte compress(const std::string &codec, const u8 *d, size_t n, int threads,
     if (codec == "nvcm") return nvcm_run("pack", d, n);
     if (codec == "nvcm-p") return nvcmp_compress(d, n);
     if (codec == "nvlz") {
-        // The GPU codec lives in nvgpu — a separate program, because the
+        // The GPU codec lives in hzgpu — a separate program, because the
         // Vulkan dependency must not get into nvz. A measurement
         // instrument, not a production path: see the README.
         int exit_code = 0;
-        Byte out = run_program(sibling_binary("nvgpu"), {"pack", "--quiet"}, d, n, &exit_code);
-        if (exit_code != 0) throw Error("nvgpu pack: exit status " + std::to_string(exit_code));
+        Byte out = run_program(sibling_binary("hzgpu"), {"pack", "--quiet"}, d, n, &exit_code);
+        if (exit_code != 0) throw Error("hzgpu pack: exit status " + std::to_string(exit_code));
         return out;
     }
     if (codec.rfind("zstd", 0) == 0) return zstd_compress(codec, d, n, threads);
@@ -416,8 +416,8 @@ Byte decompress(const std::string &codec, const u8 *d, size_t n, u64 raw_len) {
     if (codec == "nvcm-p") return nvcmp_decompress(d, n);
     if (codec == "nvlz") {
         int exit_code = 0;
-        Byte out = run_program(sibling_binary("nvgpu"), {"unpack", "--quiet"}, d, n, &exit_code);
-        if (exit_code != 0) throw Error("nvgpu unpack: exit status " + std::to_string(exit_code));
+        Byte out = run_program(sibling_binary("hzgpu"), {"unpack", "--quiet"}, d, n, &exit_code);
+        if (exit_code != 0) throw Error("hzgpu unpack: exit status " + std::to_string(exit_code));
         return out;
     }
     if (codec.rfind("zstd", 0) == 0) return zstd_decompress(d, n, raw_len);
@@ -481,7 +481,7 @@ std::string choose_codec(const u8 *d, size_t n, bool with_cm, bool with_gpu, int
     if (with_gpu) {
         int exit_code = 0;
         try {
-            Byte g = run_program(sibling_binary("nvgpu"), {"pack", "--quiet"},
+            Byte g = run_program(sibling_binary("hzgpu"), {"pack", "--quiet"},
                                  probe.data(), pn, &exit_code);
             if (exit_code == 0) gb = g.size();
         } catch (...) { gb = 0; }

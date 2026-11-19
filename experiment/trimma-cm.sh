@@ -4,7 +4,7 @@
 set -u
 prov=/tmp/claude-1000/-home-hugo/23274567-06f8-47a5-80d4-1071e7e104fd/scratchpad/m8.bin
 for val in "$@"; do
-    gcc -O2 -w $val -o /tmp/claude-1000/-home-hugo/23274567-06f8-47a5-80d4-1071e7e104fd/scratchpad/nvcm-t src/nvcm.c || { echo "$val BYGGFEL"; continue; }
+    gcc -O2 -w $val -o /tmp/claude-1000/-home-hugo/23274567-06f8-47a5-80d4-1071e7e104fd/scratchpad/nvcm-t src/hzcm.c || { echo "$val BYGGFEL"; continue; }
     t0=$(date +%s.%N)
     s=$(/tmp/claude-1000/-home-hugo/23274567-06f8-47a5-80d4-1071e7e104fd/scratchpad/nvcm-t packa < $prov | wc -c)
     t=$(echo "$(date +%s.%N)-$t0" | bc)

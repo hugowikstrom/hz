@@ -50,6 +50,7 @@ int main_gzip(int argc, char **argv);
 // Canonicalize a mode name. The Swedish names remain as aliases because
 // published reports, measurement scripts and muscle memory use them.
 // Returns the canonical name, or "" if unknown.
+std::string canonical_codec(const std::string &c);
 std::string canonical_mode(const std::string &mode);
 
 constexpr u64 BLOCK_CAP = 192ull << 20;

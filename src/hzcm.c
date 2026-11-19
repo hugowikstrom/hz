@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * nvcm - context-mixing compressor for text and source code.
+ * hzcm - context-mixing compressor for text and source code.
  *
- *     nvcm [flags] [file ...]        gzip-style CLI (see man nvcm)
- *     nvcm pack|unpack < in > out    worker path; hz runs nvcm as a worker
+ *     hzcm [flags] [file ...]        gzip-style CLI (see man hzcm)
+ *     hzcm pack|unpack < in > out    worker path; hz runs hzcm as a worker
  *                                    process (the old names packa|packaupp
  *                                    remain as aliases)
  *
  * Dictionary compressors (xz, zstd) pay bits for every back-reference even
  * when the next byte is fully determined by context (the letter after
- * "func" in a js file, the indent after a newline). nvcm instead predicts
+ * "func" in a js file, the indent after a newline). hzcm instead predicts
  * the next bit with several models voting at once:
  *
  *   orders 0-8   what follows the last 0, 1, 2, 3, 4, 6 and 8 bytes; short
@@ -24,7 +24,7 @@
  * probability maps refine the mix before the arithmetic coder. No single
  * model needs to be right.
  *
- * The price is speed: nvcm packs at a few MB/s where zstd does hundreds.
+ * The price is speed: hzcm packs at a few MB/s where zstd does hundreds.
  * hz picks it only for blocks where it actually wins, and only when the
  * archive should be small rather than fast.
  *
@@ -46,7 +46,7 @@ typedef uint16_t U16;
 typedef uint32_t U32;
 typedef uint64_t U64;
 
-static void die(const char *m) { fprintf(stderr, "nvcm: %s\n", m); exit(2); }
+static void die(const char *m) { fprintf(stderr, "hzcm: %s\n", m); exit(2); }
 
 /* -------------------------------------------------- logistic transform -- */
 /*
@@ -462,7 +462,7 @@ static int pack_stream(FILE *in, FILE *out) {
 static int unpack_stream(FILE *in, FILE *out) {
     char magic[5];
     if (fread(magic, 1, 5, in) != 5 || (memcmp(magic, MAGIC, 5) && memcmp(magic, MAGIC_OLD, 5)))
-        die("not an nvcm stream");
+        die("not an hzcm stream");
     U64 len;
     if (fread(&len, 8, 1, in) != 1) die("broken header");
     Model *m = model_new((size_t)len);
@@ -489,33 +489,33 @@ static int unpack_stream(FILE *in, FILE *out) {
 
 /* ------------------------------------------------------- gzip-style CLI -- */
 /*
- * nvcm is invoked like gzip:
+ * hzcm is invoked like gzip:
  *
- *     nvcm file           -> file.nvcm, the original is removed
- *     nvcm -d file.nvcm   -> file, the packed one is removed
- *     nvcm -c file > out  -> to stdout, the file is untouched
- *     nvcm -t file.nvcm   -> tests that it can be unpacked
- *     nvcm -l file.nvcm   -> the sizes without unpacking
- *     ... | nvcm | ...    -> no file arguments: stdin to stdout
+ *     hzcm file           -> file.hzcm, the original is removed
+ *     hzcm -d file.hzcm   -> file, the packed one is removed
+ *     hzcm -c file > out  -> to stdout, the file is untouched
+ *     hzcm -t file.hzcm   -> tests that it can be unpacked
+ *     hzcm -l file.hzcm   -> the sizes without unpacking
+ *     ... | hzcm | ...    -> no file arguments: stdin to stdout
  *
  * gzip's syntax rather than a private one, because existing scripts,
  * Makefiles and benchmarks already speak it; a codec that demands
- * `nvcm pack < in > out` cannot be dropped into an existing invocation
+ * `hzcm pack < in > out` cannot be dropped into an existing invocation
  * and then never gets measured.
  *
- * -1..-9, --fast and --best are accepted and ignored: nvcm has no levels,
+ * -1..-9, --fast and --best are accepted and ignored: hzcm has no levels,
  * but scripts send them and refusing a meaningless flag helps nothing.
  *
  * The worker subcommands `pack` and `unpack` (and their old names `packa`
  * and `packaupp`) remain for hz but are not listed in the help.
  */
 
-static const char *SUF = ".nvcm";
+static const char *SUF = ".hzcm";
 
 typedef struct { int d, c, k, f, t, l, v; } Flags;
 
 static int grumble(const char *name, const char *what) {
-    fprintf(stderr, "nvcm: %s: %s\n", name, what);
+    fprintf(stderr, "hzcm: %s: %s\n", name, what);
     return 1;
 }
 
@@ -535,7 +535,7 @@ static int list_file(const char *name) {
     struct stat st;
     int have_st = stat(name, &st) == 0;
     fclose(f);
-    if (!ok) return grumble(name, "not an nvcm stream");
+    if (!ok) return grumble(name, "not an hzcm stream");
     double packed = have_st ? (double)st.st_size : 0;
     double ratio = len ? 100.0 * (1.0 - packed / (double)len) : 0;
     printf("%12.0f %12llu %6.1f%% %s\n", packed, (unsigned long long)len, ratio, name);
@@ -548,7 +548,7 @@ static int do_file(const char *name, Flags fl) {
     size_t nlen = strlen(name), slen = strlen(SUF);
     int has_suffix = nlen > slen && !strcmp(name + nlen - slen, SUF);
     if (!fl.d && has_suffix && !fl.c && !fl.t)
-        return grumble(name, "already has the suffix .nvcm -- left alone");
+        return grumble(name, "already has the suffix .hzcm -- left alone");
     if ((fl.d || fl.t) && !has_suffix && !fl.c)
         return grumble(name, "unknown suffix -- left alone");
 
@@ -598,7 +598,7 @@ static int do_file(const char *name, Flags fl) {
 
 static void help(void) {
     printf(
-"usage: nvcm [flags] [file ...]\n"
+"usage: hzcm [flags] [file ...]\n"
 "\n"
 "  -d, --decompress   unpack\n"
 "  -c, --stdout       write to stdout, leave the file alone\n"
@@ -607,11 +607,11 @@ static void help(void) {
 "  -t, --test         test that the packed data can be unpacked\n"
 "  -l, --list         show packed and unpacked size\n"
 "  -v, --verbose      say what happened\n"
-"  -1 .. -9           accepted and ignored (nvcm has no levels)\n"
+"  -1 .. -9           accepted and ignored (hzcm has no levels)\n"
 "  -h, --help         this text\n"
 "  -V, --version      the version\n"
 "\n"
-"With no file arguments the stream goes stdin -> stdout. The suffix is .nvcm.\n");
+"With no file arguments the stream goes stdin -> stdout. The suffix is .hzcm.\n");
 }
 
 int main(int argc, char **argv) {
@@ -619,7 +619,7 @@ int main(int argc, char **argv) {
     build_rates();
 
     /*
-     * Worker path first: hz calls `nvcm pack|unpack`. The old Swedish
+     * Worker path first: hz calls `hzcm pack|unpack`. The old Swedish
      * names remain as aliases.
      */
     if (argc >= 2 && (!strcmp(argv[1], "pack") || !strcmp(argv[1], "packa")))
@@ -643,8 +643,8 @@ int main(int argc, char **argv) {
             else if (!strcmp(a, "--verbose")) fl.v = 1;
             else if (!strcmp(a, "--fast") || !strcmp(a, "--best")) { /* no levels */ }
             else if (!strcmp(a, "--help")) { help(); return 0; }
-            else if (!strcmp(a, "--version")) { printf("nvcm 1.0\n"); return 0; }
-            else { fprintf(stderr, "nvcm: unknown flag %s\n", a); return 1; }
+            else if (!strcmp(a, "--version")) { printf("hzcm 1.0\n"); return 0; }
+            else { fprintf(stderr, "hzcm: unknown flag %s\n", a); return 1; }
             continue;
         }
         for (const char *c = a + 1; *c; c++) {
@@ -661,9 +661,9 @@ int main(int argc, char **argv) {
             case '1': case '2': case '3': case '4': case '5':
             case '6': case '7': case '8': case '9': break;
             case 'h': help(); return 0;
-            case 'V': printf("nvcm 1.0\n"); return 0;
+            case 'V': printf("hzcm 1.0\n"); return 0;
             default:
-                fprintf(stderr, "nvcm: unknown flag -%c\n", *c);
+                fprintf(stderr, "hzcm: unknown flag -%c\n", *c);
                 return 1;
             }
         }
@@ -671,9 +671,9 @@ int main(int argc, char **argv) {
 
     if (i >= argc) {
         /* No file: stdin -> stdout, like gzip in a pipe. */
-        if (fl.l) { fprintf(stderr, "nvcm: -l needs a file\n"); return 1; }
+        if (fl.l) { fprintf(stderr, "hzcm: -l needs a file\n"); return 1; }
         if (!fl.d && !fl.t && isatty(1) && !fl.f) {
-            fprintf(stderr, "nvcm: compressed data is not written to a terminal. "
+            fprintf(stderr, "hzcm: compressed data is not written to a terminal. "
                             "Use -f if you mean it.\n");
             return 1;
         }

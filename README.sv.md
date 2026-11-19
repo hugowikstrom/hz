@@ -1,7 +1,7 @@
 > *README in English: [README.md](README.md). Koden är engelsk sedan 2026-11-19; de svenska kommandonamnen är permanenta alias.*
 
 > hZ hette **nvz** till 2026-11-19. Bara namnet ändrades: varje hZ läser
-> varje nvz-arkiv bit för bit, och de svenska kommandoaliasen finns kvar.
+> varje nvz-arkiv bit för bit, och de svenska kommandoaliasen finns kvar. Kodekverktygen föddes som nvcm/nvjpg/nvgpu och döptes om till hzcm/hzjpg/hzgpu 2026-11-20; strömformat och registersträngar är oförändrade.
 
 
 # hZ
@@ -99,14 +99,14 @@ men standardläget är `liten`, alltså det minsta hZ kan. Vill man ha det
 snabbt säger man `-1`.
 
 ```bash
-make                      # bygger hz (C++), nvcm, nvjpg — och gpu om den går
-make installera           # hz, nvcm, nvjpg + man-sidor under /usr/local
+make                      # bygger hz (C++), hzcm, hzjpg — och gpu om den går
+make installera           # hz, hzcm, hzjpg + man-sidor under /usr/local
 man hz                   # eller: man -l man/hz.1 direkt ur trädet
 bash prov/prova-allt.sh   # hela provsviten
 ```
 
-**hZ är sedan 2026-11-16 EN C++-binär** (367 kB, 318 kB strippad, `src/cpp/`): nvcm och
-nvjpg är inlänkade, zstd/xz/zlib anropas som bibliotek i process, och
+**hZ är sedan 2026-11-16 EN C++-binär** (367 kB, 318 kB strippad, `src/cpp/`): hzcm och
+hzjpg är inlänkade, zstd/xz/zlib anropas som bibliotek i process, och
 standardläget är `liten` — det minsta hZ kan. Pythonversionen som byggde
 alla första mätningar ligger kvar som referens i `src/hz.py` men anropas
 inte av någonting. Den läser inte C++-binärens arkiv (binärt register);
@@ -152,7 +152,7 @@ kataloger (`experiment/sortering.sh`):
 
 Det är också precis vad förarbetet säger (gwern.net/sort): metoden är känd,
 och dess värde är en funktion av fönsterstorleken. hZ:s egna vinster på
-korpusarna i rapporten kommer från punkt 3, 4 och nvcm — inte från den här
+korpusarna i rapporten kommer från punkt 3, 4 och hzcm — inte från den här
 punkten.
 
 ### 3. PNG vecklas ut och packas om
@@ -198,7 +198,7 @@ skärmdump ska bli flera gigabyte arbetsdata.
 
 En JPEG är DCT-koefficienter entropikodade med Huffman. Huffman kan inte koda
 en symbol på mindre än en bit och vet ingenting om att blocket bredvid såg
-nästan likadant ut. `src/nvjpg.c` avkodar koefficienterna och kodar om dem med
+nästan likadant ut. `src/hzjpg.c` avkodar koefficienterna och kodar om dem med
 en adaptiv aritmetisk kodare vars modeller frågar tre grannskap:
 
 * blocket till vänster och ovanför — *hur rörig är den här delen av bilden?*
@@ -262,7 +262,7 @@ för frågan "är det här inte bara känd teknik?" har ett ärligt svar: ja.
 | dedup | borg, restic, ZFS; chunkning sedan LBFS (2001) | svagare — hela filer, inte chunkar |
 | deflate tillbaka till rådata | precomp, preflate, reflate | smalare — bara strömmar zlib själv skrivit |
 | förlustfri JPEG-omkodning | packJPG, Lepton (Dropbox 2016), brunsli → JPEG XL | **sämre** — hZ −15,1 %, de andra publicerar −20 till −22 % |
-| kontextblandning (nvcm) | PAQ (Matt Mahoney), lpaq, zpaq, cmix | mindre modell — paq8px slår nvcm på enwik8, 15,8 mot 20,4 MB |
+| kontextblandning (hzcm) | PAQ (Matt Mahoney), lpaq, zpaq, cmix | mindre modell — paq8px slår hzcm på enwik8, 15,8 mot 20,4 MB |
 | filterval per innehållstyp | FreeArc (Bulat Ziganshin), zpaq:s metodsträngar | samma tanke; hZ provar på data i stället för att gå på filändelsen |
 
 Vad som är eget är därmed inte en algoritm utan paketeringen: delarna i ett
@@ -271,10 +271,10 @@ för regel, och mätningen av vad det är värt — inklusive den motinstans
 mätningen hittade och tvingade fram en rättning av (rapportens 4.2).
 Fullständig genomgång med siffror: rapportens avsnitt 7.
 
-## nvcm: en egen kompressor för text och källkod
+## hzcm: en egen kompressor för text och källkod
 
 `xz` var det starkaste som fanns installerat, så hZ fick något starkare.
-`src/nvcm.c` är en kontextblandande kompressor: i stället för att hänvisa
+`src/hzcm.c` är en kontextblandande kompressor: i stället för att hänvisa
 bakåt i en ordbok gissar den **nästa bit**, med åtta modeller samtidigt
 (ordning 0–8, en ordmodell, och en matchmodell som gör ordbokspackarens trick
 som en röst bland andra). Rösterna vägs ihop av en blandare som lär sig vilken
@@ -285,14 +285,14 @@ På kodkorpusen: **7,19 MiB mot xz:s 8,23 MiB — 13 % mindre.**
 Den är inte bättre på allt, och det är hela poängen med att prova i stället
 för att rangordna:
 
-| indata | xz -9e | nvcm | |
+| indata | xz -9e | hzcm | |
 |:--|--:|--:|:--|
 | källkod, 8 MB | 782 876 | **663 744** | −15 % |
 | `seq 1 50000` | **10 160** | 47 548 | +368 % |
 
 En modell som gissar nästa bit ur de föregående byten ser inte att ett tal
 ökar med ett; ordbokspackarens matchningslängd gör det. Därför provar läget
-`liten` nvcm mot xz och zstd på ett stickprov ur varje block och tar den som
+`liten` hzcm mot xz och zstd på ett stickprov ur varje block och tar den som
 faktiskt vinner. Första versionen gjorde inte det, och gjorde ett träd med en
 talkolumn i 8 % större.
 
@@ -322,7 +322,7 @@ kodekerna åt: åtta bitar ur skilda delar har inga upprepningar mellan sig. På
 ett 120 MiB-block ur arkivkorpusen valde provet zstd19 och fick 100,13 MiB,
 medan xz med täckande ordbok gav **91,97 MiB**. I läget `liten` provas därför
 xz på hela blocket när provet valde något annat — men bara när provets
-försprång var tunt (under 8 %), för på text vinner nvcm med tiotals procent
+försprång var tunt (under 8 %), för på text vinner hzcm med tiotals procent
 och vinner också hela blocket: en ovillkorlig verifiering tog enwik8 från 131
 till 259 sekunder utan att spara en byte.
 
@@ -400,7 +400,7 @@ De tre som inte dominerar är de tre där det inte finns något att vinna:
 `gif` och `film` är redan entropikodade (0,02 % respektive 0,00 % att
 hämta), och `enwik8` är en enda textfil där varken dedup, sortering eller
 omvandlingar har något att bidra med — där är hZ 13,8 % mindre men 7 %
-långsammare, och den tiden är nvcm:s pris. **hZ är alltså aldrig påtagligt
+långsammare, och den tiden är hzcm:s pris. **hZ är alltså aldrig påtagligt
 större än det bästa etablerade verktyget, och snabbare på sex av nio.**
 
 Gränsen går inte mellan datatyper utan mellan utnyttjbar struktur och ingen.
@@ -459,8 +459,8 @@ Uppskattningen (omätt, eftersom ändringen inte är gjord) är ett golv kring
 |:--|:--|:--|
 | `snabb` | zstd −3, inga omvandlingar | motsvarar dagens arkivskript (`-1`) |
 | `normal` | omvandlingar på, zstd −19 eller xz efter prov; opaka block avgörs av tvåstegsregeln | `-4` .. `-6` |
-| `liten` | dessutom nvcm på text där den vinner, LZMA med täckande ordbok som kandidat på opaka block, och omprövning av hela blocket när provets försprång var tunt | **standard** |
-| `gpu` | dessutom nvlz (lz77 på grafikkortet) i provet | aldrig — se mätningen nedan |
+| `liten` | dessutom hzcm på text där den vinner, LZMA med täckande ordbok som kandidat på opaka block, och omprövning av hela blocket när provets försprång var tunt | **standard** |
+| `gpu` | dessutom hzlz (lz77 på grafikkortet) i provet | aldrig — se mätningen nedan |
 
 Skillnaden mellan `normal` och `liten` är alltså tid, inte bara kodekval:
 `liten` betalar hela extra packningar för att avgöra frågor som provet inte
@@ -673,7 +673,7 @@ ett återskapningsprov som kräver tillbaka varje byte, rättighet och
 tidsstämpel: [`rapport/bred-provning.md`](rapport/bred-provning.md), även som
 [PDF](rapport/bred-provning.pdf); in English:
 [`broad-evaluation.md`](rapport/broad-evaluation.md) /
-[PDF](rapport/broad-evaluation.pdf). Kortversionen: loggar packas 23,8×, nvcm
+[PDF](rapport/broad-evaluation.pdf). Kortversionen: loggar packas 23,8×, hzcm
 slår varje klassiskt verktyg på båda standardkorpusarna, film går inte att
 packa (och det är rätt svar), och på arkiv av arkiv — där hZ först
 förlorade med 20 % — tog en tvåstegsregel i kodekprovet hem matchen:
@@ -717,15 +717,15 @@ Frågan var om ett GPU-läge gör packningen snabbare. Svaret är **nej på den
 här maskinen** — och det är mätt på fyra nivåer i stället för resonerat, för
 ett nej som bara är ett resonemang går inte att pröva.
 
-Det som byggdes är inte en skiss: `src/nvgpu.c` är en Vulkan-compute-värd med
+Det som byggdes är inte en skiss: `src/hzgpu.c` är en Vulkan-compute-värd med
 tre kärnor (`src/*.comp`), en egen kodek, och ett läge i hZ där kodeken
 får tävla om varje block. Bygg den med `make gpu` (kräver `libvulkan-dev` och
 `glslc`); resten av hZ byggs och fungerar utan den.
 
 ```
-nvgpu enhet     vad enheten klarar      nvgpu matcher FIL   lz77: gpu mot cpu
-nvgpu band      bandbreddstaket         nvgpu prov          testvektorer + gpu==cpu
-nvgpu hasha     blake2b-128 per fil     nvgpu packa|packaupp  kodeken nvlz
+hzgpu enhet     vad enheten klarar      hzgpu matcher FIL   lz77: gpu mot cpu
+hzgpu band      bandbreddstaket         hzgpu prov          testvektorer + gpu==cpu
+hzgpu hasha     blake2b-128 per fil     hzgpu packa|packaupp  kodeken hzlz
 ```
 
 ### 1. Taket: 1.11 gånger
@@ -780,11 +780,11 @@ det är den frågan som kostar tiden i `xz -9e`, `zstd -19` och i zlibs nivå 9
 
 Noll avvikelser över 16,8 miljoner positioner, i alla fyra körningarna.
 
-### 3. Kodeken: nvlz
+### 3. Kodeken: hzlz
 
 `xz`, `zstd` och `zlib` kan inte TA EMOT färdiga matchningar — deras utdata
 måste bli bit för bit vad deras egna sökningar hade gett, annars är de inte
-samma format. Därför fick gpu-matchningen en egen kodek: `nvlz`, där
+samma format. Därför fick gpu-matchningen en egen kodek: `hzlz`, där
 sökningen ligger på gpu:n och tokenvalet och den aritmetiska kodningen på
 cpu:n. **Uppackningen är ren cpu** — ett arkiv ska inte vara gisslan hos en
 grafikdrivrutin.
@@ -793,8 +793,8 @@ Samma 16 MiB-block, alla rundturer kontrollerade:
 
 | kodek | storlek | kvot | packtid | uppacktid |
 |:--|--:|--:|--:|--:|
-| **nvlz (gpu)** | 2 086 209 | x8.04 | 0.83 s | 0.33 s |
-| **nvlz (cpu)** | 2 086 209 | x8.04 | 0.84 s | 0.33 s |
+| **hzlz (gpu)** | 2 086 209 | x8.04 | 0.83 s | 0.33 s |
+| **hzlz (cpu)** | 2 086 209 | x8.04 | 0.84 s | 0.33 s |
 | zstd -3 | 2 203 155 | x7.62 | 0.05 s | 0.02 s |
 | zstd -6 | 2 007 593 | x8.36 | 0.11 s | 0.03 s |
 | zstd -12 | 1 911 072 | x8.78 | 0.49 s | 0.03 s |
@@ -802,15 +802,15 @@ Samma 16 MiB-block, alla rundturer kontrollerade:
 | xz -9e | 1 703 344 | x9.85 | 7.19 s | 0.18 s |
 
 Där tar mätningen död på idén. `zstd -6` ger **bättre** kvot (x8.36 mot
-x8.04) på **8 gånger kortare tid**, och packar upp tio gånger snabbare. Och lägg märke till de två första raderna: nvlz med gpu
-och nvlz med cpu-matchare tar **lika lång tid**. Det är Amdahls lag i klartext
+x8.04) på **8 gånger kortare tid**, och packar upp tio gånger snabbare. Och lägg märke till de två första raderna: hzlz med gpu
+och hzlz med cpu-matchare tar **lika lång tid**. Det är Amdahls lag i klartext
 — gpu:n gör den parallella halvan 2,5 gånger snabbare, men den halvan är en
 fjärdedel av kodekens tid, och entropikodningen som är resten är seriell av
 konstruktion: nästa symbol beror på den förra.
 
 ### 4. Hela arkivet
 
-`läge gpu` är `normal` plus att nvlz får vara med i varje blocks kodekprov.
+`läge gpu` är `normal` plus att hzlz får vara med i varje blocks kodekprov.
 Det provet är nvpacks egen mekanism för att inte anta något, och den
 underkände kodeken av sig själv:
 
@@ -819,7 +819,7 @@ underkände kodeken av sig själv:
 | normal | 8 597 541 byte | 44.7 s | xz9e |
 | gpu | 8 597 837 byte | 44.5 s | xz9e |
 
-Inget block valde nvlz, och tiden är oförändrad. De 296 byte som skiljer är
+Inget block valde hzlz, och tiden är oförändrad. De 296 byte som skiljer är
 inte gpu-lägets kostnad utan brus: två körningar av `--läge normal` i rad på
 samma träd gav 8 597 884 och 8 597 603 byte. Arkivstorleken rör sig några
 hundra byte mellan körningar — värt att veta när man jämför två tal som ligger
@@ -859,13 +859,13 @@ src/cpp/         hz: EN C++-binär — arkivet, kodekarna, gzip-ytan
   huvud.cpp        kommandoraden och underkommandona
   yta.cpp          gzip-ytan: filer, kataloger, rör, slutstatus
   arkiv.cpp        klassning, dedup, sortering, block, register (v2 + läser v1)
-  kodek.cpp        zstd/xz/zlib i process; nvcm och nvlz via arbetare
+  kodek.cpp        zstd/xz/zlib i process; hzcm och hzlz via arbetare
   omvandla.cpp     PNG-receptsökningen och JPEG-delningen
   trad.cpp         trädvandring och metadata
   sjalv.cpp        arbetarprocesser: binären startar sig själv
-src/nvcm.c       kontextblandande kompressor (inlänkad + egen binär)
-src/nvjpg.c      förlustfri JPEG-ompackning (inlänkad + egen binär)
-src/nvgpu.c      GPU-mätinstrumentet (eget program, vulkan)
+src/hzcm.c       kontextblandande kompressor (inlänkad + egen binär)
+src/hzjpg.c      förlustfri JPEG-ompackning (inlänkad + egen binär)
+src/hzgpu.c      GPU-mätinstrumentet (eget program, vulkan)
 src/hz.py       pythonversionen — referens, anropas inte
 korpus/          bygger testkorpusarna som hårdlänkar
 matning/         mätharness och rapportgenerator
@@ -904,13 +904,13 @@ ingenting kopieras. Arkiv från före flaggan läses som träd, vilket de är.
 
 ## Vad som inte fungerar
 
-* **Progressiv JPEG** lämnas rå. nvjpg klarar baseline sekventiell (vilket är
+* **Progressiv JPEG** lämnas rå. hzjpg klarar baseline sekventiell (vilket är
   vad kameror och telefoner producerar); progressiv kräver en annan avkodare.
 * **PNG ur okända deflate-motorer** lämnas rå — Chrome, gnome-screenshot och
   allt som använder zlib-ng eller libdeflate. Täckningen skulle kunna breddas
   genom att binda in flera deflate-implementationer och prova dem i tur och
   ordning.
-* **nvcm är långsam**: runt 1 MB/s. Den väljs bara i läget `liten`, och bara
+* **hzcm är långsam**: runt 1 MB/s. Den väljs bara i läget `liten`, och bara
   för block där provet visar att hon vinner.
 * **Kodekvalet gäller ett helt block.** Ett block med både källkod och en
   talkolumn får en enda kodek. Finare block skulle välja bättre men förlora
@@ -930,7 +930,7 @@ ingenting kopieras. Arkiv från före flaggan läses som träd, vilket de är.
   film kommer alltid att packas som film.
 * **Gpu-läget gör inte packningen snabbare.** Det är byggt och mätt (eget
   avsnitt ovan): grafikkortet vinner 2,5x på matchningssökningen men förlorar
-  på allt annat, och kodeken `nvlz` är sämre än `zstd -6` på både kvot och
+  på allt annat, och kodeken `hzlz` är sämre än `zstd -6` på både kvot och
   tid. Läget finns kvar som mätinstrument.
 * **`.git` är nästa sten att vända på.** Ett packfile är en följd av
   zlib-strömmar, precis som en PNG, och samma receptsökning borde kunna
@@ -958,8 +958,8 @@ varning (2) — skript hänger på den skillnaden.
 
 Är gpu-delen byggd provas också den: att gpu-hashen är bit för bit
 `hashlib.blake2b(digest_size=16)`, att matcharens svar är identiska på gpu och
-cpu, att kodeken `nvlz` klarar text, slump, tomt och data över styckgränsen,
-och — viktigast — att ett nvlz-arkiv går att packa upp **utan
+cpu, att kodeken `hzlz` klarar text, slump, tomt och data över styckgränsen,
+och — viktigast — att ett hzlz-arkiv går att packa upp **utan
 vulkan-drivrutin** (`VK_ICD_FILENAMES=/dev/null`). Saknas gpu-delen hoppas
 avsnittet över utan att räknas som fel.
 

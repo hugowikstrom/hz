@@ -112,7 +112,7 @@ int apply(Flags &o, char shortc, const char *value) {
     case 'L': printf("hz: original code; no terms beyond the source tree's.\n"); exit(0);
     case 'S': o.suffix = value && value[0] == '.' ? value : std::string(".") + (value ? value : ""); break;
     case 'M': o.opts.mode = value ? value : ""; break;
-    case 'K': o.opts.codec = value ? value : ""; break;
+    case 'K': o.opts.codec = canonical_codec(value ? value : ""); break;
     case 'j': o.opts.jobs = value ? atoi(value) : 0; break;
     case 'D': o.opts.dedup = false; break;
     case 'O': o.opts.transform = false; break;

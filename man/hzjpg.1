@@ -1,16 +1,16 @@
-.TH NVJPG 1 "November 2026" "nvjpg 1.0" "User commands"
+.TH HZJPG 1 "November 2026" "hzjpg 1.0" "User commands"
 .SH NAME
-nvjpg \- bit-exact lossless repacking of baseline JPEG
+hzjpg \- bit-exact lossless repacking of baseline JPEG
 .SH SYNOPSIS
-.B nvjpg pack
+.B hzjpg pack
 < image.jpg > image.nvj
 .br
-.B nvjpg unpack
+.B hzjpg unpack
 < image.nvj > image.jpg
 .SH DESCRIPTION
 A JPEG is DCT coefficients entropy-coded with Huffman, and Huffman cannot
 code a symbol in less than one bit.
-.B nvjpg
+.B hzjpg
 decodes the Huffman stream and recodes the SAME coefficients with an
 adaptive arithmetic coder whose contexts are the neighbouring blocks and
 the neighbouring slots. The pixels are never touched: this recodes the
@@ -29,5 +29,8 @@ remain as aliases.
 .SH EXIT STATUS
 0 success, 1 usage error, 2 cannot transform this file (expected for
 progressive JPEG \(em not an error).
+.SH HISTORY
+Born as nvjpg; renamed hzjpg on 2026-11-20. The stream format and its
+magic are unchanged \(em every stream the old tool wrote, this one reads.
 .SH SEE ALSO
 .BR hz (1)

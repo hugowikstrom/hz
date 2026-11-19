@@ -35,19 +35,19 @@ prov=$arbete/bitar; mkdir -p "$prov"
 head -c 3000000 /dev/urandom > "$prov/slump.bin"
 find "$rot/src" -name '*.c' -o -name '*.py' | xargs cat > "$prov/text.txt" 2>/dev/null
 
-if "$rot/src/nvcm" packa < "$prov/text.txt" | "$rot/src/nvcm" packaupp | cmp -s - "$prov/text.txt"
+if "$rot/src/hzcm" packa < "$prov/text.txt" | "$rot/src/hzcm" packaupp | cmp -s - "$prov/text.txt"
 then pass "nvcm: text fram och tillbaka"; else brist "nvcm: text fram och tillbaka"; fi
 
-if "$rot/src/nvcm" packa < "$prov/slump.bin" | "$rot/src/nvcm" packaupp | cmp -s - "$prov/slump.bin"
+if "$rot/src/hzcm" packa < "$prov/slump.bin" | "$rot/src/hzcm" packaupp | cmp -s - "$prov/slump.bin"
 then pass "nvcm: inkomprimerbar slump"; else brist "nvcm: inkomprimerbar slump"; fi
 
 : > "$prov/tom"
-if "$rot/src/nvcm" packa < "$prov/tom" | "$rot/src/nvcm" packaupp | cmp -s - "$prov/tom"
+if "$rot/src/hzcm" packa < "$prov/tom" | "$rot/src/hzcm" packaupp | cmp -s - "$prov/tom"
 then pass "nvcm: tom ström"; else brist "nvcm: tom ström"; fi
 
 jpg="$(find "$rot/korpus/foto" -name '*.jpg' 2>/dev/null | head -1)"
 if [ -n "$jpg" ]; then
-    if "$rot/src/nvjpg" packa < "$jpg" | "$rot/src/nvjpg" packaupp | cmp -s - "$jpg"
+    if "$rot/src/hzjpg" packa < "$jpg" | "$rot/src/hzjpg" packaupp | cmp -s - "$jpg"
     then pass "nvjpg: baseline-jpeg fram och tillbaka"; else brist "nvjpg: baseline-jpeg"; fi
 fi
 
@@ -107,7 +107,7 @@ chmod 700 "$t/tom-katalog"
 # gpu-läget provas bara om gpu-delen är byggd OCH enheten svarar. En maskin
 # utan vulkan ska köra resten av sviten utan att se ett enda fel.
 lagen="snabb normal liten"
-if [ -x "$rot/src/nvgpu" ] && "$rot/src/nvgpu" enhet --tyst >/dev/null 2>&1; then
+if [ -x "$rot/src/hzgpu" ] && "$rot/src/hzgpu" enhet --tyst >/dev/null 2>&1; then
     lagen="$lagen gpu"
 fi
 
@@ -149,18 +149,18 @@ done
 # att ett nvlz-arkiv går att packa upp UTAN gpu — ett arkiv får inte vara
 # gisslan hos en grafikdrivrutin.
 printf '\nGpu-delen\n'
-if [ ! -x "$rot/src/nvgpu" ]; then
-    printf '  --    hoppas över: src/nvgpu är inte byggd (make gpu)\n'
-elif ! "$rot/src/nvgpu" enhet --tyst >/dev/null 2>&1; then
+if [ ! -x "$rot/src/hzgpu" ]; then
+    printf '  --    hoppas över: src/hzgpu är inte byggd (make gpu)\n'
+elif ! "$rot/src/hzgpu" enhet --tyst >/dev/null 2>&1; then
     printf '  --    hoppas över: ingen vulkan-enhet svarar här\n'
 else
-    if "$rot/src/nvgpu" prov --tyst > "$arbete/gpuprov.txt" 2>&1
-    then pass "nvgpu prov: testvektorer, gpu==cpu, matchare==cpu"
-    else brist "nvgpu prov misslyckades"; sed 's/^/        /' "$arbete/gpuprov.txt" | head -8; fi
+    if "$rot/src/hzgpu" prov --tyst > "$arbete/gpuprov.txt" 2>&1
+    then pass "hzgpu prov: testvektorer, gpu==cpu, matchare==cpu"
+    else brist "hzgpu prov misslyckades"; sed 's/^/        /' "$arbete/gpuprov.txt" | head -8; fi
 
     # Hashen mot pythons egen hashlib, på riktiga filer ur src/.
     find "$rot/src" -maxdepth 1 -type f | sort > "$arbete/gpufiler.txt"
-    "$rot/src/nvgpu" hasha --tyst < "$arbete/gpufiler.txt" > "$arbete/gpuhash.txt" 2>/dev/null
+    "$rot/src/hzgpu" hasha --tyst < "$arbete/gpufiler.txt" > "$arbete/gpuhash.txt" 2>/dev/null
     if python3 - "$arbete/gpuhash.txt" <<'PYEOF'
 import hashlib, sys
 fel = 0
@@ -176,8 +176,8 @@ PYEOF
 
     # Kodeken fram och tillbaka på text, slump och tomt.
     for namn in text.txt slump.bin tom; do
-        if "$rot/src/nvgpu" packa --tyst < "$prov/$namn" \
-           | "$rot/src/nvgpu" packaupp | cmp -s - "$prov/$namn"
+        if "$rot/src/hzgpu" packa --tyst < "$prov/$namn" \
+           | "$rot/src/hzgpu" packaupp | cmp -s - "$prov/$namn"
         then pass "nvlz: $namn fram och tillbaka"
         else brist "nvlz: $namn fram och tillbaka"; fi
     done
@@ -187,24 +187,24 @@ PYEOF
     cat "$prov/text.txt" "$prov/text.txt" "$prov/text.txt" "$prov/text.txt" \
         "$prov/text.txt" "$prov/text.txt" > "$arbete/stort.bin" 2>/dev/null
     if [ "$(stat -c%s "$arbete/stort.bin")" -gt 1000 ]; then
-        if "$rot/src/nvgpu" packa --tyst < "$arbete/stort.bin" \
-           | "$rot/src/nvgpu" packaupp | cmp -s - "$arbete/stort.bin"
+        if "$rot/src/hzgpu" packa --tyst < "$arbete/stort.bin" \
+           | "$rot/src/hzgpu" packaupp | cmp -s - "$arbete/stort.bin"
         then pass "nvlz: $(( $(stat -c%s "$arbete/stort.bin") / 1048576 )) MiB över styckgränsen"
         else brist "nvlz: flera stycken"; fi
     fi
 
     # Uppackningen ska klara sig helt utan vulkan. VK_ICD_FILENAMES mot en
     # tom fil gör att lastaren inte hittar någon drivrutin alls.
-    "$rot/src/nvgpu" packa --tyst < "$prov/text.txt" > "$arbete/utan.nvlz"
+    "$rot/src/hzgpu" packa --tyst < "$prov/text.txt" > "$arbete/utan.nvlz"
     if VK_ICD_FILENAMES=/dev/null VK_DRIVER_FILES=/dev/null \
-       "$rot/src/nvgpu" packaupp < "$arbete/utan.nvlz" | cmp -s - "$prov/text.txt"
+       "$rot/src/hzgpu" packaupp < "$arbete/utan.nvlz" | cmp -s - "$prov/text.txt"
     then pass "nvlz: uppackning utan vulkan-drivrutin"
     else brist "nvlz: uppackningen kräver gpu — arkivet blir gisslan"; fi
 
     # Och packningen ska kunna falla tillbaka på cpu med samma format.
     if VK_ICD_FILENAMES=/dev/null VK_DRIVER_FILES=/dev/null \
-       "$rot/src/nvgpu" packa --cpu --tyst < "$prov/text.txt" \
-       | "$rot/src/nvgpu" packaupp | cmp -s - "$prov/text.txt"
+       "$rot/src/hzgpu" packa --cpu --tyst < "$prov/text.txt" \
+       | "$rot/src/hzgpu" packaupp | cmp -s - "$prov/text.txt"
     then pass "nvlz: packning utan gpu (cpu-matchare, samma format)"
     else brist "nvlz: cpu-fallbacket packar inte"; fi
 
@@ -215,7 +215,7 @@ PYEOF
     then pass "nvz --kodek nvlz: arkivet går fram och tillbaka"
     else brist "nvz --kodek nvlz: arkivet går inte fram och tillbaka"
          head -3 "$arbete/fel.txt" | sed 's/^/        /'; fi
-    if "$rot/src/hz" lista "$arbete/nvlz.nv" 2>/dev/null | grep -q nvlz
+    if "$rot/src/hz" lista "$arbete/nvlz.nv" 2>/dev/null | grep -q hzlz
     then pass "nvz lista: blocken redovisas som nvlz"
     else brist "nvz lista: kodeken syns inte i registret"; fi
 fi

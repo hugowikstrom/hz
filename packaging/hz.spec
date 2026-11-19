@@ -33,8 +33,8 @@ make test
 %license LICENSE
 %doc README.md
 %{_bindir}/hz
-%{_bindir}/nvcm
-%{_bindir}/nvjpg
+%{_bindir}/hzcm
+%{_bindir}/hzjpg
 %{_mandir}/man1/hz.1*
-%{_mandir}/man1/nvcm.1*
-%{_mandir}/man1/nvjpg.1*
+%{_mandir}/man1/hzcm.1*
+%{_mandir}/man1/hzjpg.1*

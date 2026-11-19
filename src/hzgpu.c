@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* nvgpu — GPU-läget i nvpack: Vulkan-compute mot den integrerade grafiken.
+/* hzgpu — GPU-läget i nvpack: Vulkan-compute mot den integrerade grafiken.
  *
  * VARFÖR DEN FINNS. Frågan var om ett GPU-läge gör packningen snabbare. Den
  * frågan går inte att svara på med en åsikt: nvpack gör fyra sorters arbete,
@@ -7,11 +7,11 @@
  * och på CPU:n med samma semantik, jämför svaren bit för bit och mäter tiden,
  * så att svaret blir en mätning i stället för ett antagande.
  *
- *   nvgpu enhet            vilken enhet som valdes och vad den klarar
- *   nvgpu band [MiB]       bandbreddstak: GPU-läsning mot CPU-läsning
- *   nvgpu hasha            blake2b-128 per fil (sökvägar på stdin), bitexakt
- *   nvgpu matcher FIL      LZ77-längsta-matchning: GPU mot CPU, bit för bit
- *   nvgpu prov             självprov: kända testvektorer + GPU==CPU
+ *   hzgpu enhet            vilken enhet som valdes och vad den klarar
+ *   hzgpu band [MiB]       bandbreddstak: GPU-läsning mot CPU-läsning
+ *   hzgpu hasha            blake2b-128 per fil (sökvägar på stdin), bitexakt
+ *   hzgpu matcher FIL      LZ77-längsta-matchning: GPU mot CPU, bit för bit
+ *   hzgpu prov             självprov: kända testvektorer + GPU==CPU
  *
  * Flaggor: --cpu (bara CPU-vägen), --tyst, --jobb N (CPU-trådar),
  *          --fonster N, --kedja N (matcherns fönster och kedjetak).
@@ -51,7 +51,7 @@ static int TYST = 0;
 
 static void dö(const char *fmt, ...) {
     va_list ap; va_start(ap, fmt);
-    fputs("nvgpu: ", stderr); vfprintf(stderr, fmt, ap); fputc('\n', stderr);
+    fputs("hzgpu: ", stderr); vfprintf(stderr, fmt, ap); fputc('\n', stderr);
     va_end(ap); exit(2);
 }
 
@@ -203,7 +203,7 @@ static void gpu_öppna(Gpu *g) {
     hitta_spvkatalog(g);
 
     VkApplicationInfo ai = { .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-                             .pApplicationName = "nvgpu",
+                             .pApplicationName = "hzgpu",
                              .apiVersion = VK_API_VERSION_1_3 };
     VkInstanceCreateInfo ci = { .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
                                 .pApplicationInfo = &ai };
@@ -1537,15 +1537,15 @@ static int kmd_packa_upp(void) {
 /* ----------------------------------------------------------------------- */
 
 static void hjälp(void) {
-    puts("nvgpu — gpu-läget i nvpack (vulkan-compute)\n"
+    puts("hzgpu — gpu-läget i nvpack (vulkan-compute)\n"
          "\n"
-         "  nvgpu enhet                 vilken enhet som valdes och vad den klarar\n"
-         "  nvgpu band [MiB]            bandbreddstak: gpu-läsning mot cpu-läsning\n"
-         "  nvgpu hasha < sökvägar      blake2b-128 per fil, bitexakt mot hashlib\n"
-         "  nvgpu matcher FIL           lz77-längsta-matchning: gpu mot cpu, bit för bit\n"
-         "  nvgpu prov                  självprov: kända testvektorer + gpu==cpu\n"
-         "  nvgpu packa < rå > nv       kodeken nvlz: lz77 på gpu, kodning på cpu\n"
-         "  nvgpu packaupp < nv > rå    uppackning (ren cpu, behöver ingen gpu)\n"
+         "  hzgpu enhet                 vilken enhet som valdes och vad den klarar\n"
+         "  hzgpu band [MiB]            bandbreddstak: gpu-läsning mot cpu-läsning\n"
+         "  hzgpu hasha < sökvägar      blake2b-128 per fil, bitexakt mot hashlib\n"
+         "  hzgpu matcher FIL           lz77-längsta-matchning: gpu mot cpu, bit för bit\n"
+         "  hzgpu prov                  självprov: kända testvektorer + gpu==cpu\n"
+         "  hzgpu packa < rå > nv       kodeken nvlz: lz77 på gpu, kodning på cpu\n"
+         "  hzgpu packaupp < nv > rå    uppackning (ren cpu, behöver ingen gpu)\n"
          "\n"
          "flaggor:\n"
          "  --cpu           kör bara cpu-vägen (för jämförelsen)\n"
