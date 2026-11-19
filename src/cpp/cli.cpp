@@ -30,7 +30,11 @@ namespace {
 struct Flags {
     bool d=false,c=false,k=false,f=false,t=false,l=false,r=false,q=false,N=false;
     int v=0;
-    std::string suffix = ".nv";
+    // Default archive suffix. .hz since 2026-11-19; .nv is the old name's
+    // suffix and is accepted everywhere an archive is RECOGNIZED (unpack,
+    // list, test, -r filtering), so existing archives keep working. -S
+    // overrides the suffix that is WRITTEN, as in gzip.
+    std::string suffix = ".hz";
     PackOpts opts;                   // mode defaults to "small" — the smallest archive
 };
 
@@ -80,7 +84,7 @@ void help_surface() {
 "  -l, --list         show what the archives contain\n"
 "  -q, --quiet        say nothing\n"
 "  -r, --recursive    descend into directories, packing each file on its own\n"
-"  -S, --suffix=.SUF  archive suffix (default .nv)\n"
+"  -S, --suffix=.SUF  archive suffix (default .hz; .nv is always read)\n"
 "  -t, --test         verify the archive: unpack and compare to the register\n"
 "  -v, --verbose      say what happens\n"
 "  -1 .. -9           fast .. small: -1..-3 fast, -4..-6 normal, -7..-9 small\n"
@@ -104,7 +108,7 @@ int apply(Flags &o, char shortc, const char *value) {
     case 'r': o.r = true; break;         case 'v': o.v++; break;
     case 'n': o.N = false; break;        case 'N': o.N = true; break;
     case 'h': help_surface(); exit(0);
-    case 'V': printf("hz 2.0 (c++)\n"); exit(0);
+    case 'V': printf("hZ 2.0 (c++)\n"); exit(0);
     case 'L': printf("hz: original code; no terms beyond the source tree's.\n"); exit(0);
     case 'S': o.suffix = value && value[0] == '.' ? value : std::string(".") + (value ? value : ""); break;
     case 'M': o.opts.mode = value ? value : ""; break;
@@ -139,6 +143,12 @@ bool exists(const std::string &p) {
 bool ends_with(const std::string &s, const std::string &suffix) {
     return s.size() >= suffix.size() &&
            s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
+// Recognizes both the current suffix and the legacy .nv, so archives from
+// the nvz era unpack without renaming.
+bool archive_suffix(const Flags &o, const std::string &s) {
+    return ends_with(s, o.suffix) || ends_with(s, ".nv");
 }
 
 bool may_write(const Flags &o, const std::string &target, int *status) {
@@ -198,7 +208,7 @@ void expand(const Flags &o, const std::vector<std::string> &files,
                     std::string s = dir + "/" + nm;
                     if (is_link(s)) continue;
                     if (is_dir(s)) { queue.push_back(s); continue; }
-                    if (ends_with(nm, o.suffix) != want_archives) continue;
+                    if (archive_suffix(o, nm) != want_archives) continue;
                     out.push_back(s);
                 }
             }
@@ -266,8 +276,8 @@ int pack_operand(const Flags &o, const std::string &p) {
         return warn(o, p + " is not a regular file -- skipped");
     if (st.st_nlink > 1 && !(o.f || o.k || o.c))
         return warn(o, p + strf(" has %lu other link(s) -- unchanged", (unsigned long)(st.st_nlink - 1)));
-    if (ends_with(p, o.suffix) && !o.f)
-        return warn(o, p + " already has the suffix " + o.suffix + " -- unchanged");
+    if (archive_suffix(o, p) && !o.f)
+        return warn(o, p + " already has an archive suffix -- unchanged");
     u64 raw = (u64)st.st_size;
     if (o.c) {
         std::string tmpl_s = scratch_template();
@@ -297,12 +307,17 @@ int unpack_operand(const Flags &o, const std::string &p_in) {
     std::string p = p_in;
     struct stat st;
     if (stat(p.c_str(), &st) != 0 || !S_ISREG(st.st_mode)) {
-        std::string with = p + o.suffix;               // `hz -d file` finds file.nv
-        if (exists(p) || stat(with.c_str(), &st) != 0 || !S_ISREG(st.st_mode))
-            return err(p + ": does not exist");
+        // `hz -d file` finds file.hz, and file.nv from the nvz era.
+        std::string with = p + o.suffix;
+        if (exists(p)) return err(p + ": does not exist");
+        if (stat(with.c_str(), &st) != 0 || !S_ISREG(st.st_mode)) {
+            with = p + ".nv";
+            if (stat(with.c_str(), &st) != 0 || !S_ISREG(st.st_mode))
+                return err(p + ": does not exist");
+        }
         p = with;
     }
-    if (!ends_with(p, o.suffix) && !(o.c || o.f))
+    if (!archive_suffix(o, p) && !(o.c || o.f))
         return warn(o, p + ": unknown suffix -- skipped");
     Register reg;
     try { reg = read_register(p); }
@@ -316,6 +331,8 @@ int unpack_operand(const Flags &o, const std::string &p_in) {
             target = p.substr(0, p.find_last_of('/') + 1) + name;
         else if (ends_with(p, o.suffix))
             target = p.substr(0, p.size() - o.suffix.size());
+        else if (ends_with(p, ".nv"))              // the nvz-era suffix
+            target = p.substr(0, p.size() - 3);
         if (target.empty()) return warn(o, p + ": unknown suffix -- skipped");
         if (o.c) {
             std::string tmpl_s = scratch_template();

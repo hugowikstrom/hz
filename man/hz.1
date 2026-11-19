@@ -1,16 +1,16 @@
 .TH HZ 1 "November 2026" "hz 2.0" "User commands"
 .SH NAME
-hz \- content-aware archiver that knows what it is packing
+hz \- (written hZ) content-aware archiver that knows what it is packing
 .SH SYNOPSIS
 .B hz pack
-.I dir archive.nv
+.I dir archive.hz
 .RI [ flags ]
 .br
 .B hz unpack
-.I archive.nv target
+.I archive.hz target
 .br
 .B hz list
-.I archive.nv
+.I archive.hz
 .br
 .B hz test
 .I dir
@@ -19,7 +19,7 @@ hz \- content-aware archiver that knows what it is packing
 .RI [ FLAG ]...
 .RI [ FILE ]...
 .SH DESCRIPTION
-.B hz
+.B hZ
 classifies its content and applies content-specific, lossless transforms —
 deduplication, similarity sorting, PNG unfolding with recipe search,
 lossless JPEG recoding and context-mixing compression — before choosing a
@@ -60,7 +60,7 @@ nvcm.
 .TP
 .BI \-\-mode " fast|normal|small|gpu"
 .B small
-(the default) is the smallest archive hz can make;
+(the default) is the smallest archive hZ can make;
 .B normal
 skips the most expensive re-checks and is the mode that beats the best
 established tool on both size and time on most corpora;
@@ -120,7 +120,7 @@ Without a subcommand,
 .B hz
 behaves like
 .BR gzip :
-\fBhz file\fR replaces the file with \fIfile\fR.nv (the archive inherits
+\fBhz file\fR replaces the file with \fIfile\fR.hz (the archive inherits
 its time and permissions), \fBhz \-d\fR brings it back,
 .B \-c \-k \-l \-t \-r \-S \-f \-v
 and
@@ -139,6 +139,13 @@ the flags
 .BR \-\-utan\-klassning ", " \-\-tyst ;
 and the mode values
 .BR snabb " (fast) and " liten " (small)."
+.SH SUFFIX
+The default archive suffix is
+.B .hz
+since 2026-11-19. The nvz-era suffix
+.B .nv
+is always recognized when reading \(em unpack, list, test and \fB\-r\fR
+filtering \(em so existing archives keep working unrenamed.
 .SH EXIT STATUS
 0 all well, 1 error, 2 warning. One failing operand does not stop the
 rest.

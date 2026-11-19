@@ -1,8 +1,8 @@
-# Packaging hz for a Linux distribution
+# Packaging hZ for a Linux distribution
 
-## What hz is, packaging-wise
+## What hZ is, packaging-wise
 
-hz is a **userspace** archiver — three C/C++ binaries and their man
+hZ is a **userspace** archiver — three C/C++ binaries and their man
 pages. The road into a distribution is an ordinary package (deb/rpm),
 not the kernel tree: nothing here runs in kernel space, and a
 compression tool with half-gigabyte model tables has no business there.
@@ -27,7 +27,7 @@ make test               # self-test against the bundled code corpus
 
 * No network access at build or test time.
 * No bundled copies of libraries: zstd and lzma are linked from the
-  system (`-lzstd -llzma`), the deflate side is hz's own code.
+  system (`-lzstd -llzma`), the deflate side is hZ's own code.
 * Reproducible: the archive format stores mtimes from the input only;
   the binaries embed no timestamps.
 * `make dist` produces `dist/hz-<version>.tar.gz` from `git archive` —
@@ -61,7 +61,7 @@ tarball. Published at <https://nattviken.com/filer/hz/>.
 
 ## Format stability contract
 
-Archives written by any released hz are readable by every later
+Archives written by any released hZ are readable by every later
 release (v1 Python-JSON, v2 and v3 binary registers all still unpack).
 The format strings inside archives are Swedish and frozen — see the
 note at the top of `src/cpp/hz.hpp`. A distribution upgrade never

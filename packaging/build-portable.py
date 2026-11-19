@@ -13,45 +13,45 @@ DIST = ROOT / "dist"
 SRC = (ROOT / "portable" / "hzpy.py").read_bytes()
 LIC = (ROOT / "LICENSE").read_bytes()
 
-README_MAC = f"""hz {V} — portable archiver for macOS
+README_MAC = f"""hZ {V} — portable archiver for macOS
 =====================================
 
 Needs: python3 (macOS: xcode-select --install, or python.org).
 
 Install:   ./install.sh        (puts `hz` in /usr/local/bin if writable,
                                 otherwise ~/.local/bin)
-Or run in place:   ./hz pack <dir> <archive.nv>
+Or run in place:   ./hz pack <dir> <archive.hz>
 
 Usage:
-  hz pack   <dir> <archive.nv>
-  hz unpack <archive.nv> <target-dir>
-  hz list   <archive.nv>
-  hz test   <archive.nv>
+  hz pack   <dir> <archive.hz>
+  hz unpack <archive.hz> <target-dir>
+  hz list   <archive.hz>
+  hz test   <archive.hz>
 
-Archives are ordinary hz v3 archives (codecs ra/xz9e), bit-exact and
+Archives are ordinary hZ v3 archives (codecs ra/xz9e), bit-exact and
 interchangeable with the optimized Linux hz (`--portable` mode there).
 License: GPL-2.0-only, see LICENSE. https://nattviken.com/projekt/hz/
 """
 
-README_WIN = f"""hz {V} — portable archiver for Windows
+README_WIN = f"""hZ {V} — portable archiver for Windows
 =======================================
 
 Needs: Python 3.8+ from python.org or the Microsoft Store.
 
 Install:  right-click install.ps1 -> Run with PowerShell
           (copies hz to %LOCALAPPDATA%\\Programs\\hz and adds it to PATH)
-Or run in place:  hz.cmd pack <dir> <archive.nv>
+Or run in place:  hz.cmd pack <dir> <archive.hz>
 
 Usage:
-  hz pack   <dir> <archive.nv>
-  hz unpack <archive.nv> <target-dir>
-  hz list   <archive.nv>
-  hz test   <archive.nv>
+  hz pack   <dir> <archive.hz>
+  hz unpack <archive.hz> <target-dir>
+  hz list   <archive.hz>
+  hz test   <archive.hz>
 
 Symbolic links need Windows developer mode; otherwise they are skipped
 with a warning (exit status 2), never silently wrong.
 
-Archives are ordinary hz v3 archives (codecs ra/xz9e), bit-exact and
+Archives are ordinary hZ v3 archives (codecs ra/xz9e), bit-exact and
 interchangeable with the optimized Linux hz (`--portable` mode there).
 License: GPL-2.0-only, see LICENSE.txt. https://nattviken.com/projekt/hz/
 """

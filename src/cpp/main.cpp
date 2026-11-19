@@ -2,9 +2,9 @@
 // nvz entry point: subcommand dispatch for pack/unpack/list/test, the
 // hidden worker subcommands, and fallthrough to the gzip surface.
 //
-//   nvz pack    <dir> <archive.nv> [--mode ...] [--codec ...] [-q] [-j N]
-//   nvz unpack  <archive.nv> <target> [-q] [-j N]
-//   nvz list    <archive.nv>
+//   nvz pack    <dir> <archive.hz> [--mode ...] [--codec ...] [-q] [-j N]
+//   nvz unpack  <archive.hz> <target> [-q] [-j N]
+//   nvz list    <archive.hz>
 //   nvz test    <dir>              pack, unpack, compare bit for bit
 //
 // The Swedish subcommand names (packa, packa-upp, lista, prova) are
@@ -40,9 +40,9 @@ void help() {
     printf(
 "usage: hz <command> ...\n"
 "\n"
-"  hz pack    <dir> <archive.nv>    pack a tree\n"
-"  hz unpack  <archive.nv> <target> unpack\n"
-"  hz list    <archive.nv>          show the contents\n"
+"  hz pack    <dir> <archive.hz>    pack a tree\n"
+"  hz unpack  <archive.hz> <target> unpack\n"
+"  hz list    <archive.hz>          show the contents\n"
 "  hz test    <dir>                 pack, unpack, compare bit for bit\n"
 "\n"
 "flags for pack:\n"
@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
         return is_sub(argv[2], "pack", "packa") ? hz_nvjpg_pack() : hz_nvjpg_unpack();
 
     if (cmd == "-h" || cmd == "--help") { help(); return 0; }
-    if (cmd == "-V" || cmd == "--version") { printf("hz 2.0 (c++)\n"); return 0; }
+    if (cmd == "-V" || cmd == "--version") { printf("hZ 2.0 (c++)\n"); return 0; }
 
     // No subcommand: the gzip surface. `nvz file` packs, `nvz -d file.nv`
     // unpacks, and the flags mean what they mean in gzip.

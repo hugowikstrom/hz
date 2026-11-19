@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: GPL-2.0-only
 """hzpy — the portable hz: pure standard-library Python, slow but correct.
 
-    python3 hzpy.py pack   <dir> <archive.nv>
-    python3 hzpy.py unpack <archive.nv> <target-dir>
-    python3 hzpy.py list   <archive.nv>
-    python3 hzpy.py test   <archive.nv>
+    python3 hzpy.py pack   <dir> <archive.hz>
+    python3 hzpy.py unpack <archive.hz> <target-dir>
+    python3 hzpy.py list   <archive.hz>
+    python3 hzpy.py test   <archive.hz>
 
 WHY THIS EXISTS. The real hz is a Linux binary, fully optimized: libzstd
 and liblzma in process, fork-based workers, its own context-mixing codec.

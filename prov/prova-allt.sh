@@ -257,22 +257,22 @@ cp -a "$y/trad" "$y/trad-orig"
 
 # En fil: originalet ska vara borta och arkivet ska ärva tid och rättigheter.
 ( cd "$y" && "$nv" -q ensam.txt )
-if [ ! -e "$y/ensam.txt" ] && [ -f "$y/ensam.txt.nv" ]; then
-    pass "nvz fil: originalet ersatt av fil.nv"
+if [ ! -e "$y/ensam.txt" ] && [ -f "$y/ensam.txt.hz" ]; then
+    pass "nvz fil: originalet ersatt av fil.hz"
 else brist "nvz fil: originalet ersattes inte"; fi
-if [ "$(stat -c '%a %Y' "$y/ensam.txt.nv")" = "$rattigheter" ]; then
+if [ "$(stat -c '%a %Y' "$y/ensam.txt.hz")" = "$rattigheter" ]; then
     pass "nvz fil: arkivet ärvde tid och rättigheter"
 else brist "nvz fil: arkivet fick andra tider än filen"; fi
 
-( cd "$y" && "$nv" -dq ensam.txt.nv )
+( cd "$y" && "$nv" -dq ensam.txt.hz )
 if [ "$(sha256sum "$y/ensam.txt" | cut -d' ' -f1)" = "$sha" ] \
-   && [ "$(stat -c '%a %Y' "$y/ensam.txt")" = "$rattigheter" ] && [ ! -e "$y/ensam.txt.nv" ]; then
+   && [ "$(stat -c '%a %Y' "$y/ensam.txt")" = "$rattigheter" ] && [ ! -e "$y/ensam.txt.hz" ]; then
     pass "nvz -d: bit-exakt tillbaka, arkivet borta"
 else brist "nvz -d: filen kom inte tillbaka oförändrad"; fi
 
 # -c och -k rör inte filen, och strömmen ska gå att packa upp igen.
-( cd "$y" && "$nv" -ckq ensam.txt > "$arbete/via-ut.nv" )
-if [ -f "$y/ensam.txt" ] && "$nv" -dcq "$arbete/via-ut.nv" | cmp -s - "$y/ensam.txt"; then
+( cd "$y" && "$nv" -ckq ensam.txt > "$arbete/via-ut.hz" )
+if [ -f "$y/ensam.txt" ] && "$nv" -dcq "$arbete/via-ut.hz" | cmp -s - "$y/ensam.txt"; then
     pass "-c -k: filen i fred, arkivet till standard ut"
 else brist "-c -k: strömmen eller filen stämmer inte"; fi
 
@@ -283,20 +283,20 @@ else brist "röret gav inte tillbaka samma byte"; fi
 
 # En katalog som operand: ETT arkiv av trädet, och trädet lämnas kvar.
 ( cd "$y" && "$nv" -q trad )
-if [ -f "$y/trad.nv" ] && [ -d "$y/trad" ]; then
+if [ -f "$y/trad.hz" ] && [ -d "$y/trad" ]; then
     pass "katalog: ett arkiv av trädet, källträdet kvar"
 else brist "katalog: fel utfall (arkiv saknas eller trädet raderades)"; fi
-if "$nv" -tq "$y/trad.nv"; then pass "-t: arkivet provas mot registret"
+if "$nv" -tq "$y/trad.hz"; then pass "-t: arkivet provas mot registret"
 else brist "-t: provet underkände ett friskt arkiv"; fi
 rm -rf "$y/trad"
-( cd "$y" && "$nv" -dq trad.nv )
+( cd "$y" && "$nv" -dq trad.hz )
 if diff -rq --no-dereference "$y/trad-orig" "$y/trad" >/dev/null 2>&1; then
     pass "-d på trädarkiv: hela trädet tillbaka"
 else brist "-d på trädarkiv: trädet skiljer sig"; fi
 
 # -r är gzips bokstavliga beteende: en fil i taget, och upprepbart.
 ( cd "$y" && "$nv" -rq trad && "$nv" -rq trad )
-if [ -f "$y/trad/kod.py.nv" ] && [ ! -e "$y/trad/kod.py" ] && [ -L "$y/trad/lank.py" ]; then
+if [ -f "$y/trad/kod.py.hz" ] && [ ! -e "$y/trad/kod.py" ] && [ -L "$y/trad/lank.py" ]; then
     pass "-r: fil för fil, symlänkar lämnade i fred"
 else brist "-r: svepet packade inte som gzip gör"; fi
 ( cd "$y" && "$nv" -rdq trad )
@@ -307,7 +307,14 @@ else brist "-r -d: svepet gav inte tillbaka trädet"; fi
 # Slutstatus: 1 är fel, 2 är varning. Skript hänger på skillnaden.
 "$nv" -q "$arbete/finns-inte-alls" 2>/dev/null; [ "$?" = 1 ] \
     && pass "slutstatus 1 när filen inte finns" || brist "fel slutstatus för saknad fil"
-( cd "$y" && "$nv" -q ensam.txt && "$nv" -kq ensam.txt.nv ) 2>/dev/null; [ "$?" = 2 ] \
+# Arvssuffixet: arkiv från nvz-tiden heter .nv och ska packas upp utan byte.
+cp "$arbete/via-ut.hz" "$y/arv.nv"
+( cd "$y" && "$nv" -dq arv.nv )
+if [ -f "$y/arv" ] && cmp -s "$y/arv" "$y/ensam.txt"; then
+    pass ".nv-arkiv från nvz-tiden packas upp med suffixet klippt"
+else fel ".nv-arvssuffixet"; fi
+
+( cd "$y" && "$nv" -q ensam.txt && "$nv" -kq ensam.txt.hz ) 2>/dev/null; [ "$?" = 2 ] \
     && pass "slutstatus 2 när filen redan är packad" || brist "fel slutstatus för redan packad fil"
 ( cd "$y" && "$nv" -dq trad-orig/kod.py ) 2>/dev/null; [ "$?" = 2 ] \
     && pass "slutstatus 2 vid okänd ändelse" || brist "fel slutstatus för okänd ändelse"
@@ -317,7 +324,7 @@ else brist "-r -d: svepet gav inte tillbaka trädet"; fi
     && pass "tvetydig förkortning avvisas" || brist "tvetydig förkortning godtogs"
 
 # Ett trädarkiv är inte en byteström och ska inte låtsas vara det.
-( cd "$y" && "$nv" -q trad && "$nv" -dcq trad.nv >/dev/null ) 2>/dev/null; [ "$?" = 1 ] \
+( cd "$y" && "$nv" -q trad && "$nv" -dcq trad.hz >/dev/null ) 2>/dev/null; [ "$?" = 1 ] \
     && pass "trädarkiv vägrar skrivas till standard ut" || brist "trädarkiv hälldes ut i en ström"
 
 printf '\n'
