@@ -50,6 +50,15 @@ A starting-point RPM spec is in `packaging/nvz.spec`; the Debian
 equivalent is a stock `debhelper` rules file over the same
 `make install` interface.
 
+## macOS and Windows
+
+`bash packaging/build-portable.sh` builds the portable-edition packages
+into `dist/` — a macOS tarball with installer, a Windows zip with
+`install.ps1`, and a run-anywhere `nvz.pyz` zipapp — deterministically:
+the same commit yields the same bytes, so the published `SHA256SUMS`
+stays true. `packaging/nvz.rb` is a Homebrew formula over the macOS
+tarball. Published at <https://nattviken.com/filer/nvz/>.
+
 ## Format stability contract
 
 Archives written by any released nvz are readable by every later
