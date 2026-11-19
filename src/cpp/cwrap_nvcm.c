@@ -1,9 +1,12 @@
-/* nvcm linked into the nvz binary.
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * nvcm linked into the nvz binary.
  *
- * nvcm.c is a standalone program with a main(). Here main is swapped out
- * and two functions with other names are exposed instead. Everything else
- * in the file is static, so nothing collides with the nvjpg wrapper next
- * door — they are separate translation units. */
+ * nvcm.c is a standalone program with a main(). Its main is renamed away
+ * here and two functions with other names are exposed instead. Everything
+ * else in the file is static, so nothing collides with the nvjpg wrapper
+ * next door — they are separate translation units.
+ */
 #define main nvcm_main_unused
 #include "../nvcm.c"
 #undef main

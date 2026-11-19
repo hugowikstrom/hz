@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-only
+// nvz archive front end: pack/unpack entry points, options, and the
+// single-file (gzip-surface) variants.
 #pragma once
 #include "nvz.hpp"
 
@@ -7,9 +10,9 @@ struct PackOpts {
     std::string mode = "small";     // fast | normal | small | gpu
     bool dedup = true;
     bool transform = true;
-    // Ablation flags: they exist so EACH trick can be isolated on its own
-    // (the report's section on prior work). The sort and the class split
-    // are two distinct effects that would otherwise be measured together.
+    // Ablation flags, so each trick can be measured in isolation (the
+    // report's section on prior work). The sort and the class split are
+    // two distinct effects that would otherwise be measured together.
     bool sort = true;               // place similar files next to each other
     bool class_blocks = true;       // one block per content class
     u64 block_cap = 0;              // 0 = BLOCK_CAP; otherwise raw bytes per block
@@ -30,10 +33,10 @@ void unpack(const std::string &archive, const std::string &target, const PackOpt
 void list_archive(const std::string &archive);
 Register read_register(const std::string &archive);
 
-// The single-file archives behind the gzip surface: one file becomes a
-// "flat" archive — same format, but the register is marked so that
-// unpacking creates no root directory. A large archive pays zero bytes
-// for the capability.
+// Single-file archives behind the gzip surface: one file becomes a "flat"
+// archive — same format, but the register is marked so that unpacking
+// creates no root directory. A large archive pays zero bytes for the
+// capability.
 u64 pack_file(const std::string &file, const std::string &archive, const PackOpts &o,
               const std::string &name = "");
 void unpack_file(const std::string &archive, const std::string &target, const PackOpts &o);
@@ -44,7 +47,7 @@ bool verify(const std::string &archive, const PackOpts &o);  // unpack to scratc
 u64 file_size(const std::string &p);
 int main_gzip(int argc, char **argv);
 
-// Canonicalize a mode name: the Swedish names remain as aliases because
+// Canonicalize a mode name. The Swedish names remain as aliases because
 // published reports, measurement scripts and muscle memory use them.
 // Returns the canonical name, or "" if unknown.
 std::string canonical_mode(const std::string &mode);

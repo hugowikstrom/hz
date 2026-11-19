@@ -1,20 +1,25 @@
-// The archive: blocks plus a register.
+// SPDX-License-Identifier: GPL-2.0-only
+//
+// nvz archive container: pack, unpack, verify, list, and the register
+// readers/writers (v1 JSON, binary v2/v3).
+//
+// Layout:
 //
 //   "NVPACK\x01" | block 0 | block 1 | ... | register | <u64 offset, u64 raw len>
 //
-// The container is the same as the Python implementation's, deliberately:
-// an archive it wrote must unpack with this binary. The difference is the
-// register. Python writes JSON; here a binary v2/v3 is written. The reader
-// recognizes them by the first byte — '{' is v1, "NVZREG2" is v2 and v3.
+// The container matches the Python implementation on purpose: an archive it
+// wrote must unpack with this binary. Only the register differs — Python
+// writes JSON, this writes binary v2/v3. The reader keys on the first byte:
+// '{' is v1, "NVZREG2" is v2 and v3.
 //
-// FORMAT-FROZEN STRINGS (see the language note in nvz.hpp): the block class
+// Format-frozen strings (see the language note in nvz.hpp): block class
 // names written into registers are the original Swedish words and must stay
 // byte-identical forever — "text", "binar" (binary), "opak" (opaque),
 // "png", "jpeg", "png-ra" (unfolded PNG filter rows), "png-rest" (PNG
 // skeleton), "jpeg-kropp" (JPEG body), "jpeg-rest" (JPEG header), and
 // "blandat" (mixed, from --no-classing). Codec names likewise. The probe
-// sentinels ("probe", "probe-cm", "probe-gpu", "opak-eskalera") are never
-// written to disk and are therefore free to change.
+// sentinels ("probe", "probe-cm", "probe-gpu", "opak-eskalera") never reach
+// disk and are free to change.
 #include "archive.hpp"
 #include <set>
 #include "codec.hpp"
@@ -40,9 +45,9 @@ namespace {
 const u8 MAGIC[7] = {'N','V','P','A','C','K',1};
 const char REG2[8] = {'N','V','Z','R','E','G','2','\0'};
 
-// Codec per class and mode. "probe" = the block decides for itself by
-// compressing a sample with each candidate; "probe-cm" lets nvcm compete
-// too. The table is the Python implementation's LÄGEN, verbatim.
+// Codec per class and mode. "probe": the block decides by compressing a
+// sample with each candidate; "probe-cm" adds nvcm as a candidate. The
+// table is the Python implementation's LÄGEN, verbatim.
 std::map<std::string, std::string> mode_codecs(const std::string &mode) {
     if (mode == "fast")
         return {{"text","zstd3"},{"binar","zstd3"},{"png-ra","zstd3"},{"png-rest","zstd3"},
@@ -53,20 +58,21 @@ std::map<std::string, std::string> mode_codecs(const std::string &mode) {
                 {"jpeg-rest","zstd19"},{"jpeg-kropp","ra"},{"jpeg","probe"},{"opak","probe"},
                 {"png","probe"}};
     if (mode == "gpu")
-        // like normal, but nvlz competes for every block. A measurement
-        // instrument: on this machine it never wins a block (see README).
+        // Like normal, but nvlz competes for every block. Measurement
+        // instrument only: on this machine it never wins a block (see
+        // README).
         return {{"text","probe-gpu"},{"binar","probe-gpu"},{"png-ra","probe-gpu"},
                 {"png-rest","probe-gpu"},{"jpeg-rest","probe-gpu"},{"jpeg-kropp","ra"},
                 {"jpeg","probe"},{"opak","probe"},{"png","probe-gpu"}};
-    // small — the default mode: nvcm on everything where it wins the probe.
-    // Unfolded image data (png-ra) is too voluminous for it; that class
-    // probes zstd/xz.
+    // small, the default mode: nvcm wherever it wins the probe. Unfolded
+    // image data (png-ra) is too voluminous for nvcm; that class probes
+    // zstd/xz.
     return {{"text","probe-cm"},{"binar","probe-cm"},{"png-ra","probe"},{"png-rest","probe-cm"},
             {"jpeg-rest","probe-cm"},{"jpeg-kropp","ra"},{"jpeg","probe"},{"opak","probe"},
             {"png","probe"}};
 }
 
-// --- write helpers for the binary register ----------------------------------
+// Read/write helpers for the binary register.
 struct Out {
     Byte d;
     void u8v(u8 v) { d.push_back(v); }
@@ -97,7 +103,7 @@ Byte write_register(const Register &r) {
     u.u32v(r.version);
     u.strv(r.root);
     u.u8v(r.flat ? 1 : 0);
-    // v3: the time as epoch seconds instead of an ISO string (20 bytes -> 8).
+    // v3 stores epoch seconds instead of an ISO string (20 bytes -> 8).
     if (r.version >= 3) u.i64v(r.created_epoch);
     else                u.strv(r.created);
     u.u32v((u32)r.blocks.size());
@@ -106,24 +112,22 @@ Byte write_register(const Register &r) {
         u.u64v(b.off); u.u64v(b.clen); u.u64v(b.raw_len);
     }
     u.u32v((u32)r.objects.size());
-    // THE HASH LENGTH, and why it shrank from 16 bytes to 4.
-    //
-    // The hash in the register has ONE job: `nvz -t` recomputes it from the
-    // unpacked file and compares, so that a mis-assembled archive is
-    // caught. That job does not need 128 bits. Bit errors in a compressed
+    // v3 shrank the hash from 16 bytes to 4. Its only job is `nvz -t`,
+    // which recomputes it from the unpacked file to catch a mis-assembled
+    // archive; that does not need 128 bits. Bit errors in a compressed
     // stream are already caught by the blocks' own checksums (CRC64 in xz,
-    // xxhash in zstd); what the hash must catch is nvz's own assembly
-    // faults — swapped objects, wrong offsets — where any deviation
-    // mismatches with probability 1 - 2^-32.
+    // xxhash in zstd); what remains is nvz's own assembly faults — swapped
+    // objects, wrong offsets — where any deviation mismatches with
+    // probability 1 - 2^-32.
     //
-    // The twelve extra bytes were expensive, because hashes are random and
+    // The twelve extra bytes were expensive because hashes are random and
     // therefore incompressible: on the code corpus (5 898 objects) they
     // were 94 368 bytes of a 239 049-byte register — 1.1 % of the whole
     // archive, more than the entire distance up to `xz -9e`.
     const size_t hl = r.version >= 3 ? 4 : 16;
     for (const Object &o : r.objects) { u.rawv(o.hash, hl); u.u64v(o.size); }
     for (const Object &o : r.objects) { u.u32v(o.blk); u.u64v(o.off); u.u64v(o.len); }
-    // Transformed objects are few; they stand on their own instead of as
+    // Transformed objects are few; store them separately rather than as
     // empty fields on every row.
     u32 ntr = 0;
     for (const Object &o : r.objects) if (!o.transform.empty()) ntr++;
@@ -156,7 +160,7 @@ Register read_register_v2(const u8 *d, size_t n) {
         time_t t = (time_t)r.created_epoch;
         struct tm tm{};
         // localtime, not gmtime: v2 wrote local time as a string, and
-        // `nvz list` should show the same thing for both formats.
+        // `nvz list` must show the same thing for both formats.
         if (localtime_r(&t, &tm)) strftime(buf, sizeof buf, "%Y-%m-%dT%H:%M:%S", &tm);
         r.created = buf;
     } else {
@@ -193,10 +197,10 @@ Register read_register_v2(const u8 *d, size_t n) {
     return r;
 }
 
-// --- v1: the Python implementation's JSON ------------------------------------
-// Block positions are not stored in v1 but derived from the lengths, in
-// exactly the order the objects were appended. Same derivation as in
-// src/nvz.py. The JSON keys are format constants — do not translate.
+// v1: the Python implementation's JSON register. Block positions are not
+// stored in v1 but derived from the lengths, in exactly the order the
+// objects were appended — same derivation as in src/nvz.py. The JSON keys
+// are format constants; do not translate.
 Register read_register_v1(const std::string &text) {
     Jptr j = parse_json(text);
     Register r;
@@ -265,8 +269,8 @@ Register read_register_v1(const std::string &text) {
     return r;
 }
 
-// Runs *n* tasks on *threads* threads; the first exception wins and stops
-// the rest at the next task boundary.
+// Run n tasks on up to the given number of threads. The first exception
+// wins and stops the rest at the next task boundary.
 void parallel_for(size_t n, int threads, const std::function<void(size_t)> &fn) {
     if (n == 0) return;
     int t = std::max(1, std::min<int>(threads, (int)n));
@@ -332,10 +336,10 @@ Register read_register(const std::string &archive) {
         fclose(f); throw Error("could not read the register");
     }
     fclose(f);
-    // Which compressor the register was packed with is decided by the
-    // stream's OWN magic, not by the version field — that sits inside the
-    // register and is unreadable until the register is unpacked. xz starts
-    // with FD 37 7A 58 5A 00.
+    // The register's compressor is identified by the stream's own magic,
+    // not by the version field — that sits inside the register and is
+    // unreadable until the register is unpacked. xz starts with
+    // FD 37 7A 58 5A 00.
     const bool reg_xz = packed.size() >= 6 && packed[0] == 0xFD && packed[1] == 0x37 &&
                         packed[2] == 0x7A && packed[3] == 0x58 && packed[4] == 0x5A &&
                         packed[5] == 0x00;
@@ -409,8 +413,8 @@ u64 pack(const std::string &root_in, const std::string &archive, const PackOpts 
                  file_index.size() - objects.size(), (raw_bytes - unique) / 1048576.0));
 
     // --- 3. sort --------------------------------------------------------------
-    // Class first, then extension, then path: files that resemble each
-    // other land next to each other in the stream.
+    // Class first, then extension, then path: similar files land next to
+    // each other in the stream.
     std::vector<u32> order(objects.size());
     for (u32 i = 0; i < order.size(); i++) order[i] = i;
     if (o.sort)
@@ -418,30 +422,29 @@ u64 pack(const std::string &root_in, const std::string &archive, const PackOpts 
             const Object &x = objects[a], &y = objects[b];
             if (x.cls != y.cls) return x.cls < y.cls;
             if (x.ext != y.ext) return x.ext < y.ext;
-            // LARGE files first within the group, the rest in path order.
+            // Large files first within the group, the rest in path order.
             //
-            // The large file builds the dictionary the smaller, similar
+            // A large file builds the dictionary the smaller, similar
             // files then match into — a known heuristic in solid archives.
             // Measured on zlib-ng/corpora: neuro is two volumes of the same
             // scan, 38 and 19 MiB, and path order (19 before 38) cost 2.0 %.
             //
-            // But the rule must NOT apply to all files. Tried on the whole
-            // group it cost 2.99 % on the code corpus, because a real
-            // project tree already has its similarity gathered per
-            // directory — `.py` sits with `.py` in the same package — and
-            // size order tears that locality apart. The threshold limits
-            // the rule to files that have a mechanism: only a file large
-            // enough to fill a noticeable share of the block's window can
-            // serve as the base for the ones that follow. Hence AN EIGHTH
-            // OF THE BLOCK CAP rather than a fixed number — 24 MiB with
-            // the default 192 MiB cap.
+            // The rule must not apply to all files: on the whole group it
+            // cost 2.99 % on the code corpus, because a real project tree
+            // already has its similarity gathered per directory — `.py`
+            // sits with `.py` in the same package — and size order tears
+            // that locality apart. The threshold limits the rule to files
+            // with a mechanism: only a file large enough to fill a
+            // noticeable share of the block's window can serve as the base
+            // for the ones that follow. Hence an eighth of the block cap
+            // rather than a fixed number — 24 MiB with the default 192 MiB
+            // cap.
             //
-            // The boundary is measured, not guessed. At 4 MiB the gif
-            // corpus's largest file (7.4 MiB) qualified, moved first,
-            // changed the codec probe's sample and cost 0.95 % on that
-            // corpus. At an eighth of the cap it falls outside, while
-            // neuro's 36 MiB volume — the case the rule exists for — stays
-            // inside.
+            // The boundary is measured. At 4 MiB the gif corpus's largest
+            // file (7.4 MiB) qualified, moved first, changed the codec
+            // probe's sample and cost 0.95 % on that corpus. At an eighth
+            // of the cap it falls outside, while neuro's 36 MiB volume —
+            // the case the rule exists for — stays inside.
             const u64 DICT_BUILDER = (o.block_cap ? o.block_cap : BLOCK_CAP) / 8;
             const bool xl = x.size >= DICT_BUILDER, yl = y.size >= DICT_BUILDER;
             if (xl != yl) return xl;                       // large before small
@@ -459,33 +462,32 @@ u64 pack(const std::string &root_in, const std::string &archive, const PackOpts 
     for (Entry &p : entries) if (p.kind == Kind::File && p.obj >= 0) p.obj = renum[p.obj];
 
     // --- 4. transform and place into blocks -----------------------------------
-    // The transforms run in rounds of *jobs* so that the sort order
-    // survives and memory stays bounded: an unfolded PNG can be a hundred
-    // times its file size, and 24 of those in flight is enough to fill the
-    // machine.
+    // Transforms run in rounds of `jobs` so the sort order survives and
+    // memory stays bounded: an unfolded PNG can be a hundred times its file
+    // size, and 24 of those in flight fills the machine.
     struct Building { Block b; Byte raw; };
     std::vector<Building> blocks;
     std::map<std::string, size_t> open;
     // Opaque blocks are not split at 192 MiB. The cap exists for
-    // parallelism, but on opaque data a block split is a compression limit:
+    // parallelism, but on opaque data a split is a compression limit:
     // whatever similarity exists sits between files far apart, and two
     // independent blocks cannot match each other by construction (report
-    // section 4.2: the whole gain lives in the window). zstd is also
+    // section 4.2: the whole gain lives in the window). zstd is
     // multithreaded inside the block, so the parallelism survives anyway.
     const u64 cap = o.block_cap ? o.block_cap : BLOCK_CAP;
-    // UNFOLDED IMAGE DATA is split finer in the fast modes. png-ra is PNG
-    // filter rows, and that class is special in three ways: it is the only
-    // one that inflates (a 431 MiB tree becomes 2 GiB of blocks), its
-    // similarity sits between NEIGHBOURING images rather than hundreds of
-    // megabytes away, and it is therefore the class where splitting costs
-    // the least ratio per second saved. Measured on the PNG corpus:
+    // Unfolded image data is split finer in the fast modes. png-ra is PNG
+    // filter rows, special in three ways: it is the only class that
+    // inflates (a 431 MiB tree becomes 2 GiB of blocks), its similarity
+    // sits between neighbouring images rather than hundreds of megabytes
+    // away, and it is therefore the class where splitting costs the least
+    // ratio per second saved. Measured on the PNG corpus:
     //
     //     192 MiB blocks   261 s   218 956 236 bytes
     //      64 MiB blocks   201 s   221 495 996   (1.30x faster, +1.16 %)
     //      32 MiB blocks   137 s   231 569 236   (1.90x faster, +5.76 %)
     //
     // The best established tool on that corpus is zstd -22 at 257 132 369
-    // bytes in 156 s: at 32 MiB nvz is still 9.9 % smaller AND faster,
+    // bytes in 156 s: at 32 MiB nvz is still 9.9 % smaller and faster,
     // which is what `normal` exists for; `small` keeps the full cap and
     // takes the last 5.8 %. The split also keeps memory down: a 32 MiB
     // block gets a 64 MiB dictionary instead of 256, and several encoders
@@ -498,18 +500,17 @@ u64 pack(const std::string &root_in, const std::string &archive, const PackOpts 
     };
     auto place = [&](const std::string &cls_in, const u8 *d, size_t n) {
         // With --no-classing everything lands in one block stream. Objects
-        // point out their content with (block, offset, length), and
-        // unpacking reads only the block's CODEC and the object's transform
-        // tag — never the class — so the merge is invisible there. Only the
+        // address their content with (block, offset, length), and unpacking
+        // reads only the block's codec and the object's transform tag —
+        // never the class — so the merge is invisible there; only the
         // compressor's window notices. Verified bit-exact with PNG- and
         // JPEG-transformed objects in the same block.
         //
-        // One side effect to know when the flag is used for measurement:
-        // the merged block is named "blandat" (format string), so the
-        // two-step rule for opaque blocks (which keys on the class name
-        // below) never fires. That is intentional — the ablation measures
-        // nvz WITHOUT tricks — but it makes the row unsuitable as a
-        // reference for opaque data.
+        // Side effect when the flag is used for measurement: the merged
+        // block is named "blandat" (format string), so the two-step rule
+        // for opaque blocks (which keys on the class name below) never
+        // fires. Intentional — the ablation measures nvz without tricks —
+        // but it makes the row unsuitable as a reference for opaque data.
         const std::string cls = o.class_blocks ? cls_in : std::string("blandat");
         auto it = open.find(cls);
         if (it == open.end() || blocks[it->second].raw.size() >= cap_for(cls)) {
@@ -517,14 +518,13 @@ u64 pack(const std::string &root_in, const std::string &archive, const PackOpts 
             nb.b.index = (u32)blocks.size();
             nb.b.cls = cls;
             nb.b.codec = codecs.count(cls) ? codecs[cls] : "probe";
-            // Reserve the block's cap up front. Without it the vector grows
-            // in steps, and every step re-copies everything already there —
-            // for a block headed for 192 MiB that is roughly one extra full
-            // copy of the content, plus a memory peak of double during the
-            // reallocation itself. The reservation is virtual memory until
-            // the pages are touched, so a block that stays small costs
-            // nothing. Opaque blocks (16 GiB cap) get a more careful
-            // advance.
+            // Reserve the block's cap up front. Otherwise the vector grows
+            // in steps and each step re-copies everything already there —
+            // for a block headed for 192 MiB roughly one extra full copy,
+            // plus a doubled memory peak during the reallocation. The
+            // reservation is virtual memory until the pages are touched, so
+            // a block that stays small costs nothing. Opaque blocks
+            // (16 GiB cap) get a more careful advance.
             nb.raw.reserve((size_t)std::min<u64>(cap_for(cls), 256u << 20));
             blocks.push_back(std::move(nb));
             open[cls] = blocks.size() - 1;
@@ -579,22 +579,21 @@ u64 pack(const std::string &root_in, const std::string &archive, const PackOpts 
     int per_block = std::max(1, jobs / std::max<int>(1, (int)blocks.size()));
     const int concurrent = std::min<int>((int)blocks.size(), jobs);
 
-    // THE CODEC PROBE RUNS PER CLASS, NOT PER BLOCK.
+    // The codec probe runs per class, not per block.
     //
-    // The probe costs a couple of seconds (zstd19 and xz on 4 MiB), which
-    // was negligible while a tree produced a handful of blocks. Once
-    // unfolded image data started splitting at 32 MiB there were sixty
-    // blocks of the same kind of data, and sixty probes with the same
-    // answer took over half the pack time: the PNG corpus ran in 191
-    // seconds of which roughly 130 were probes.
+    // A probe costs a couple of seconds (zstd19 and xz on 4 MiB) —
+    // negligible while a tree produced a handful of blocks. Once unfolded
+    // image data started splitting at 32 MiB there were sixty blocks of
+    // the same kind of data, and sixty probes with the same answer took
+    // over half the pack time: the PNG corpus ran in 191 seconds of which
+    // roughly 130 were probes.
     //
-    // The class IS nvz's answer to "what is this data" — it is set by the
+    // The class is nvz's answer to "what is this data" — set by the
     // content, and every block in a class carries the same kind of content
     // by construction. So the first block of each class is probed and the
-    // rest inherit the answer. It is a simplification and should be named
-    // as one: two blocks of class `binar` could in principle want different
-    // codecs. The price of finding out would be paying the probe sixty
-    // times.
+    // rest inherit the answer. This is a simplification: two blocks of
+    // class `binar` could in principle want different codecs, but finding
+    // out would mean paying the probe sixty times.
     std::map<std::string, std::pair<std::string, double>> probe_answer;
     {
         std::vector<size_t> firsts;      // one block per class that needs probing
@@ -622,7 +621,7 @@ u64 pack(const std::string &root_in, const std::string &archive, const PackOpts 
     parallel_for(blocks.size(), jobs, [&](size_t k) {
         Building &b = blocks[k];
         std::string cod = o.codec.empty() ? b.b.codec : o.codec;
-        double margin = 1.0;      // 1.0 = no idea (no probe was run)
+        double margin = 1.0;      // 1.0: no probe was run
         if (cod.rfind("probe", 0) == 0) {
             auto it = probe_answer.find(b.b.cls);
             if (it != probe_answer.end()) { cod = it->second.first; margin = it->second.second; }
@@ -630,63 +629,61 @@ u64 pack(const std::string &root_in, const std::string &archive, const PackOpts 
                                     cod == "probe-gpu", per_block,
                                     b.b.cls == "opak", &margin);
         }
-        // Portable archives: only {ra, xz9e, xz9e-j0} may be WRITTEN, since
-        // those are what a pure-stdlib Python reader can decode (the lzma
-        // module). The probe still ran with its full candidate set — that
-        // is fine, it only guides the choice — but anything that is not raw
-        // becomes xz here, with the pb variant settled on a sample. This is
-        // deliberately slower and sometimes larger: portability is the
-        // point, see PackOpts.
+        // Portable archives may only write {ra, xz9e, xz9e-j0}: what a
+        // pure-stdlib Python reader can decode (the lzma module). The probe
+        // still ran with its full candidate set — it only guides the choice
+        // — but anything that is not raw becomes xz here, with the pb
+        // variant settled on a sample. Deliberately slower and sometimes
+        // larger: portability is the point, see PackOpts.
         if (o.portable && cod != "ra" && cod.rfind("xz9e", 0) != 0)
             cod = xz_variant(b.raw.data(), b.raw.size());
-        // nvcm is single-threaded per stream, and that made it the whole
-        // price of mode `small` on text — in BOTH directions. Blocks that
-        // hold at least two 32 MiB shards are upgraded to nvcm-p: the same
-        // model in parallel independent shards (codec.cpp has the measured
-        // trade-off: +1.88 % on enwik8 for 3-4x pack AND unpack). A forced
+        // nvcm is single-threaded per stream, which made it the whole price
+        // of mode `small` on text in both directions. Blocks holding at
+        // least two 32 MiB shards are upgraded to nvcm-p: the same model in
+        // parallel independent shards (codec.cpp has the measured
+        // trade-off: +1.88 % on enwik8 for 3-4x pack and unpack). A forced
         // --codec nvcm is left alone — the forced name is the single-stream
         // minimum and stays what it says.
         if (cod == "nvcm" && o.codec.empty() && b.raw.size() >= (64u << 20))
             cod = "nvcm-p";
         if (cod == "opak-eskalera") {
-            // TWO QUESTIONS, AND THE FIRST ONE MUST BE CHEAP.
+            // Two questions, and the first one must be cheap.
             //
             // The sample cannot tell film from archives-of-archives: both
             // are entropy-coded and locally dense in 4 MiB (report section
             // 4.2). But "does this block have tens of percent to give?"
             // needs no strong compressor — just an honest pass over the
-            // WHOLE block. Measured on the gif corpus:
+            // whole block. Measured on the gif corpus:
             //
             //     zstd -3     14 983 720 bytes      68 ms
             //     zstd -19    14 868 267 bytes   4 388 ms
             //     zstd -22    14 867 123 bytes   3 856 ms
             //
-            // zstd -3 sees 47.8 of the 48 percentage points available, in a
-            // sixtieth of the time — but ONLY when the redundancy is local.
-            // On archives-of-archives it sits hundreds of megabytes apart,
-            // and plain zstd -3 with its megabyte window saw just 2.6 % of
-            // the 33 that existed: the escalation never fired and the
-            // archive grew from 248 to 271 MB. The step is therefore
+            // zstd -3 sees 47.8 of the 48 percentage points available, in
+            // a sixtieth of the time — but only when the redundancy is
+            // local. On archives-of-archives it sits hundreds of megabytes
+            // apart, and plain zstd -3 with its megabyte window saw just
+            // 2.6 % of the 33 that existed: the escalation never fired and
+            // the archive grew from 248 to 271 MB. The step is therefore
             // zstd3L — the same level with long-distance matching, 27.6 %
             // in the same 725 ms.
             cod = "zstd3L";
             packed[k] = compress(cod, b.raw.data(), b.raw.size(), per_block, concurrent);
             if ((double)packed[k].size() < (double)b.raw.size() * 0.90) {
-                // There is similarity between files. Then the window
-                // decides, and zstd -22 with its 2 GiB window is the right
-                // candidate; zstd -19 is dominated and skipped.
+                // Similarity between files exists, so the window decides:
+                // zstd -22 with its 2 GiB window is the right candidate;
+                // zstd -19 is dominated and skipped.
                 Byte costly = compress("zstd22", b.raw.data(), b.raw.size(), per_block, concurrent);
                 if (costly.size() < packed[k].size()) {
                     packed[k] = std::move(costly);
                     cod = "zstd22";
                 }
-                // Only in mode `small`: LZMA with a dictionary covering the
-                // whole block. That candidate is the only one whose window
-                // reaches across an entire opaque block, and it is exactly
-                // the form 7-Zip beat nvz with in section 3.6 of the
-                // report. The step is a full extra compression, worth 2.3 %
-                // on the archive corpus — but only in the mode that exists
-                // to be smallest.
+                // Mode `small` only: LZMA with a dictionary covering the
+                // whole block — the only candidate whose window reaches
+                // across an entire opaque block, and exactly the form 7-Zip
+                // beat nvz with in section 3.6 of the report. The step is a
+                // full extra compression, worth 2.3 % on the archive corpus
+                // — affordable only in the mode that exists to be smallest.
                 if (o.mode == "small" && !o.portable) {
                     std::string variant = xz_variant(b.raw.data(), b.raw.size());
                     Byte lz = compress(variant, b.raw.data(), b.raw.size(), per_block, concurrent);
@@ -696,10 +693,10 @@ u64 pack(const std::string &root_in, const std::string &archive, const PackOpts 
                     }
                 }
             } else {
-                // Film-like: half a percent to collect, not tens. There
-                // zstd -19 is still what takes the per-mille, and it is
-                // both cheaper and better than zstd -22 on such data
-                // (film: 557 863 118 bytes in 56 s vs 557 873 791 in 264 s).
+                // Film-like: half a percent to collect, not tens. zstd -19
+                // takes the per-mille and is both cheaper and better than
+                // zstd -22 on such data (film: 557 863 118 bytes in 56 s
+                // vs 557 873 791 in 264 s).
                 Byte z19 = compress("zstd19", b.raw.data(), b.raw.size(), per_block, concurrent);
                 if (z19.size() < packed[k].size()) {
                     packed[k] = std::move(z19);
@@ -715,39 +712,38 @@ u64 pack(const std::string &root_in, const std::string &archive, const PackOpts 
                 else { packed[k] = std::move(b.raw); cod = "ra"; }
             }
         } else if (cod == "ra") {
-            // Raw is raw: move the block instead of copying it. The film
-            // corpus is 537 MB that was otherwise memcpy'd for nothing,
-            // with a matching memory peak.
+            // Move the block instead of copying it: the film corpus is
+            // 537 MB that was otherwise memcpy'd for nothing, with a
+            // matching memory peak.
             packed[k] = std::move(b.raw);
         } else {
             packed[k] = compress(cod, b.raw.data(), b.raw.size(), per_block, concurrent);
-            // THE SAMPLE'S BLIND SPOT, and why it costs percent.
-            //
-            // The probe takes 4 MiB as eight disjoint pieces of the block —
-            // the right construction for seeing what the data IS, but it
-            // tears apart exactly the long-range structure that separates
-            // the codecs. Eight pieces from different parts of the block
-            // hold no repeats between them, so the probe cannot see what a
+            // The sample has a blind spot that costs percent. The probe
+            // takes 4 MiB as eight disjoint pieces of the block — the right
+            // construction for seeing what the data is, but it tears apart
+            // exactly the long-range structure that separates the codecs.
+            // Eight pieces from different parts of the block hold no
+            // repeats between them, so the probe cannot see what a
             // dictionary covering the whole block can do. Measured on a
             // 120 MiB block from the archive corpus: the probe chose
-            // zstd19 and got 100.13 MiB where xz with a covering
-            // dictionary gave 91.97 — the probe missed 8 percent.
+            // zstd19 and got 100.13 MiB where xz with a covering dictionary
+            // gave 91.97 — the probe missed 8 percent.
             //
-            // A cheap predictive signal was tried and rejected: zstd -3's
-            // ratio on the sample vs the whole block does differ (1.016 vs
-            // 1.025 on two blocks) but ranks them wrongly, so it cannot
-            // replace a measurement.
+            // A cheap predictive signal does not work: zstd -3's ratio on
+            // the sample vs the whole block does differ (1.016 vs 1.025 on
+            // two blocks) but ranks them wrongly, so it cannot replace a
+            // measurement.
             //
-            // Hence: in mode `small`, where size outranks time, the whole
+            // Hence, in mode `small`, where size outranks time, the whole
             // block is re-tried with covering-dictionary xz when the probe
             // chose something else — but only when the probe's lead was
-            // THIN. On text nvcm wins the probe by tens of percent and
+            // thin. On text nvcm wins the probe by tens of percent and
             // wins the whole block too, so unconditional re-checking cost a
             // full xz pass for nothing: enwik8 went from 131 to 259
             // seconds without saving a byte. Where the ranking actually
             // flipped (the archive-corpus block, 8.2 %) the probe's lead
-            // was under one percent. The threshold stands at eight
-            // percent, with margin on the safe side.
+            // was under one percent. The threshold stands at eight percent,
+            // with margin on the safe side.
             if (o.mode == "small" && !o.portable && cod.rfind("xz9e", 0) != 0 && cod != "ra"
                 && margin < 0.08 && b.raw.size() > (16u << 20)) {
                 std::string variant = xz_variant(b.raw.data(), b.raw.size());
@@ -768,7 +764,7 @@ u64 pack(const std::string &root_in, const std::string &archive, const PackOpts 
     // Every write is checked, and an archive that did not finish is removed
     // rather than left behind looking valid. See write_checked in util.cpp:
     // the gzip surface deletes the source after a successful pack, so
-    // "successful" must mean the bytes are on disk.
+    // success must mean the bytes are on disk.
     struct Cleanup {
         const std::string &name; FILE *f; bool done = false;
         ~Cleanup() { if (!done) { if (f) fclose(f); unlink(name.c_str()); } }
@@ -799,8 +795,8 @@ u64 pack(const std::string &root_in, const std::string &archive, const PackOpts 
     // with zstd — 227 048 vs 239 053 bytes on the code corpus. But xz's
     // container is ~60 bytes against zstd's ~13, so on a tiny archive xz
     // loses on its own frame. Both are tried and the smaller wins; the
-    // reader recognizes which by the stream's magic. A portable archive
-    // skips the zstd candidate: its reader may have no zstd at all.
+    // reader keys on the stream's magic. A portable archive skips the zstd
+    // candidate: its reader may have no zstd at all.
     Byte reg_x = compress("xz9e", raw.data(), raw.size(), jobs);
     Byte reg_packed;
     if (o.portable) {
@@ -833,8 +829,8 @@ void unpack(const std::string &archive, const std::string &target, const PackOpt
     auto say = [&](const std::string &s) { if (!o.quiet) { printf("%s\n", s.c_str()); fflush(stdout); } };
     Register reg = read_register(archive);
 
-    // The target directory is created with parents: `nvz unpack arkiv.nv
-    // new/place` must work without anyone building new/place by hand first.
+    // Create the target directory with parents: `nvz unpack arkiv.nv
+    // new/place` must work without new/place existing beforehand.
     std::string built;
     for (size_t i = 0; i <= target.size(); i++) {
         if (i == target.size() || target[i] == '/') {
@@ -847,7 +843,7 @@ void unpack(const std::string &archive, const std::string &target, const PackOpt
     say(strf("  %zu entries, %zu blocks", reg.entries.size(), reg.blocks.size()));
 
     // Each block is decompressed once and kept in memory while the files
-    // are written.
+    // are written out.
     std::vector<Byte> block_data(reg.blocks.size());
     FILE *f = fopen(archive.c_str(), "rb");
     if (!f) throw Error(archive + ": cannot open");
@@ -875,11 +871,11 @@ void unpack(const std::string &archive, const std::string &target, const PackOpt
         if (mkdir(s.c_str(), 0700) != 0 && errno != EEXIST)
             throw Error(s + ": cannot create");
     }
-    // Files are written IN PARALLEL. The reason is not the disks but the
+    // Files are written in parallel — not for the disks but for the
     // transforms: every JPEG is rebuilt by a worker process, and 1 143
     // photos in sequence is two minutes where 24 abreast is eight seconds.
-    // Directories already exist, and no two entries write the same file,
-    // so the only shared state is the blocks — and they are only read.
+    // Directories already exist and no two entries write the same file,
+    // so the only shared state is the blocks, which are only read.
     std::vector<const Entry*> file_entries;
     for (const Entry &q : reg.entries)
         if (q.kind != Kind::Dir) file_entries.push_back(&q);
@@ -900,7 +896,8 @@ void unpack(const std::string &archive, const std::string &target, const PackOpt
             u64 len = ob.len;
             if (!ob.transform.empty()) {
                 // Transformed: stitch the original from rest + body. The
-                // body sits at (blk,off,len), the rest at (rblk,roff,rlen).
+                // body sits at (blk, off, len), the rest at
+                // (rblk, roff, rlen).
                 const Byte &rb = block_data[ob.rblk];
                 if (ob.roff + ob.rlen > rb.size()) throw Error(s + ": the rest lies outside its block");
                 Byte rest(rb.begin() + ob.roff, rb.begin() + ob.roff + ob.rlen);
@@ -910,8 +907,8 @@ void unpack(const std::string &archive, const std::string &target, const PackOpt
                 data = whole.data(); len = whole.size();
             }
             write_file(s, data, len);
-            // The check is not free, but an archive that hands out wrong
-            // bytes without a word is worse than one that is slow.
+            // The check is not free, but an archive that silently hands out
+            // wrong bytes is worse than one that is slow.
             u8 h[16];
             blake2b128(data, len, h);
             if (memcmp(h, ob.hash, reg.hash_len)) throw Error(s + ": content does not match the register");
@@ -931,9 +928,9 @@ void unpack(const std::string &archive, const std::string &target, const PackOpt
 
 u64 pack_file(const std::string &file, const std::string &archive, const PackOpts &o,
               const std::string &name) {
-    // The file is hard-linked into a scratch directory next to the archive
-    // and the tree is packed flat. A link costs nothing; if it fails
-    // (filesystem boundary) the file is copied, and then it may cost.
+    // Hard-link the file into a scratch directory next to the archive and
+    // pack the tree flat. A link costs nothing; if it fails (filesystem
+    // boundary) the file is copied, which may cost.
     std::string dir = archive.substr(0, archive.find_last_of('/') + 1);
     if (dir.empty()) dir = ".";
     char tmpl[4096];
@@ -959,7 +956,7 @@ u64 pack_file(const std::string &file, const std::string &archive, const PackOpt
 }
 
 void unpack_file(const std::string &archive, const std::string &target, const PackOpts &o) {
-    // Unpacked next to the target and MOVED into place: the target either
+    // Unpack next to the target and move into place: the target either
     // does not exist at all or is complete, never half-written.
     std::string dir = target.substr(0, target.find_last_of('/') + 1);
     if (dir.empty()) dir = ".";

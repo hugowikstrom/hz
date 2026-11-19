@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
 # The three flaws from Ted Lyngmo's code review of 2026-11-18 — as
 # regression tests. Every check is GREEN when the flaw is fixed.
 #

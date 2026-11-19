@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0-only
+// Block codecs for nvz: zstd, xz (liblzma), nvcm and nvcm-p wrappers, plus
+// the sampling probe that picks a codec per block.
+
 #include "codec.hpp"
 #include "worker.hpp"
 #include <condition_variable>
@@ -13,27 +17,24 @@ namespace nvz {
 namespace {
 
 // --- zstd -------------------------------------------------------------------
-// The window log is not cosmetics. zstd -19 with the default window gave
-// 365 MiB on the archive corpus where the same codec with --long=27 gave
-// 261. The parameters here therefore match the Python implementation's
-// command lines exactly.
+// The window log decides the result: zstd -19 with the default window gave
+// 365 MiB on the archive corpus vs 261 MiB with --long=27. Parameters match
+// the Python implementation's command lines exactly.
 struct Zparam { int level; int window_log; };
 Zparam zparam(const std::string &k) {
     if (k == "zstd3")  return {3, 0};
-    // zstd3L: level 3 but with LONG-DISTANCE MATCHING (window 2^27 =
-    // 128 MiB). It exists for the cheap step of the two-step rule
-    // (archive.cpp): the question "does this block have tens of percent to
-    // give?" cannot be answered by a one-megabyte window, because on
-    // archives-of-archives the redundancy sits hundreds of megabytes apart.
-    // Measured on the archive corpus (410 833 681 bytes):
+    // zstd3L: level 3 with long-distance matching (window 2^27 = 128 MiB),
+    // for the cheap step of the two-step rule (archive.cpp). A one-megabyte
+    // window cannot detect tens-of-percent redundancy when, as on
+    // archives-of-archives, it sits hundreds of megabytes apart. Measured
+    // on the archive corpus (410 833 681 bytes):
     //
     //     zstd -3                400 328 735 bytes   (2.6 %)     721 ms
     //     zstd -3 --long=27      297 348 678 bytes  (27.6 %)     725 ms
     //     zstd -19 --long=27     274 067 642 bytes  (33.3 %)   48 325 ms
     //
-    // The window is free and the level is expensive. The first measurement
-    // of this step used plain zstd -3, and the escalation never fired: the
-    // archive came out 271 MB instead of 248.
+    // The window is free, the level is expensive. With plain zstd -3 the
+    // escalation never fired: 271 MB archive instead of 248.
     if (k == "zstd3L") return {3, 27};
     if (k == "zstd19") return {19, 27};
     return {22, 31};                       // zstd22
@@ -78,38 +79,37 @@ Byte zstd_decompress(const u8 *d, size_t n, u64 raw_len) {
 }
 
 // --- xz ---------------------------------------------------------------------
-// THE DICTIONARY MUST COVER THE BLOCK. Preset 9e has a fixed 64 MiB
-// dictionary, and nvz's blocks are larger: 192 MiB for ordinary classes and
-// the whole corpus for opaque ones. LZMA then by construction cannot see a
-// repeat further back than 64 MiB, however large the block is — and that is
-// precisely the repeat the similarity sort and the deduplication put there.
-// Measured on 120 MiB from the archive corpus:
+// The dictionary must cover the block. Preset 9e fixes a 64 MiB dictionary
+// while nvz blocks are larger: 192 MiB for ordinary classes, the whole
+// corpus for opaque ones. LZMA cannot see a repeat further back than the
+// dictionary, and long-range repeats are exactly what the similarity sort
+// and the deduplication create. Measured on 120 MiB from the archive
+// corpus:
 //
 //     64 MiB dictionary (preset 9e)     98 700 988 bytes    83 s
 //     dictionary covering the input     96 559 784 bytes    73 s
 //
-// 2.17 % smaller AND 12 % faster: a found match is cheaper than a continued
-// search. It was also the whole distance to 7-Zip's solid 512 MiB form in
-// section 3.6 of the report.
+// 2.17 % smaller and 12 % faster: a found match is cheaper than a continued
+// search. This also closed the whole gap to 7-Zip's solid 512 MiB form
+// (report section 3.6).
 //
-// Two traps. First: `lzma_stream_encoder_mt` with block_size = 0 splits the
-// input into independent pieces of roughly three dictionaries each, and two
-// independent pieces cannot match each other by construction — the
-// multithreading takes back what the dictionary gave. It is therefore used
-// only when the block is larger than the dictionary cap, where the split
-// happens anyway.
+// Two constraints. First: lzma_stream_encoder_mt with block_size = 0 splits
+// the input into independent pieces of roughly three dictionaries each, and
+// independent pieces cannot match each other, which takes back what the
+// dictionary gave. It is used only when the block exceeds the dictionary
+// cap, where the split happens anyway.
 //
 // Second: memory. The encoder needs roughly ten times the dictionary, so
-// four parallel blocks with 512 MiB dictionaries would be twenty gigabytes.
-// The need is therefore asked of liblzma itself and drawn from a gate whose
-// budget comes from the machine's free memory. A lone request always gets
-// through, however large, so the gate can never deadlock.
+// four parallel blocks with 512 MiB dictionaries would need twenty
+// gigabytes. The need is queried from liblzma and drawn from a gate
+// budgeted from the machine's free memory. A lone request always passes,
+// so the gate cannot deadlock.
 //
-// The floor is not preset 9e's 64 MiB but what the block actually needs. A
-// dictionary larger than the block costs memory without being usable, and
-// memory is what decides how many blocks compress at once: a 32 MiB block
-// that received a 64 MiB dictionary tied up 700 MB instead of 370 and
-// halved the parallelism on a machine short of free memory.
+// The floor is what the block needs, not preset 9e's 64 MiB: a dictionary
+// larger than the block costs memory without being usable, and memory
+// decides how many blocks compress at once. A 32 MiB block given a 64 MiB
+// dictionary tied up 700 MB instead of 370 and halved the parallelism on a
+// machine short of free memory.
 constexpr u64 DICT_FLOOR = 4ull << 20;
 constexpr u64 DICT_CAP   = 512ull << 20;
 
@@ -122,13 +122,12 @@ u64 mem_needed(u64 dict) {
     return b == UINT64_MAX ? dict * 11 : b;
 }
 
-// The dictionary should cover the block — but not at the price of the
-// parallelism. Measured on the PNG corpus: nine 192 MiB blocks received a
-// 256 MiB dictionary each, and since the encoder needs about ten times the
-// dictionary, only ONE at a time fit through the memory gate. Pack time went
-// from 268 to 841 seconds for an archive 0.06 % smaller. The dictionary is
-// therefore shrunk until it fits the budget divided by the number of
-// expected concurrent encoders, but never below the floor.
+// Cover the block, but not at the price of parallelism. On the PNG corpus,
+// nine 192 MiB blocks each got a 256 MiB dictionary; at ~10x dictionary per
+// encoder only one at a time fit through the memory gate, and pack time
+// went from 268 to 841 seconds for an archive 0.06 % smaller. Shrink the
+// dictionary until it fits the budget divided by the expected concurrent
+// encoders, but never below the floor.
 u32 dict_for(size_t n, int concurrent, u64 budget) {
     u64 d = DICT_FLOOR;
     while (d < (u64)n && d < DICT_CAP) d <<= 1;
@@ -165,31 +164,29 @@ u64 free_memory() {
     return kb ? kb * 1024 : (2ull << 30);
 }
 
-// The budget is all of free memory, not half: compression memory is
-// transient, and half the budget made the PNG corpus compress two blocks at
-// a time instead of four. The gate remains as a ceiling, so nvz can never
-// ask for more than the machine has — but it should not be stingier than
-// necessary. KNOWN TRADE-OFF (report section 8): this makes dictionary
-// sizes — and with them ratio and pack time — depend on how much memory the
-// machine happens to have free at start-up. Measure on an unloaded machine.
+// Budget all of free memory, not half: compression memory is transient, and
+// half the budget made the PNG corpus compress two blocks at a time instead
+// of four. The gate still caps total use at what the machine has. Known
+// trade-off (report section 8): dictionary sizes — and with them ratio and
+// pack time — depend on free memory at start-up; measure on an unloaded
+// machine.
 const u64 xz_budget = std::max<u64>(1ull << 30, free_memory());
 MemoryGate xz_gate(xz_budget);
 
-// `pb` (position bits) is LZMA's assumption about the WORD LENGTH of the
-// data: preset 9e sets pb = 2, i.e. that position modulo four carries
-// information, which holds for 32-bit numbers and machine code. Entropy-
-// coded data — archives of archives, film, compressed streams — has no such
-// alignment, and there pb = 0 is better. Measured on 120 MiB of archive
-// data, with a covering dictionary:
+// pb (position bits) is LZMA's assumption about the data's word length:
+// preset 9e sets pb = 2, i.e. position modulo four carries information,
+// which holds for 32-bit numbers and machine code. Entropy-coded data —
+// archives of archives, film, compressed streams — has no such alignment,
+// and pb = 0 is better there. Measured on 120 MiB of archive data with a
+// covering dictionary:
 //
 //     pb = 2 (preset 9e)   96 559 784 bytes
 //     pb = 0               96 433 036 bytes     -0.13 %
 //
-// Unlike the dictionary size this is a LOCAL property, so it shows in a
-// sample — which is why the sample decides it (xz_variant). The stream
-// carries its own filter parameters, so the decoder never needs to know
-// which variant was chosen: an archive from before this change decompresses
-// through the same code as one from after.
+// Unlike dictionary size this is a local property and shows in a sample, so
+// the sample decides it (xz_variant). The stream carries its own filter
+// parameters, so the decoder never needs to know which variant was chosen:
+// archives from before and after this change decode through the same code.
 Byte xz_compress(const u8 *d, size_t n, int threads, u32 pb, int concurrent = 1) {
     lzma_options_lzma opt;
     if (lzma_lzma_preset(&opt, 9 | LZMA_PRESET_EXTREME))
@@ -197,7 +194,7 @@ Byte xz_compress(const u8 *d, size_t n, int threads, u32 pb, int concurrent = 1)
     opt.dict_size = dict_for(n, concurrent, xz_budget);
     opt.pb = pb;
     lzma_filter filter[2] = {{LZMA_FILTER_LZMA2, &opt}, {LZMA_VLI_UNKNOWN, nullptr}};
-    const bool covers = (u64)opt.dict_size >= (u64)n;   // dictionary holds the whole block
+    const bool covers = (u64)opt.dict_size >= (u64)n;
 
     lzma_stream s = LZMA_STREAM_INIT;
     lzma_ret r;
@@ -276,12 +273,11 @@ Byte xz_decompress(const u8 *d, size_t n, u64 raw_len) {
 // The code is linked into the binary but runs in a worker process
 // (run_self): a broken stream may kill the worker, never the packer.
 //
-// The gate is budgeted in MEMORY, not in slots. A worker's model tables
-// cost ~550 MB for any input above ~4 MiB (the table size formula caps at
-// 2^24 counters), plus about twice the input for its buffers. The old
-// fixed gate of four underused a 28 GB machine and would overuse a 4 GB
-// one; a budget does the right thing on both, and a lone request always
-// passes so the gate cannot deadlock.
+// The gate is budgeted in memory, not slots. A worker's model tables cost
+// ~550 MB for any input above ~4 MiB (the table size formula caps at 2^24
+// counters), plus about twice the input for buffers. A fixed gate of four
+// underused a 28 GB machine and would overuse a 4 GB one; a budget fits
+// both, and a lone request always passes so the gate cannot deadlock.
 u64 nvcm_mem_needed(size_t n) {
     return (550ull << 20) + 2 * (u64)n + (16ull << 20);
 }
@@ -298,25 +294,25 @@ Byte nvcm_run(const char *cmd, const u8 *d, size_t n) {
 }
 
 // --- nvcm-p: nvcm in parallel shards ------------------------------------------
-// nvcm is single-threaded per stream, and that is the WHOLE price of mode
-// `small` on text: 23 cores watch one core grind at ~1 MB/s, in both
+// nvcm is single-threaded per stream, which is the whole cost of mode
+// `small` on text: 23 cores idle while one grinds at ~1 MB/s, in both
 // directions. nvcm-p splits the block into independent shards, each a
 // complete nvcm stream with a cold model, coded and decoded in parallel.
 //
-// The shard size is measured, not guessed (enwik8, 12 threads):
+// Shard size is measured, not guessed (enwik8, 12 threads):
 //
 //      8 MiB shards   +5.59 % size   15.0 s   (8.5x vs the single stream)
 //     16 MiB shards   +3.48 %        20.7 s   (6.2x)
 //     32 MiB shards   +1.88 %        37.4 s   (3.4x)
 //
-// 32 MiB keeps the loss under two percent while both pack and unpack gain
-// 3-4x — and the unpack gain is what retires the "100x slower to unpack"
-// objection against mode `small`. Anyone who wants the absolute minimum
-// still has the single stream via --codec nvcm.
+// 32 MiB keeps the size loss under two percent while pack and unpack both
+// gain 3-4x; the unpack gain answers the "100x slower to unpack" objection
+// against mode `small`. The absolute minimum is still available as a single
+// stream via --codec nvcm.
 //
 // Container: "NVCMP1" | u32 shard count | u64 raw total | u64 clen per
 // shard | the shards, each an ordinary nvcm stream. Shards are defined by
-// RAW offsets (i*SHARD), so the decoder knows every shard's raw size from
+// raw offsets (i*SHARD), so the decoder knows every shard's raw size from
 // the header alone. The codec name "nvcm-p" is a format string: archives
 // using it need an nvz from 2026-11-19 or later (or any version, if the
 // block was small enough to stay plain "nvcm").
@@ -415,7 +411,7 @@ Byte compress(const std::string &codec, const u8 *d, size_t n, int threads,
 Byte decompress(const std::string &codec, const u8 *d, size_t n, u64 raw_len) {
     if (codec == "ra")   return Byte(d, d + n);
     if (codec.rfind("xz9e", 0) == 0) return xz_decompress(d, n, raw_len);
-    if (codec == "nvcm" || codec == "nvz")   // "nvz" was written during the renaming hours
+    if (codec == "nvcm" || codec == "nvz")   // old archives say "nvz" (pre-rename)
         return nvcm_run("unpack", d, n);
     if (codec == "nvcm-p") return nvcmp_decompress(d, n);
     if (codec == "nvlz") {
@@ -434,9 +430,9 @@ std::string choose_codec(const u8 *d, size_t n, bool with_cm, bool with_gpu, int
     (void)threads;
     if (n == 0) return "ra";
 
-    // The sample is taken at EIGHT spots spread through the block. A block
-    // is sorted by extension, so the first megabytes are a single file type
-    // and say nothing about the rest.
+    // Sample eight spots spread through the block: blocks are sorted by
+    // extension, so the first megabytes are a single file type and say
+    // nothing about the rest.
     Byte probe;
     if (n <= PROBE_BYTES) {
         probe.assign(d, d + n);
@@ -451,18 +447,18 @@ std::string choose_codec(const u8 *d, size_t n, bool with_cm, bool with_gpu, int
     size_t pn = probe.size();
     size_t zb = zstd_compress("zstd19", probe.data(), pn, 1).size();
 
-    // xz on the sample is the probe's most expensive item, and it must not
-    // be paid for nothing. Two cuts, both measured:
+    // xz on the sample is the probe's most expensive item. Two measured
+    // cuts:
     //
-    //   OPAQUE BLOCKS do not ask for xz here. They go to the two-step rule
-    //   (opak-eskalera), which settles the matter on the whole block, so an
-    //   xz pass on the sample is wasted. On the gif corpus it was 4 of 10
-    //   seconds.
+    //   Opaque blocks skip xz here: they go to the two-step rule
+    //   (opak-eskalera), which settles the matter on the whole block, so
+    //   an xz pass on the sample is wasted. On the gif corpus it was 4 of
+    //   10 seconds.
     //
-    //   THE pb VARIANT is decided on a TENTH of the sample. pb is a local
-    //   property — what word length the data has — and it shows in half a
-    //   megabyte as well as in four. Choosing the variant on the full
-    //   sample doubled the probe's cost for an answer that got no better.
+    //   The pb variant is decided on a tenth of the sample. pb is a local
+    //   property — the data's word length — and shows in half a megabyte
+    //   as well as in four; deciding on the full sample doubled the
+    //   probe's cost with no better answer.
     size_t xb = 0;
     bool j0 = false;
     if (!opaque) {
@@ -472,15 +468,14 @@ std::string choose_codec(const u8 *d, size_t n, bool with_cm, bool with_gpu, int
         j0 = b0 < a;
         xb = xz_compress(probe.data(), pn, 1, j0 ? 0 : 2).size();
     }
-    // The reference the expensive codecs must beat. When xz was skipped
-    // (opaque blocks) zstd stands in — spelled out here because the earlier
-    // `std::min(zb, xb)` with xb == 0 silently made the threshold
-    // unbeatable, which happened to be unreachable but was fragile.
+    // Reference the expensive codecs must beat. With xz skipped (opaque
+    // blocks) zstd stands in; spelled out because `std::min(zb, xb)` with
+    // xb == 0 silently made the threshold unbeatable.
     const size_t cheap_ref = xb ? std::min(zb, xb) : zb;
     size_t cb = 0;
     if (with_cm) {
         try { cb = nvcm_run("pack", probe.data(), pn).size(); }
-        catch (...) { cb = 0; }          // if nvcm refuses, a probe simply went missing
+        catch (...) { cb = 0; }          // nvcm failure only loses one candidate
     }
     size_t gb = 0;
     if (with_gpu) {
@@ -504,19 +499,19 @@ std::string choose_codec(const u8 *d, size_t n, bool with_cm, bool with_gpu, int
     // takes them for free.
     if ((double)best > pn * 0.998) return "ra";
     if ((double)best > pn * 0.98)  return "zstd3";
-    // nvcm needs a margin: it is far more expensive than zstd and should
-    // only be chosen when it brings home something real.
+    // nvcm is far more expensive than zstd; require a real margin on the
+    // sample before choosing it.
     if (cb && (double)cb < cheap_ref * 0.98) return "nvcm";
     // nvlz needs a margin for the same reason.
     if (gb && (double)gb < cheap_ref * 0.98) return "nvlz";
-    // OPAQUE YET COMPRESSIBLE is ambiguous in a way the sample cannot
-    // resolve: film and archives-of-archives look the same in 4 MiB — both
-    // entropy-coded and locally dense. The difference only shows when the
-    // WHOLE block is compressed: film's ratio stops at a percent or so,
-    // while between-file similarity in archives yields tens. The probe
-    // therefore answers "escalate": compress the block cheaply for real,
-    // and pay for zstd22 only once the cheap pass has proven there is
-    // something to collect (report section 4.2).
+    // Opaque yet compressible is ambiguous at sample scale: film and
+    // archives-of-archives look the same in 4 MiB — both entropy-coded and
+    // locally dense. Only compressing the whole block separates them:
+    // film's ratio stops at a percent or so, between-file similarity in
+    // archives yields tens. The probe therefore answers "escalate":
+    // compress the block cheaply for real, and pay for zstd22 only once
+    // the cheap pass has proven there is something to collect (report
+    // section 4.2).
     if (opaque) return "opak-eskalera";
     if (!xb || (double)xb >= zb * 0.995) return "zstd19";
     return j0 ? "xz9e-j0" : "xz9e";

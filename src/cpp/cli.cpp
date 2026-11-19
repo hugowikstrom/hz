@@ -1,18 +1,18 @@
-// The gzip surface: nvz without a subcommand behaves like gzip.
+// SPDX-License-Identifier: GPL-2.0-only
+// The gzip surface: flag parsing and operand handling for nvz run without
+// a subcommand.
 //
-// The surface is gzip's because every script, Makefile and habit that
-// already exists speaks it. The promises the test suite holds it to:
+// The surface follows gzip because existing scripts, Makefiles and habits
+// speak it. Contract held by the test suite:
 //
-//   * `nvz file` replaces the file with file.nv, and the archive INHERITS
-//     its time and permissions. `nvz -d` returns exactly the same bytes and
-//     removes the archive. -c and -k touch nothing.
-//   * A directory operand becomes ONE archive of the tree (source tree
-//     kept); with -r each file is packed on its own instead, as gzip
-//     literally does.
-//   * Exit status separates errors (1) from warnings (2). Scripts hang on
-//     that distinction.
-//   * A tree archive refuses to be written to standard out. A thousand
-//     files are not a byte stream.
+//  - `nvz file` replaces the file with file.nv; the archive inherits its
+//    mtime and permissions. `nvz -d` restores the same bytes and removes
+//    the archive. -c and -k touch nothing.
+//  - A directory operand becomes one archive of the tree (source kept);
+//    with -r each file is packed separately, as gzip does.
+//  - Exit status separates errors (1) from warnings (2); scripts rely on
+//    the distinction.
+//  - A tree archive is refused on standard out.
 #include "archive.hpp"
 #include "tree.hpp"
 #include <cerrno>
@@ -40,7 +40,7 @@ int warn(const Flags &o, const std::string &m) {
     return 2;
 }
 
-// The level digits map onto the modes. Unlike gzip the DEFAULT is the
+// Level digits map onto the modes. Unlike gzip the default is the
 // smallest: whoever packs an archive almost always wants it small, and
 // nvz's transforms are expensive once and cheap to unpack.
 const char *level_mode(int n) { return n <= 3 ? "fast" : n <= 6 ? "normal" : "small"; }
@@ -58,7 +58,7 @@ const LongFlag LONG_FLAGS[] = {
     {"no-sort",'s',false},{"no-classing",'C',false},
     {"block-cap",'B',true},{"portable",'P',false},
     // Swedish aliases: published reports, measurement scripts and muscle
-    // memory use these. They are permanent.
+    // memory use these. Permanent; do not remove.
     {"tyst",'q',false},{"läge",'M',true},{"lage",'M',true},{"kodek",'K',true},
     {"jobb",'j',true},{"utan-dedup",'D',false},{"utan-omvandling",'O',false},
     {"utan-sortering",'s',false},{"utan-klassning",'C',false},{"blocktak",'B',true},
@@ -174,10 +174,10 @@ void ratio_line(const Flags &o, const std::string &from, u64 raw, u64 packed,
             replaced ? "replaced with" : "written to", to.c_str());
 }
 
-// With -r a directory is swapped for the files inside it. In that sweep,
-// files with the wrong suffix are skipped WITHOUT a word — an `nvz -r` that
-// barks one line per already-packed file is unusable. Name a file yourself
-// and you get the warning.
+// With -r a directory is swapped for the files inside it. In that sweep
+// files with the wrong suffix are skipped silently: an `nvz -r` that warns
+// once per already-packed file is unusable. Explicitly named files still
+// get the warning.
 void expand(const Flags &o, const std::vector<std::string> &files,
             bool want_archives, std::vector<std::string> &out) {
     for (const std::string &f : files) {
@@ -241,7 +241,7 @@ int pack_operand(const Flags &o, const std::string &p) {
         source = real;
     }
     if (is_dir(source)) {
-        // ONE archive of the tree, and the source tree stays.
+        // One archive of the whole tree; the source tree is kept.
         u64 raw = o.v ? tree_size(source) : 0;
         if (o.c) {
             std::string tmpl_s = scratch_template();
@@ -310,8 +310,7 @@ int unpack_operand(const Flags &o, const std::string &p_in) {
 
     if (reg.flat) {
         std::string name = archived_name(reg);
-        // The target: strip the suffix; with -N use the stored name instead.
-        // (The old code computed the same condition twice — simplified.)
+        // Target: strip the suffix; with -N use the stored name instead.
         std::string target;
         if (o.N && !name.empty())
             target = p.substr(0, p.find_last_of('/') + 1) + name;
@@ -337,9 +336,8 @@ int unpack_operand(const Flags &o, const std::string &p_in) {
         if (!o.k) unlink(p.c_str());
         return 0;
     }
-    // A tree. It cannot be poured into a byte stream, and it should not be
-    // guessed into one either — an archive of a thousand files is not a
-    // file.
+    // A tree archive is not a byte stream and is refused on standard out
+    // rather than guessed into one.
     if (o.c)
         return err(p + ": the archive holds a tree (" + reg.root +
                    "); it cannot be written to standard out");
@@ -371,9 +369,9 @@ int list_operand(const Flags &o, const std::string &p, u64 *sc, u64 *su, int *sn
 }
 
 int test_operand(const Flags &o, const std::string &p) {
-    // gzip names the actual problem for a missing operand; so should we.
-    // Without this, verify() swallowed the "cannot open" into a generic
-    // THE TEST FAILED.
+    // Name the actual problem for a missing operand, as gzip does.
+    // Without this check verify() swallowed the "cannot open" into a
+    // generic test failure.
     if (!exists(p)) return err(p + ": does not exist");
     bool ok;
     try { ok = verify(p, o.opts); }
@@ -451,8 +449,8 @@ int main_gzip(int argc, char **argv) {
             size_t eq = name.find('=');
             if (eq != std::string::npos) { value = name.substr(eq + 1); name = name.substr(0, eq); has_value = true; }
             // Unambiguous abbreviations are accepted; ambiguous ones are
-            // refused. A script that writes --l today could mean four
-            // different things tomorrow.
+            // refused, so a script using a prefix cannot silently change
+            // meaning when a new flag is added.
             std::vector<const LongFlag*> hits;
             for (const LongFlag &lf : LONG_FLAGS) {
                 if (name == lf.name) { hits = {&lf}; break; }
@@ -517,14 +515,14 @@ int main_gzip(int argc, char **argv) {
     std::vector<std::string> all;
     expand(o, files, o.d, all);
     for (const std::string &p : all) {
-        // ONE FAILING OPERAND MUST NOT TAKE THE REST WITH IT. Without this
-        // catch, an exception out of pack_operand escaped through main and
-        // the process died in std::terminate: `nvz a.txt b.txt c.txt` with
+        // One failing operand must not abort the rest. Without this catch
+        // an exception out of pack_operand escaped through main and the
+        // process died in std::terminate: `nvz a.txt b.txt c.txt` with
         // b.txt unreadable gave SIGABRT and a core dump (exit status 134),
         // with a.txt already packed and deleted and c.txt never processed.
-        // The fault came out of Ted Lyngmo's code review on 2026-11-18.
-        // gzip's contract was measured on the same case: a warning, the
-        // rest are packed, exit status 1.
+        // Found in Ted Lyngmo's code review of 2026-11-18. gzip's
+        // contract, measured on the same case: a warning, the rest are
+        // packed, exit status 1.
         int s;
         try { s = o.d ? unpack_operand(o, p) : pack_operand(o, p); }
         catch (const std::exception &e) { s = err(p + ": " + e.what()); }

@@ -1,10 +1,13 @@
+// SPDX-License-Identifier: GPL-2.0-only
+// PNG and JPEG transforms: split a file into rest + body so the body can
+// be compressed in a block of its own kind.
 #pragma once
 #include "nvz.hpp"
 
 namespace nvz {
 
 // A successful transform: the rest (skeleton/header) and the body (raw
-// data/stream), plus the recipe for PNG. Everything is PROVEN reproducible
+// data/stream), plus the recipe for PNG. Everything is proven reproducible
 // before it is returned — the unfold reassembles its own result and
 // compares it against the original.
 struct Unfolded {

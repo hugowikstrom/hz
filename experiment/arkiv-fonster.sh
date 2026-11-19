@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
 # [EN] The hypothesis test behind report section 4.2: block partitioning vs
 # codec choice on the archives-of-archives corpus.
 # NOTE: this older script keeps its Swedish inline comments for now; it is

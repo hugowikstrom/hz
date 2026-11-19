@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
 # The kernel test: the trial Stefan Alfredsson asked for in the public
 # thread on 2026-11-17.
 #

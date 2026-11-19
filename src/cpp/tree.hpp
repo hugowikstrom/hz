@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+// Tree scan, content classification, and metadata restore.
 #pragma once
 #include "nvz.hpp"
 
@@ -8,7 +10,7 @@ namespace nvz {
 // guess; magic bytes are a statement.
 //
 // The returned strings ("text", "binar", "png", "jpeg", "opak") are archive
-// format constants — see the language note in nvz.hpp.
+// format constants — see the frozen-strings list in nvz.hpp.
 std::string classify(const std::string &path, const u8 *head, size_t n);
 
 // Walks the tree once and produces entries in a stable order. The number of

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
 # [EN] The GPU measurement series: bandwidth ceiling, kernel-vs-CPU parity,
 # and the nvlz codec timings behind the README GPU section.
 # NOTE: this older script keeps its Swedish inline comments for now; it is

@@ -1,28 +1,30 @@
-/* nvjpg — bit-exact lossless repacking of baseline JPEG.
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * nvjpg - bit-exact lossless repacking of baseline JPEG.
  *
- *     nvjpg pack   < image.jpg > image.nvj     (exit 2 = cannot, store raw)
+ *     nvjpg pack   < image.jpg > image.nvj     exit 2 = cannot, store raw
  *     nvjpg unpack < image.nvj > image.jpg
- *     (the old names packa|packaupp remain as aliases — nvz calls these)
+ *     (the old names packa|packaupp remain as aliases; nvz runs nvjpg as a
+ *     worker process)
  *
- * WHY. A JPEG is DCT coefficients entropy-coded with Huffman according to a
- * table that sits in the file. Huffman cannot code a symbol in less than
- * one bit, and it knows nothing about the block next door looking almost
- * the same. The coefficients themselves are strongly patterned: how many
- * are nonzero in a block is almost fully predicted by the two neighbouring
- * blocks, and how large a coefficient is can be guessed from the same
- * coefficient in the blocks to the left and above.
+ * A JPEG is DCT coefficients Huffman-coded with tables carried in the
+ * file. Huffman spends at least one bit per symbol and ignores the
+ * neighbouring blocks, yet the coefficients are strongly patterned: a
+ * block's nonzero count is almost fully predicted by the two neighbouring
+ * blocks, and a coefficient's magnitude by the same coefficient in the
+ * blocks to the left and above.
  *
  * nvjpg decodes the Huffman stream into coefficients and recodes them with
- * an ADAPTIVE ARITHMETIC CODER that has exactly those contexts. The pixels
- * are never touched — this is not a recoding of the image, it is a
- * recoding of the entropy layer. The same coefficients encode back through
- * the file's own Huffman tables, and exactly the same bytes appear again.
+ * an adaptive arithmetic coder over exactly those contexts. The pixels are
+ * never touched; only the entropy layer is recoded. Unpacking encodes the
+ * same coefficients back through the file's own Huffman tables and
+ * reproduces exactly the original bytes.
  *
- * THE PROOF IS IN THE PACKING. Before anything is written out, the packer
- * re-encodes the coefficients to Huffman and compares with the original's
- * bytes. If anything differs it exits with status 2 and the archive stores
- * the file raw. An archiver may have a transform it cannot do; it must
- * never BELIEVE it did one it could not.
+ * Before anything is written out, the packer re-encodes the coefficients
+ * to Huffman and compares with the original's bytes. Any mismatch exits
+ * with status 2 and the archive stores the file raw: an archiver may have
+ * a transform it cannot do, but it must never assume one worked that did
+ * not.
  *
  * Support: baseline sequential (SOF0/SOF1), one or more components,
  * arbitrary subsampling, restart markers. Progressive JPEG (SOF2) and
@@ -60,10 +62,12 @@ static uint8_t *read_all(FILE *f, size_t *n) {
     *n = len; return d;
 }
 
-/* ------------------------------------------------- the arithmetic coder --- */
-/* Binary range coder in the LZMA style: 11-bit probabilities, adaptation
- * with shift 5. It is small, fast and above all exactly symmetric — the
- * decoder makes the same updates in the same order as the encoder. */
+/* ----------------------------------------------------- arithmetic coder -- */
+/*
+ * Binary range coder in the LZMA style: 11-bit probabilities, adaptation
+ * shift 5. Small, fast and exactly symmetric: the decoder makes the same
+ * updates in the same order as the encoder.
+ */
 
 #define PBITS 11
 #define PINIT  (1 << (PBITS - 1))
@@ -80,16 +84,20 @@ static uint8_t *read_all(FILE *f, size_t *n) {
 #define PSHIFT 5
 #endif
 
-/* A probability kept at two rates. The fast one catches that statistics
- * change from image area to image area, the slow one remembers the whole
- * image, and the average beats either alone. The same blend is done in both
- * directions, so encoder and decoder cannot drift apart. */
+/*
+ * A probability kept at two rates: the fast one tracks statistics that
+ * shift from image area to image area, the slow one remembers the whole
+ * image, and the average beats either alone. The same blend runs in both
+ * directions, so encoder and decoder cannot drift apart.
+ */
 #if BLEND == 2
-/* The rate falls with the number of observations: the first bits in a
+/*
+ * The rate falls with the number of observations: the first bits in a
  * context move the estimate far, later bits only polish. That gives both a
- * fast start and a stable end state — what two fixed rates tried to do, but
- * without the slow one dragging the average toward 50 % through the whole
- * image. */
+ * fast start and a stable end state - what the two fixed rates aimed for,
+ * but without the slow one dragging the average toward 50 % through the
+ * whole image.
+ */
 #ifndef FINAL_RATE
 #define FINAL_RATE 5    /* the rate levels off here; higher = longer memory */
 #endif
@@ -181,9 +189,10 @@ static uint32_t dec_direct(Decoder *a, int bits) {
     return v;
 }
 
-/* Tree: codes a `bits`-bit number through a binary tree where every node
- * has its own probability. Gives context-sensitive coding of small
- * integers. */
+/*
+ * Tree coding: a `bits`-bit number through a binary tree where every node
+ * has its own probability; context-sensitive coding of small integers.
+ */
 static void enc_tree(Encoder *k, Prob *p, int bits, uint32_t v) {
     uint32_t m = 1;
     for (int i = bits - 1; i >= 0; i--) {
@@ -231,8 +240,10 @@ static void build_huff(Huff *h) {
     int sizes[257]; int n = 0;
     for (int l = 1; l <= 16; l++) for (int i = 0; i < h->bits[l]; i++) sizes[n++] = l;
     sizes[n] = 0;
-    /* The RE-ENCODING table is indexed by the symbol value, not by its
-     * position in vals[] — that is what encode_huffman() holds in its hand. */
+    /*
+     * The re-encoding table is indexed by the symbol value, not by its
+     * position in vals[]: encode_huffman() looks symbols up by value.
+     */
     int si = sizes[0], i = 0; code = 0;
     memset(h->code, 0, sizeof h->code); memset(h->size, 0, sizeof h->size);
     while (sizes[i]) {
@@ -378,8 +389,10 @@ static void allocate(Image *b) {
     }
 }
 
-/* Decodes the whole scan into coefficient planes. Returns the last entropy
- * byte. */
+/*
+ * Decode the whole scan into coefficient planes. Returns the offset where
+ * the entropy data ends.
+ */
 static size_t decode_scan(Image *b, const uint8_t *d, size_t n) {
     BitReader r = { d, b->scan_start, n, 0, 0, 0 };
     int pred[4] = {0, 0, 0, 0};
@@ -387,8 +400,10 @@ static size_t decode_scan(Image *b, const uint8_t *d, size_t n) {
     for (int my = 0; my < b->mcuy; my++)
         for (int mx = 0; mx < b->mcux; mx++) {
             if (b->dri && to_restart == 0) {
-                /* restart marker: the bit buffer empties and the DC
-                 * prediction resets */
+                /*
+                 * Restart marker: the bit buffer empties and the DC
+                 * prediction resets.
+                 */
                 r.n = 0;
                 while (r.pos + 1 < n && !(d[r.pos] == 0xFF && d[r.pos+1] >= 0xD0 && d[r.pos+1] <= 0xD7)) r.pos++;
                 r.pos += 2;
@@ -424,8 +439,7 @@ static size_t decode_scan(Image *b, const uint8_t *d, size_t n) {
     return p;
 }
 
-/* Encodes the coefficients back to Huffman — the same bytes as the
- * original. */
+/* Encode the coefficients back to Huffman: the same bytes as the original. */
 static Buf encode_huffman(Image *b) {
     BitWriter w = { {NULL, 0, 0}, 0, 0 };
     int pred[4] = {0, 0, 0, 0};
@@ -477,28 +491,27 @@ static Buf encode_huffman(Image *b) {
  * The contexts are chosen by what actually predicts the next number. Three
  * neighbourhoods are used, and they are different things:
  *
- *   THE BLOCKS LEFT AND ABOVE  say how busy this part of the image is. The
- *      number of nonzero coefficients in a block is predicted almost
- *      entirely by the counts in the two neighbouring blocks — smooth sky
- *      next to smooth sky.
+ *   blocks left and above: how busy this part of the image is. The number
+ *   of nonzero coefficients in a block is predicted almost entirely by the
+ *   counts in the two neighbouring blocks - smooth sky next to smooth sky.
  *
- *   THE SAME SLOT IN THE NEIGHBOURS  says how large this particular
- *      frequency tends to be around here. A vertical edge pattern persists
- *      into the block next door.
+ *   the same slot in the neighbours: how large this particular frequency
+ *   tends to be around here. A vertical edge pattern persists into the
+ *   block next door.
  *
- *   THE SLOTS LEFT AND ABOVE IN THE SAME BLOCK  say where in the block the
- *      energy sits. They are already coded when we arrive: the zigzag path
- *      always visits (r-1,c) and (r,c-1) before (r,c).
+ *   the slots left and above in the same block: where in the block the
+ *   energy sits. Both are already coded on arrival: the zigzag path always
+ *   visits (r-1,c) and (r,c-1) before (r,c).
  *
  * DC is not coded the way JPEG does it (difference against the previous
- * block in scan order) but against the mean of the blocks left and above.
- * An image is read row by row, but it RESEMBLES itself in two directions,
- * and at the end of a row the previous block in scan order neighbours the
+ * block in scan order) but against the mean of the blocks left and above:
+ * an image is read row by row but resembles itself in two directions, and
+ * at the end of a row the previous block in scan order neighbours the
  * wrong edge of the image.
  *
- * Luma and chroma are kept apart because their statistics are entirely
- * different. The mantissa's lowest bits are coded directly: they are in
- * practice random, and a model on them costs more than it gives.
+ * Luma and chroma are kept apart because their statistics differ entirely.
+ * The mantissa's lowest bits are coded directly: they are in practice
+ * random, and a model on them costs more than it gives.
  */
 #ifndef KB
 #define KB 16   /* zigzag buckets */
@@ -576,8 +589,10 @@ static int count_nnz(const int16_t *blk) {
     return n;
 }
 
-/* The mantissa: the top bits below the leading one are modeled, the rest
- * pass straight through. The same split in both directions. */
+/*
+ * Mantissa: the top bits below the leading one are modeled, the rest pass
+ * straight through. The same split in both directions.
+ */
 #ifndef MODELED
 #define MODELED 3
 #endif
@@ -601,9 +616,11 @@ static void code_mantissa(Encoder *k, Decoder *a, Prob *p, int encode, int e, in
     }
 }
 
-/* One function handles both encoding and decoding, steered by `encode`.
- * Deliberate: the model CANNOT fall out of step between the two directions
- * if there is only one description of it. */
+/*
+ * One function handles both encoding and decoding, steered by `encode`.
+ * Deliberate: with only one description of the model, the two directions
+ * cannot fall out of step.
+ */
 static void walk(Image *b, Model *m, Encoder *k, Decoder *a, int encode) {
     for (int c = 0; c < b->nk; c++) {
         int ck = c == 0 ? 0 : 1;
@@ -652,9 +669,10 @@ static void walk(Image *b, Model *m, Encoder *k, Decoder *a, int encode) {
 #endif
                 for (int kk = 1; kk < 64 && remaining > 0; kk++) {
                     int z = ZIGZAG[kk], r = z >> 3, s = z & 7;
-                    /* the neighbours' magnitude: two slots in the same
-                     * block, plus the same slot in the blocks left and
-                     * above */
+                    /*
+                     * Neighbour magnitude: two slots in the same block,
+                     * plus the same slot in the blocks left and above.
+                     */
                     int gm = (s ? absi(blk[z - 1]) : 0) + (r ? absi(blk[z - 8]) : 0);
 #if NEIGHBOURS >= 2
                     if (r && s) gm += (absi(blk[z - 9]) + 1) >> 1;      /* diagonal */
@@ -663,10 +681,12 @@ static void walk(Image *b, Model *m, Encoder *k, Decoder *a, int encode) {
                     if (s > 1) gm += (absi(blk[z - 2]) + 1) >> 1;
                     if (r > 1) gm += (absi(blk[z - 16]) + 1) >> 1;
 #endif
-                    /* The neighbour block is weighed by direction: the top
-                     * row of a block is horizontal frequencies and
-                     * continues down from the block ABOVE, the left column
-                     * likewise sideways. */
+                    /*
+                     * The neighbour block is weighed by direction: the top
+                     * row of a block holds horizontal frequencies and
+                     * continues down from the block above, the left column
+                     * likewise sideways.
+                     */
                     int gr = (r == 0) ? (above ? absi(above[z]) : 0)
                            : (s == 0) ? (left ? absi(left[z]) : 0)
                            : (((left ? absi(left[z]) : 0) + (above ? absi(above[z]) : 0) + 1) >> 1);
@@ -678,8 +698,10 @@ static void walk(Image *b, Model *m, Encoder *k, Decoder *a, int encode) {
                     int cm = bucket_mag(gm), ckk = bucket_k(kk);
                     int cnq = remaining > NB - 1 ? NB - 1 : remaining;
                     int nonzero;
-                    /* If no more slots remain than nonzeros, the answer is
-                     * given and must not cost a single bit. */
+                    /*
+                     * When no more slots remain than nonzeros, the answer
+                     * is forced and must not cost a single bit.
+                     */
                     int forced = (64 - kk <= remaining);
                     if (encode) {
                         nonzero = blk[z] != 0;
@@ -716,7 +738,7 @@ static int pack_main(void) {
     allocate(&b);
     size_t end = decode_scan(&b, d, n);
 
-    /* The proof: encode back to Huffman and compare. */
+    /* Verify before trusting the transform: encode back to Huffman and compare. */
     Buf again = encode_huffman(&b);
     size_t orig_len = end - b.scan_start;
     int last_literal = 0;

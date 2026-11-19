@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
 # Summerar nvjpg-storleken över ett fast urval. Används för modelltrimning.
 set -u
 in=0; ut=0; n=0

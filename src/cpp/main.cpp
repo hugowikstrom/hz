@@ -1,20 +1,23 @@
-// nvz — the command line.
+// SPDX-License-Identifier: GPL-2.0-only
+// nvz entry point: subcommand dispatch for pack/unpack/list/test, the
+// hidden worker subcommands, and fallthrough to the gzip surface.
 //
 //   nvz pack    <dir> <archive.nv> [--mode ...] [--codec ...] [-q] [-j N]
 //   nvz unpack  <archive.nv> <target> [-q] [-j N]
 //   nvz list    <archive.nv>
 //   nvz test    <dir>              pack, unpack, compare bit for bit
 //
-// The Swedish subcommand names (packa, packa-upp, lista, prova) remain as
+// The Swedish subcommand names (packa, packa-upp, lista, prova) are
 // permanent aliases: published reports, measurement scripts and muscle
 // memory use them.
 //
-// The default mode is SMALL: whoever packs an archive almost always wants
-// it small, and nvz's transforms are expensive once and cheap to unpack.
+// The default mode is "small": whoever packs an archive almost always
+// wants it small, and nvz's transforms are expensive once and cheap to
+// unpack.
 //
-// The hidden subcommands `nvcm pack|unpack` and `nvjpg pack|unpack` are the
-// workers: nvz starts itself with them (see worker.cpp). They exist for
-// machines, not people, and therefore do not appear in the help.
+// The hidden subcommands `nvcm pack|unpack` and `nvjpg pack|unpack` are
+// worker entry points: nvz starts itself with them (see worker.cpp). They
+// exist for machines and are left out of the help text.
 #include "archive.hpp"
 #include "tree.hpp"
 #include <csignal>
@@ -70,11 +73,10 @@ int roundtrip_test(const std::string &dir, const nvz::PackOpts &o) {
         nvz::pack(dir, ark, o);
         mkdir(up.c_str(), 0700);
         nvz::unpack(ark, up, o);
-        // The comparison is done by the unpack itself: every file is
-        // checked against its blake2b in the register before it is
-        // accepted. If we got here the content is proven. What remains is
-        // that the tree is complete, and that is covered by the entry count
-        // having matched.
+        // The unpack itself does the comparison: every file is checked
+        // against its blake2b in the register before it is accepted, so
+        // reaching this point proves the content. Tree completeness is
+        // covered by the entry count having matched.
         printf("Test ok: every file identical bit for bit.\n");
     } catch (const std::exception &e) {
         fprintf(stderr, "nvz: %s\n", e.what());
@@ -92,13 +94,13 @@ bool is_sub(const char *a, const char *en, const char *sv) {
 }  // namespace
 
 int main(int argc, char **argv) {
-    // SIGXFSZ IS IGNORED ON PURPOSE. The signal arrives when a write blows
-    // past RLIMIT_FSIZE, and the default action kills the process — gzip
-    // dies that way with status 153. No cleanup runs, and a truncated
-    // archive that looks valid stays behind. Ignored instead, the write
-    // gets EFBIG, the checks in write_checked catch it, the half archive is
-    // removed and the exit status is 1 — nvz's own convention for errors.
-    // A deliberate deviation from gzip, and the only one on the error path.
+    // SIGXFSZ is ignored on purpose. The signal arrives when a write
+    // exceeds RLIMIT_FSIZE, and the default action kills the process —
+    // gzip dies that way with status 153: no cleanup runs and a truncated
+    // archive that looks valid stays behind. Ignored, the write gets
+    // EFBIG, write_checked catches it, the half archive is removed and the
+    // exit status is 1, nvz's convention for errors. A deliberate
+    // deviation from gzip, the only one on the error path.
     signal(SIGXFSZ, SIG_IGN);
     if (argc < 2) return nvz::main_gzip(argc, argv);
     std::string cmd = argv[1];

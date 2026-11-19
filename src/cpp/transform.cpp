@@ -1,9 +1,8 @@
-// The PNG and JPEG transforms. Ported line by line from src/png.py and
-// src/jpeg.py — the comments there explain why; here is only how.
-//
-// The one thing that is NOT a port is how nvjpg is invoked: Python ran the
-// src/nvjpg binary, here the same code is linked into our own binary and
-// run through a worker process (see worker.cpp).
+// SPDX-License-Identifier: GPL-2.0-only
+// PNG and JPEG transforms, ported line by line from src/png.py and
+// src/jpeg.py (the rationale lives there). One departure: nvjpg is linked
+// in and run via a worker process (worker.cpp), not as the src/nvjpg binary.
+
 #include "transform.hpp"
 #include "worker.hpp"
 #include <zlib.h>
@@ -127,21 +126,17 @@ Byte redeflate(const Byte &raw, const std::array<int,4> &r) {
     return out;
 }
 
-// THE DEFLATE ENGINE'S FINGERPRINT, and why it is needed.
-//
-// The recipe is four zlib parameters, and it rests on an assumption that
-// does not hold: that those four determine the output stream. They do not —
-// the output depends on the IMPLEMENTATION. zlib and zlib-ng produce
+// Deflate engine fingerprint. Four zlib parameters do not determine the
+// output stream — the implementation does: zlib and zlib-ng produce
 // different bytes for the same parameters, and zlib-ng is the default libz
-// on a growing number of distributions. Ted Lyngmo demonstrated it in a
-// code review on 2026-11-18: an archive packed against system zlib could
-// not be unpacked against zlib-ng.
+// on a growing number of distributions. Shown in Ted Lyngmo's code review
+// of 2026-11-18: an archive packed against system zlib could not be
+// unpacked against zlib-ng.
 //
-// The fingerprint is behavioral, not a version string: a fixed probe string
-// is deflated with fixed parameters and the crc32 of the output is the
+// The fingerprint is behavioral, not a version string: a fixed probe is
+// deflated with fixed parameters and the crc32 of the output is the
 // fingerprint. Two libraries that produce the same bytes are
-// interchangeable regardless of what they call themselves, and that is
-// exactly the property that matters here.
+// interchangeable regardless of name, which is the property that matters.
 std::string engine_fingerprint() {
     static const std::string fp = [] {
         Byte probe;
@@ -244,15 +239,14 @@ std::optional<Unfolded> png_unfold(const Byte &b, double inflation_cap) {
 
 namespace {
 
-// Assembles the PNG from skeleton and stream, and VERIFIES every IDAT chunk
-// against the skeleton's own CRC32 before accepting it.
+// Assembles the PNG from skeleton and stream, verifying every IDAT chunk
+// against the skeleton's stored CRC32 before accepting it.
 //
-// The verification is not caution but necessity. The old code copied the
-// skeleton's CRC bytes straight into the output, so a stream of the right
-// LENGTH but the wrong bytes — exactly what a different deflate engine can
-// produce — would have become a PNG with wrong image data and a CRC that
-// looks correct. Silent corruption is the one outcome a packer must never
-// have, and it is what used to be here. The same case is now a refusal.
+// The check is required: copying the skeleton's CRC bytes straight into the
+// output, as the code once did, turns a stream of the right length but
+// wrong bytes — exactly what a different deflate engine produces — into a
+// PNG with wrong image data and a seemingly valid CRC. That case must be a
+// refusal, not silent corruption.
 std::optional<Byte> assemble(const Byte &skeleton, const Byte &stream) {
     Byte out(skeleton.begin(), skeleton.begin() + std::min<size_t>(8, skeleton.size()));
     size_t i = 8, j = 0, n = skeleton.size();
@@ -297,14 +291,13 @@ Byte png_rebuild(const Byte &skeleton, const Byte &raw, const std::string &recip
     const std::array<int,4> r = parse_recipe(recipe);
     if (auto out = assemble(skeleton, redeflate(raw, r))) return *out;
 
-    // The recipe did not reproduce the stream. This machine's deflate
-    // engine is therefore not the one that packed the archive — but the
-    // parameters in the recipe are a property of the FILE, not the engine,
-    // so another combination may happen to give the same bytes here. The
-    // search is cheap compared to the alternative (an archive that cannot
-    // be unpacked) and runs only on the failure path. The window size is
-    // not varied: it is stated in the PNG's own zlib header and is the same
-    // on every engine.
+    // The recipe did not reproduce the stream, so this machine's deflate
+    // engine is not the one that packed the archive. The recipe parameters
+    // are a property of the file, not the engine, so another combination
+    // may give the same bytes here; the search is cheap next to an archive
+    // that cannot be unpacked and runs only on the failure path. The
+    // window size is not varied: the PNG's own zlib header states it, and
+    // it is the same on every engine.
     for (int level = 9; level >= 1; level--)
         for (int mem : {r[2], 9, 8, 7, 6, 5, 4, 3, 2, 1})
             for (int strat : {r[3], 0, 1, 2, 3, 4}) {

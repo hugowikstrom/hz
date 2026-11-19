@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0-only
 # nvz has been C++ since 2026-11-16: ONE binary with nvcm and nvjpg linked
 # in and libzstd/liblzma/libz in process. The retired Python implementation
 # stays in the tree as the v1 format reference (src/nvz.py) but is built by
@@ -97,6 +98,15 @@ pdf: rapport/nvz-rapport.pdf
 
 rapport/nvz-rapport.pdf: rapport/bygg-tryck.py $(wildcard resultat/*.json)
 	bash rapport/bygg-pdf.sh
+
+# Release tarball from git, the artifact a distribution package builds from.
+# git archive guarantees the tarball holds exactly what is committed.
+VERSION ?= 2.0
+dist:
+	mkdir -p dist
+	git archive --format=tar.gz --prefix=nvz-$(VERSION)/ \
+	    -o dist/nvz-$(VERSION).tar.gz HEAD
+	@ls -l dist/nvz-$(VERSION).tar.gz
 
 clean:
 	rm -f src/nvjpg src/nvcm src/nvgpu src/nvz src/cpp/*.o src/cpp/*.d $(SPV)

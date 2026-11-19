@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-only
+// Tree walking and content classification: scan a directory into Entry
+// records, classify file heads, restore metadata on unpack.
 #include "tree.hpp"
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -31,9 +34,9 @@ std::string classify(const std::string &path, const u8 *head, size_t n) {
     std::string e = extension_of(path);
     if (OPAQUE_EXTS.count(e)) return "opak";
     if (TEXT_EXTS.count(e)) return "text";
-    // Unknown extension: fewer than one byte in twenty outside the printable
-    // range is enough to call something text. Text gains from sitting next
-    // to text.
+    // Unknown extension: fewer than one byte in twenty outside the
+    // printable range classifies as text. Text compresses better next to
+    // text.
     size_t probe = std::min<size_t>(n, 4096), odd = 0;
     for (size_t i = 0; i < probe; i++) {
         u8 b = head[i];
@@ -47,8 +50,8 @@ std::vector<Entry> scan_tree(const std::string &root, size_t *skipped) {
     std::vector<Entry> entries;
     *skipped = 0;
 
-    // Breadth first, with directories in sorted order: the same order every
-    // time gives the same archive every time.
+    // Breadth first with directories sorted: a deterministic walk order
+    // gives a reproducible archive.
     std::vector<std::string> queue = {""};
     while (!queue.empty()) {
         std::string rel = queue.front();
@@ -80,8 +83,8 @@ std::vector<Entry> scan_tree(const std::string &root, size_t *skipped) {
             if (lstat(f.c_str(), &s2) != 0) continue;
             i64 mt = (i64)s2.st_mtim.tv_sec * 1000000000 + s2.st_mtim.tv_nsec;
             if (S_ISLNK(s2.st_mode)) {
-                // A symlink TO A DIRECTORY must be caught here. Testing for
-                // directories first makes it vanish silently from the archive
+                // A symlink to a directory must be caught here: testing
+                // for directories first drops it silently from the archive
                 // — the fault the test suite found in the Python version.
                 char buf[4096];
                 ssize_t l = readlink(f.c_str(), buf, sizeof buf - 1);
@@ -112,7 +115,7 @@ void set_metadata(const std::string &path, u32 mode, i64 mtime_ns, bool is_link)
         utimensat(AT_FDCWD, path.c_str(), times, AT_SYMLINK_NOFOLLOW);
         return;
     }
-    if (chmod(path.c_str(), mode) != 0) { /* permissions are a wish */ }
+    if (chmod(path.c_str(), mode) != 0) { /* chmod is best effort */ }
     utimensat(AT_FDCWD, path.c_str(), times, 0);
 }
 

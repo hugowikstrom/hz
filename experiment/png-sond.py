@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
 """Sond: gar PNG:ers IDAT-zlibstrom att ateskapa bit-exakt med zlib?"""
 import sys, zlib, struct, pathlib, collections
 

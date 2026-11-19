@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
 # Renderar tryckversionen till PDF och kontrollerar resultatet.
 #
 #   bash rapport/bygg-pdf.sh

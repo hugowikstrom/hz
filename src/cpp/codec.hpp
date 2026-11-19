@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+// Block codecs: compression, decompression and codec selection.
 #pragma once
 #include "nvz.hpp"
 
@@ -5,10 +7,10 @@ namespace nvz {
 
 // Codec names are archive format constants, shared with the Python-era
 // archives so a register means the same thing in both: ra, zstd3, zstd3L,
-// zstd19, zstd22, xz9e, xz9e-j0, nvcm, nvlz. The difference from the Python
-// implementation is that THE LIBRARIES — libzstd and liblzma — are called in
-// process; Python started the zstd and xz programs, which cost a process per
-// block and forced data through pipes.
+// zstd19, zstd22, xz9e, xz9e-j0, nvcm, nvlz. Unlike the Python
+// implementation, the libraries — libzstd and liblzma — are called in
+// process; Python started the zstd and xz programs, which cost a process
+// per block and forced data through pipes.
 //
 // `concurrent` = how many blocks are expected to be compressing at once. It
 // governs how large a dictionary xz may take: a dictionary that does not fit
@@ -25,7 +27,7 @@ std::string xz_variant(const u8 *d, size_t n);
 // Same sample (8 spots, 4 MiB total) and same thresholds as the Python
 // implementation.
 //
-// The last parameter answers a second question: HOW SURE was the choice? It
+// The last parameter answers a second question: how sure was the choice? It
 // is set to the winner's margin against the xz candidate on the sample. A
 // thin lead means the ranking can flip when the whole block is compressed
 // (see the re-check in archive.cpp).

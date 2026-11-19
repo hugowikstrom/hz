@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
 # [EN] Codec-level measurements on the standard corpora (Silesia, enwik8),
 # single-threaded, against published literature numbers.
 # NOTE: this older script keeps its Swedish inline comments for now; it is

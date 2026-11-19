@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
 # When is the similarity sort worth something, and when is it worth zero?
 #
 # The ablation in experiment/ablation.sh measures the sort at ±0 on the

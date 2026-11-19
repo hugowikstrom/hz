@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
 # The ablation: how much comes from EACH trick on its own?
 #
 # The question came from Stefan Alfredsson in the public thread on

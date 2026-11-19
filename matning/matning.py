@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
 # [EN] The measurement harness: runs each packer over a corpus, times pack
 # and unpack, verifies the round trip, and updates resultat/<corpus>.json.
 # Fingerprints the corpus before and after each run — the corpora are

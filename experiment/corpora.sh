@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
 # zlib-ng/corpora: a test on data somebody else chose.
 #
 # The suggestion came from Jonas Danielsson in the public thread on

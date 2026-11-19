@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
 """nvzpy — the portable nvz: pure standard-library Python, slow but correct.
 
     python3 nvzpy.py pack   <dir> <archive.nv>

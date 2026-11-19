@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
 """Gör rapport/bred-provning.md till en PDF.
 
     python3 rapport/bred-provning-pdf.py

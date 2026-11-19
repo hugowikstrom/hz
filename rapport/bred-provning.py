@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
 """Fyller tabellerna i rapport/bred-provning.md ur resultat/*.json.
 
     python3 rapport/bred-provning.py

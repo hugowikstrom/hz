@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
 # Packs and unpacks EVERY jpeg in a directory and demands identical bytes.
 set -u
 root="${1:?directory}"

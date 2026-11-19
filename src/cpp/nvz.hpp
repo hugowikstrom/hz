@@ -1,21 +1,24 @@
-// nvz — content-aware archiver, the C++ implementation.
+// SPDX-License-Identifier: GPL-2.0-only
+// nvz — content-aware archiver, C++ implementation.
+// Core types and small helpers shared by every other translation unit.
 //
-// This file holds the types and small helpers everything else rests on.
-// Everything else — codecs, classification, the tree walk, the PNG recipe,
-// the archive itself — lives in its own file and knows only what is here.
+// Codecs, classification, the tree walk, the PNG recipe and the archive
+// itself each live in their own file and depend only on what is here.
 //
-// The retired Python implementation (src/nvz.py) remains in the tree as the
-// v1 format reference. It is the oracle: the test suite packs the same tree
-// with both and demands the same bytes back. That is why the field names
-// here deliberately mirror the ones there.
+// The retired Python implementation (src/nvz.py) stays in the tree as the
+// v1 format reference and as the test oracle: the suite packs the same
+// tree with both and demands identical bytes. The field names here mirror
+// the Python ones for that reason.
 //
-// LANGUAGE NOTE. The source was translated from Swedish to English on
-// 2026-11-19. Strings that are part of the ARCHIVE FORMAT kept their
-// original Swedish spellings, because millions of bytes of existing
-// archives contain them: block class names ("text", "binar", "opak",
-// "png-ra", "png-rest", "jpeg-kropp", "jpeg-rest", "blandat"), codec names
-// ("ra", "zstd3", ...), the v1 JSON register keys, and the magic numbers.
-// They are data, not prose — do not translate them.
+// Frozen format strings (Swedish) — written into archives; translating
+// them breaks compatibility (millions of bytes of existing archives
+// contain them):
+//   block class names: "text", "binar", "opak", "png-ra", "png-rest",
+//                      "jpeg-kropp", "jpeg-rest", "blandat"
+//   codec names:       "ra", "zstd3", ...
+//   plus the v1 JSON register keys and the magic numbers.
+// The source was translated from Swedish to English on 2026-11-19; these
+// strings are data, not prose — do not translate them.
 #pragma once
 #include <cstdint>
 #include <cstdio>
@@ -32,12 +35,12 @@ using u32 = uint32_t; using u64 = uint64_t;
 using i64 = int64_t;
 using Byte = std::vector<u8>;
 
-// An error that should reach the user as a message, not as a stack dump.
+// Error meant to reach the user as a message, not a stack dump.
 struct Error : std::runtime_error {
     explicit Error(const std::string &m) : std::runtime_error(m) {}
 };
 
-// --- entry kinds in the tree ------------------------------------------------
+// Entry kinds in the tree.
 enum class Kind : u8 { Dir = 'd', File = 'f', Link = 'l' };
 
 struct Entry {
@@ -50,8 +53,8 @@ struct Entry {
     i64 obj = -1;         // object number (files), -1 = none
 };
 
-// --- object: one unique file body -------------------------------------------
-// Several entries may point at the same object; that is the deduplication.
+// Object: one unique file body. Several entries may point at the same
+// object; that is the deduplication.
 struct Object {
     u8 hash[16]{};        // blake2b-128 of the original content
     u64 size = 0;         // raw size
@@ -70,7 +73,7 @@ struct Object {
 
 struct Block {
     u32 index = 0;
-    std::string cls;      // format string — see the language note above
+    std::string cls;      // format string — see the frozen-strings list above
     std::string codec;    // format string
     u64 off = 0, clen = 0, raw_len = 0;
 };
@@ -84,7 +87,7 @@ struct Register {
     std::vector<Object> objects;
     std::vector<Entry> entries;
     // v1 (Python/JSON) carries only 8 hash bytes per object — that register
-    // stored the first 16 HEX DIGITS. v2 carries all 16 bytes, v3 carries 4
+    // stored the first 16 hex digits. v2 carries all 16 bytes, v3 carries 4
     // (enough to catch mis-assembly; bit errors are caught by the block
     // checksums). The unpack-time check compares as many bytes as the
     // register actually has.
@@ -92,7 +95,7 @@ struct Register {
     i64 created_epoch = 0;   // v3: creation time as epoch seconds
 };
 
-// --- small helpers ----------------------------------------------------------
+// Small helpers.
 std::string lower(std::string s);
 std::string extension_of(const std::string &path);   // ".PNG" -> ".png"
 std::string hex(const u8 *d, size_t n);
@@ -105,11 +108,11 @@ void write_file(const std::string &path, const u8 *d, size_t n);
 void write_checked(FILE *f, const void *d, size_t n, const std::string &what);
 void close_checked(FILE *f, const std::string &what, bool sync);
 
-// The directory for scratch files: $TMPDIR if set, else /tmp. An archive
-// larger than /tmp is a real thing, and gzip honors TMPDIR too.
+// Scratch-file directory: $TMPDIR if set, else /tmp. Archives larger than
+// /tmp do occur, and gzip honors TMPDIR too.
 std::string temp_dir();
 
-// Formatted std::string without the iostream dance.
+// printf-style formatting into a std::string.
 std::string strf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
 }  // namespace nvz

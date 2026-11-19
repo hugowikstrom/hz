@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-only
+// Worker processes: run code from this binary, or a sibling binary, in a
+// separate process so its failures stay its own.
 #pragma once
 #include "nvz.hpp"
 

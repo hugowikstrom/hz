@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
 # [EN] Reconstruction proof: a full fingerprint — SHA-256, mode, mtime in
 # nanoseconds, link target, entry kind — before packing and after
 # unpacking, for every entry, plus a check that the register entry count

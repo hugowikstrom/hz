@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
 """Builds the result tables from resultat/*.json.
 
 Numbers copied by hand go wrong sooner or later — usually when something is

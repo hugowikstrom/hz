@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
 """Var går gränsen för när PNG-utveckling lönar sig?
 
 Hypotes: det avgörande talet är UPPBLÅSNINGEN — hur många gånger större den

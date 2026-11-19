@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
 """Bygger återskapningsprotokollet som rapport ur resultat/protokoll/.
 
     python3 rapport/protokoll-rapport.py     # skriver rapport/aterskapningsprotokoll.md

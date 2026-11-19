@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
 """Randomized test: builds random trees, packs, unpacks, demands identity.
 
 Why this exists beyond prova-allt.sh: that suite tests the edge cases

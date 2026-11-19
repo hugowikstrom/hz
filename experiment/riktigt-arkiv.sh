@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
 # [EN] The reality check: nvz against the live 2.9 GB archive this project
 # was started for.
 # NOTE: this older script keeps its Swedish inline comments for now; it is

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
 # Bygger nvjpg med givna modellval och mäter på samma urval.
 set -u
 for val in "$@"; do

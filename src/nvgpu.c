@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /* nvgpu — GPU-läget i nvpack: Vulkan-compute mot den integrerade grafiken.
  *
  * VARFÖR DEN FINNS. Frågan var om ett GPU-läge gör packningen snabbare. Den

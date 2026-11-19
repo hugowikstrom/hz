@@ -1,41 +1,35 @@
-/* nvcm — context-mixing compressor for text and source code.
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * nvcm - context-mixing compressor for text and source code.
  *
- *     nvcm [flags] [file ...]        (gzip syntax, see man nvcm)
- *     nvcm pack|unpack < in > out    (the worker path, called by nvz;
- *                                     the old names packa|packaupp remain)
+ *     nvcm [flags] [file ...]        gzip-style CLI (see man nvcm)
+ *     nvcm pack|unpack < in > out    worker path; nvz runs nvcm as a worker
+ *                                    process (the old names packa|packaupp
+ *                                    remain as aliases)
  *
- * WHY. xz and zstd are DICTIONARY compressors: they find an earlier
- * occurrence of the same byte sequence and write "same as 4 kB back,
- * 19 bytes". An excellent idea for repeats, but it has a floor. Every
- * reference costs bits even when the next character was completely
- * predictable — and the letter after "func" in a js file, or the spaces
- * after a newline in indented code, ARE completely predictable.
+ * Dictionary compressors (xz, zstd) pay bits for every back-reference even
+ * when the next byte is fully determined by context (the letter after
+ * "func" in a js file, the indent after a newline). nvcm instead predicts
+ * the next bit with several models voting at once:
  *
- * nvcm instead guesses the next BIT, with several models at once:
+ *   orders 0-8   what follows the last 0, 1, 2, 3, 4, 6 and 8 bytes; short
+ *                orders learn fast, long ones become sharp
+ *   word         what follows the word begun so far, regardless of what
+ *                preceded it ("funct" -> "function" wherever it appears)
+ *   match        continue the way an earlier occurrence of the same
+ *                6 bytes did; the dictionary trick cast as one vote among
+ *                others, with no forced per-hit reference cost
  *
- *   ORDERS 0–8    what tends to follow the last 0, 1, 2, 3, 4, 6 and 8
- *                 bytes. Short orders learn fast, long ones become sharp;
- *                 the mixer decides whom to believe.
- *   WORD          what tends to follow the word begun so far, regardless of
- *                 what stood before it. Catches that "funct" becomes
- *                 "function" wherever it appears.
- *   MATCH         if the same 6 bytes were seen before: continue the way it
- *                 did then. That is the dictionary compressor's trick, cast
- *                 as one vote among others — long repeats still go fast but
- *                 no expensive reference is forced per hit.
+ * A mixer learns per context which models to believe, and two adaptive
+ * probability maps refine the mix before the arithmetic coder. No single
+ * model needs to be right.
  *
- * The votes are weighed by a small mixer that learns, as it goes, which
- * models tend to be right for this particular kind of data, and the result
- * is polished by two adaptive probability maps before it reaches the
- * arithmetic coder. No single model needs to be right: it is enough that
- * the mixer learns which one is.
- *
- * The price is speed. nvcm packs at a few MB/s where zstd does hundreds.
- * nvz therefore picks it only for blocks where it actually wins, and only
- * when the archive should be small rather than fast.
+ * The price is speed: nvcm packs at a few MB/s where zstd does hundreds.
+ * nvz picks it only for blocks where it actually wins, and only when the
+ * archive should be small rather than fast.
  *
  * Decoding is mirrored encoding: the same models, the same updates, in the
- * same order. That is why one function serves both directions.
+ * same order, which is why one function serves both directions.
  */
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -54,10 +48,11 @@ typedef uint64_t U64;
 
 static void die(const char *m) { fprintf(stderr, "nvcm: %s\n", m); exit(2); }
 
-/* ------------------------------------------------ the logistic transform -- */
-/* Probabilities are mixed not linearly but on the logistic scale: there,
- * addition means weighing evidence together, and a model that is completely
- * sure gets to pull hard. */
+/* -------------------------------------------------- logistic transform -- */
+/*
+ * Probabilities are mixed on the logistic scale, not linearly: addition
+ * there weighs evidence together, and a confident model pulls hard.
+ */
 
 static int squash(int d) {
     static const int t[33] = {1,2,3,6,10,16,27,45,73,120,194,310,488,747,1101,
@@ -69,6 +64,11 @@ static int squash(int d) {
     d = (d >> 7) + 16;
     return (t[d] * (128 - w) + t[d + 1] * w + 64) >> 7;
 }
+/*
+ * STRETCH inverts squash(). It is precomputed once at startup: the inverse
+ * would otherwise need a search per lookup, and stretch runs for every
+ * model on every bit.
+ */
 static short STRETCH[4096];
 static void build_stretch(void) {
     int pi = 0;
@@ -81,8 +81,10 @@ static void build_stretch(void) {
 }
 
 /* ------------------------------------------------------ arithmetic coder -- */
-/* Carryless binary coder: the interval [x1,x2] is split in proportion to
- * the probability, and the top bytes are emitted as soon as they settle. */
+/*
+ * Carryless binary coder: the interval [x1,x2] is split in proportion to
+ * the probability, and the top bytes are emitted as soon as they settle.
+ */
 
 typedef struct { U32 x1, x2, x; FILE *f; } Coder;
 
@@ -113,14 +115,18 @@ static int coder_decode(Coder *k, int p) {
 static void coder_flush(Coder *k) { for (int i = 0; i < 4; i++) { putc((int)(k->x1 >> 24), k->f); k->x1 <<= 8; } }
 
 /* ------------------------------------------------------------- counters -- */
-/* A probability with its own learning rate: the first observations in a
- * context move the estimate far, later ones only polish. Same idea as in
- * nvjpg. */
+/*
+ * A probability with its own learning rate: the first observations in a
+ * context move the estimate far, later ones only polish. Same scheme as
+ * in nvjpg.
+ */
 
 typedef struct { U16 p; U16 n; } Counter;
 #define RMAX 60
-/* The rate is looked up instead of divided out. One division per model and
- * bit is seven divisions per bit, and it shows clearly on the clock. */
+/*
+ * The rate is a table lookup, not a division: one division per model and
+ * bit means seven divisions per bit, clearly visible in profiles.
+ */
 static int RATE[RMAX + 1];
 static void build_rates(void) { for (int i = 0; i <= RMAX; i++) RATE[i] = 65536 * 2 / (i + 3); }
 static inline int ctr_p(const Counter *r) { return r->p >> 4; }       /* 16 -> 12 bits */
@@ -145,11 +151,12 @@ static inline void ctr_update(Counter *r, int bit) {
 #ifndef TBITS
 #define TBITS 24                 /* cap: 16 M slots per context model */
 #endif
-/* The tables scale with the input size. A one-megabyte block never fills
+/*
+ * The tables scale with the input size: a one-megabyte block never fills
  * 16 M slots, and zeroing half a gigabyte of counters for it takes longer
- * than the whole compression. The formula depends ONLY on the length,
- * which is in the header — so the decoder derives the same size without
- * asking. */
+ * than the whole compression. The formula depends only on the input
+ * length, which is in the header, so the decoder derives the same size.
+ */
 static int table_bits_for(U64 n) {
     int b = 16;
     while (b < TBITS && ((U64)1 << (b - 2)) < n) b++;
@@ -222,10 +229,12 @@ static void model_free(Model *m) {
     free(m->mhash); free(m->buf); free(m);
 }
 
-/* Adaptive probability map: takes a finished probability and a small
- * context and learns how the estimate tends to be skewed right there.
- * Cheap, and often worth a few percent — especially early in a file before
- * the models have had time to learn. */
+/*
+ * Adaptive probability map: given a finished probability and a small
+ * context, learns how the estimate tends to be skewed there. Cheap, and
+ * often worth a few percent, especially early in a file before the models
+ * have learned.
+ */
 static int apm(Counter *t, int pr, int cx, int bit, int update) {
     int s = STRETCH[pr] + 2048;             /* 0..4095 */
     int w = s & 127;
@@ -235,17 +244,20 @@ static int apm(Counter *t, int pr, int cx, int bit, int update) {
     return out;
 }
 
-/* One bit: gather every vote, mix, encode or decode, and train everything.
- * Encoding and decoding are the same function with the same update order —
- * otherwise they cannot stay in step. */
+/*
+ * One bit: gather the votes, mix, code, train. Encoding and decoding are
+ * the same function with the same update order; anything else and they
+ * fall out of step.
+ */
 static int bit_step(Model *m, Coder *k, int encode, int bit_in) {
     Counter *slot[NMOD];
     short st[NMOD];
     int n = 0;
 
-    /* All fifteen bit paths through a nibble sit on the same cache line.
-     * That is the difference between eight cache misses per byte and model,
-     * and two. */
+    /*
+     * All fifteen bit paths through a nibble sit on the same cache line:
+     * two cache misses per byte and model instead of eight.
+     */
     for (int i = 0; i < NORD; i++) {
         U32 idx = m->base[i] + (m->c0n & 15);
         slot[n] = &m->t[i][idx];
@@ -253,8 +265,7 @@ static int bit_step(Model *m, Coder *k, int encode, int bit_in) {
         n++;
     }
 
-    /* The match model: if we are following an earlier occurrence, what did
-     * it say? */
+    /* Match model: the bit the earlier occurrence predicts, if any. */
     int mbit = -1;
     if (m->mlen > 0 && m->mpos < m->bufn) {
         U32 predicted = m->buf[m->mpos];
@@ -277,12 +288,15 @@ static int bit_step(Model *m, Coder *k, int encode, int bit_in) {
     int match_slot = n;
     n++;
 
-    /* The mixer. The weight set is picked by the byte in progress, so the
-     * model gets a different balance at the start and end of a character. */
+    /*
+     * Mixer: the weight set is picked by the byte in progress, so the
+     * balance differs between the start and end of a character.
+     */
 #if MIXCTX > 1
-    /* A long running match makes the votes worth something entirely
-     * different than when the model is groping. They should not share a
-     * weight set either. */
+    /*
+     * A long running match changes what every vote is worth, so match
+     * states get weight sets of their own.
+     */
     int wsel = (int)(m->c0 & 255) + 256 * (m->mlen == 0 ? 0 : m->mlen < 8 ? 1 : m->mlen < 24 ? 2 : 3);
 #else
     int wsel = (int)(m->c0 & 255);
@@ -304,8 +318,10 @@ static int bit_step(Model *m, Coder *k, int encode, int bit_in) {
     if (encode) { bit = bit_in; coder_encode(k, final, bit); }
     else bit = coder_decode(k, final);
 
-    /* Train: mixer weights against the error, then every vote against the
-     * outcome. */
+    /*
+     * Train: mixer weights against the error, then every vote against the
+     * outcome.
+     */
     int err = ((bit << 12) - pr) * 6;
     for (int i = 0; i < n; i++) {
         int d = (st[i] * err * 2 >> 16);
@@ -324,8 +340,10 @@ static int bit_step(Model *m, Coder *k, int encode, int bit_in) {
     return bit;
 }
 
-/* At every nibble boundary the row moves: the second half of the byte gets
- * its own row, keyed by what the first half turned out to be. */
+/*
+ * At every nibble boundary the row moves: the second half of the byte gets
+ * its own row, keyed by what the first half turned out to be.
+ */
 static void set_rows(Model *m, U32 nibble) {
     for (int i = 0; i < NORD; i++) {
         m->base[i] = (m->hash[i] ^ (nibble * 0x85EBCA6Bu)) & (m->tmask & ~15u);
@@ -343,8 +361,7 @@ static void byte_done(Model *m, U8 c) {
     m->buf[m->bufn++] = c;
     m->c4 = (m->c4 << 8) | c;
 
-    /* The word model: letters and digits build a word, anything else breaks
-     * it. */
+    /* Word model: identifier characters extend the hash, anything else resets it. */
     if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')
         m->word = m->word * 0x6F4F2F1Du + c + 1;
     else
@@ -361,8 +378,10 @@ static void byte_done(Model *m, U8 c) {
         m->hash[i] = (U32)((h ^ (h >> 29)) * (U32)(order * 0x9E3779B1u + 1));
     }
 
-    /* The match model: the key is the six most recent bytes. If they are
-     * found again, mpos points at the byte AFTER the earlier occurrence. */
+    /*
+     * Match model: keyed by the six most recent bytes. On a hit, mpos
+     * points at the byte after the earlier occurrence.
+     */
     if (m->bufn >= MORD) {
         U64 mh = 0;
         for (int j = 0; j < MORD; j++) mh = mh * 0x100000001B3ull + m->buf[m->bufn - 1 - j] + 1;
@@ -372,8 +391,10 @@ static void byte_done(Model *m, U8 c) {
             if (m->mlen < 63) m->mlen++;
         } else {
             U32 cand = m->mhash[idx];
-            /* The hash can lie. A false match is worse than none at all: it
-             * gives the mixer a confident vote that is wrong. */
+            /*
+             * The hash can lie, and a false match is worse than none: it
+             * hands the mixer a confident vote that is wrong.
+             */
             if (cand >= MORD && cand < m->bufn
 #if VERIFY
                 && memcmp(m->buf + cand - MORD, m->buf + m->bufn - MORD, MORD) == 0
@@ -391,9 +412,11 @@ static void byte_done(Model *m, U8 c) {
 
 /* ------------------------------------------------------------------ main -- */
 
-/* The magic is NVCM1. For a few hours the program was named nvcm and wrote
- * NVZ01; that magic is still read, so nothing already packed becomes
- * unreadable because a name changed back. Both are format constants. */
+/*
+ * The magic is NVCM1. An early build wrote NVZ01; that magic is still
+ * accepted so data already packed with it stays readable. Both are format
+ * constants.
+ */
 static const char *MAGIC = "NVCM1";
 static const char *MAGIC_OLD = "NVZ01";
 
@@ -464,8 +487,9 @@ static int unpack_stream(FILE *in, FILE *out) {
 }
 
 
-/* ------------------------------------------------------ the gzip syntax -- */
-/* nvcm is invoked like gzip:
+/* ------------------------------------------------------- gzip-style CLI -- */
+/*
+ * nvcm is invoked like gzip:
  *
  *     nvcm file           -> file.nvcm, the original is removed
  *     nvcm -d file.nvcm   -> file, the packed one is removed
@@ -474,17 +498,16 @@ static int unpack_stream(FILE *in, FILE *out) {
  *     nvcm -l file.nvcm   -> the sizes without unpacking
  *     ... | nvcm | ...    -> no file arguments: stdin to stdout
  *
- * Why gzip's syntax and not its own? Because every script, Makefile and
- * benchmark that already exists speaks it. A codec that demands
+ * gzip's syntax rather than a private one, because existing scripts,
+ * Makefiles and benchmarks already speak it; a codec that demands
  * `nvcm pack < in > out` cannot be dropped into an existing invocation
- * without rewriting the invocation, and then it never gets measured.
+ * and then never gets measured.
  *
  * -1..-9, --fast and --best are accepted and ignored: nvcm has no levels,
- * but scripts send them, and refusing to start over a meaningless flag
- * would be a quarrel about nothing.
+ * but scripts send them and refusing a meaningless flag helps nothing.
  *
  * The worker subcommands `pack` and `unpack` (and their old names `packa`
- * and `packaupp`) remain — nvz calls them — but they are not in the help.
+ * and `packaupp`) remain for nvz but are not listed in the help.
  */
 
 static const char *SUF = ".nvcm";
@@ -498,8 +521,8 @@ static int grumble(const char *name, const char *what) {
 
 static void keep_metadata(const char *target, const struct stat *st) {
     struct timespec times[2] = { st->st_atim, st->st_mtim };
-    if (chmod(target, st->st_mode & 07777) != 0) { /* permissions are a wish */ }
-    if (utimensat(AT_FDCWD, target, times, 0) != 0) { /* and so are the times */ }
+    if (chmod(target, st->st_mode & 07777) != 0) { /* best effort */ }
+    if (utimensat(AT_FDCWD, target, times, 0) != 0) { /* best effort */ }
 }
 
 /* The header carries the unpacked length, so -l need not unpack anything. */
@@ -595,8 +618,10 @@ int main(int argc, char **argv) {
     build_stretch();
     build_rates();
 
-    /* The worker path first: nvz calls `nvcm pack|unpack`. The old Swedish
-     * names remain as aliases. */
+    /*
+     * Worker path first: nvz calls `nvcm pack|unpack`. The old Swedish
+     * names remain as aliases.
+     */
     if (argc >= 2 && (!strcmp(argv[1], "pack") || !strcmp(argv[1], "packa")))
         return pack_stream(stdin, stdout);
     if (argc >= 2 && (!strcmp(argv[1], "unpack") || !strcmp(argv[1], "packaupp")))

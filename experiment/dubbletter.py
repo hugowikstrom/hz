@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
 # [EN] Counts duplicate bytes per corpus — the numbers behind the dedup rows.
 # NOTE: this older script keeps its Swedish inline comments for now; it is
 # verified by its own runs and is translated as it is next touched.

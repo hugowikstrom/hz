@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
 """Lönar sig PNG-utvecklingen? Jämför original-bytes mot utvecklad-och-ompackad."""
 import sys, subprocess, tempfile, time, concurrent.futures as fut
 from pathlib import Path

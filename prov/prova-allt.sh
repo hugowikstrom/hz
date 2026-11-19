@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
 # [EN] The 44-edge-case suite: builds a tree of empty files, duplicates,
 # symlinks (relative, broken, to directories), newline and non-ASCII file
 # names, odd permissions and 1985/2031 timestamps; packs it in every mode

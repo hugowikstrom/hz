@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+// Shared helpers: string utilities, blake2b-128, checked file I/O.
 #include "nvz.hpp"
 #include <cerrno>
 #include <cstring>
@@ -42,9 +44,9 @@ std::string temp_dir() {
 
 // --- blake2b-128 ------------------------------------------------------------
 // The same hash the Python implementation used (hashlib.blake2b,
-// digest_size=16), so that archives from the two carry the same object keys.
-// The implementation is lifted from src/nvgpu.c, where it already existed as
-// the oracle for the GPU kernel.
+// digest_size=16), so archives from both carry the same object keys.
+// Lifted from src/nvgpu.c, where it already serves as the oracle for the
+// GPU kernel.
 namespace {
 const u64 IV[8] = {
     0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL, 0x3c6ef372fe94f82bULL,
@@ -121,12 +123,11 @@ void blake2b128(const u8 *data, size_t n, u8 out[16]) {
 Byte read_file(const std::string &path) {
     FILE *f = fopen(path.c_str(), "rb");
     if (!f) throw Error(path + ": cannot open");
-    // One allocation, one read. The old path read in 64 kB chunks and let
-    // the vector grow, which re-copies roughly the whole file once over —
-    // measurable in a packer whose fast mode is dominated by exactly these
-    // sweeps over the data. The size from fstat is an assumption, not a
-    // truth (the file may grow between stat and read), so any tail beyond
-    // st_size is picked up the old way.
+    // One allocation, one read. Reading in 64 kB chunks into a growing
+    // vector re-copies roughly the whole file once — measurable in a
+    // packer whose fast mode is dominated by these sweeps. The size from
+    // fstat is a hint, not a guarantee (the file may grow between stat and
+    // read), so any tail beyond st_size is read chunkwise below.
     struct stat st;
     Byte d;
     if (fstat(fileno(f), &st) == 0 && S_ISREG(st.st_mode) && st.st_size > 0) {
@@ -141,25 +142,25 @@ Byte read_file(const std::string &path) {
     return d;
 }
 
-// EVERY WRITE MUST BE CHECKED, for a reason specific to a packer with a gzip
-// surface: it DELETES the original once the pack has succeeded. If a write
-// fails silently — full disk, exceeded quota, a file-size limit — and nvz
-// still reports success, the source is deleted and the archive is truncated.
-// The data is gone.
+// Every write must be checked, for a reason specific to a packer with a
+// gzip surface: the original is deleted once the pack has succeeded. If a
+// write fails silently — full disk, exceeded quota, a file-size limit —
+// and nvz still reports success, the source is deleted, the archive is
+// truncated and the data is gone.
 //
-// The fault came out of a code review by Ted Lyngmo on 2026-11-18, who
-// reproduced it under RLIMIT_FSIZE: truncated archive, exit status 0,
-// original deleted, and `nvz -d` afterwards said the register pointed
-// outside the archive. His comparison is the right one: `gzip -c file >
-// /dev/full` returns 1; nvz returned 0.
+// Found in Ted Lyngmo's code review of 2026-11-18, reproduced under
+// RLIMIT_FSIZE: truncated archive, exit status 0, original deleted, and
+// `nvz -d` afterwards said the register pointed outside the archive. The
+// reference behaviour: `gzip -c file > /dev/full` returns 1; nvz
+// returned 0.
 //
-// Three traps these helpers exist for. (i) fwrite buffers, so ENOSPC often
-// only surfaces when the buffer is flushed — hence fflush before fclose,
+// Three traps these helpers cover. (i) fwrite buffers, so ENOSPC often
+// surfaces only when the buffer is flushed — hence fflush before fclose,
 // with the error read before the stream is closed. (ii) fclose frees the
-// stream even when it fails, so an error only fclose sees would otherwise be
-// lost. (iii) fsync: for a packer that deletes its source it is not enough
-// that the kernel accepted the bytes — they must be on disk. EINVAL is
-// tolerated for targets that cannot be synced (pipes, /dev/null).
+// stream even when it fails, so an error only fclose sees would otherwise
+// be lost. (iii) fsync: a packer that deletes its source needs the bytes
+// on disk, not merely accepted by the kernel. EINVAL is tolerated for
+// targets that cannot be synced (pipes, /dev/null).
 void write_checked(FILE *f, const void *d, size_t n, const std::string &what) {
     if (n && fwrite(d, 1, n, f) != n)
         throw Error(what + ": write failed (" + std::strerror(errno) + ")");

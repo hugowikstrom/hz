@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
 """Dominance: is nvz better AND faster than the best established tool?
 
     python3 experiment/dominans.py [corpus...]

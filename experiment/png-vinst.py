@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0-only
 import sys, zlib, struct, pathlib, subprocess, tempfile, os
 sys.path.insert(0,'.')
 from importlib.machinery import SourceFileLoader

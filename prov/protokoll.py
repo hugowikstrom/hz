@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
 # [EN] Reconstruction protocol: md5 manifests before and after, checked by
 # the system md5sum -c rather than by our own code, committed to the repo
 # so anyone can re-run the check.
