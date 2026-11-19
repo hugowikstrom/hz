@@ -13,7 +13,7 @@ from pathlib import Path
 ROT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROT / 'matning'))
 import rapport as r
-from rapport import tal
+from rapport import num as tal   # rapport.py speaks English since 2026-11-19
 
 MIB = 1048576
 NYA = {'gif': 'Bilder (GIF)', 'film': 'Film (h264 och VP9)',
@@ -26,7 +26,7 @@ def jattetabell() -> str:
     """Hela mätmatrisen i en tabell: packare som rader, korpusar som
     kolumner. Två paneler — storlek och packtid — eftersom en cell som bär
     båda blir oläslig. Minsta storlek och kortaste tid per kolumn i fet."""
-    korpusar = [(k, r.läs(k)) for k in ALLA]
+    korpusar = [(k, r.load(k)) for k in ALLA]
     korpusar = [(k, d) for k, d in korpusar if d]
     namnrad = {'kod': 'kod', 'png': 'png', 'foto': 'foto', 'gif': 'gif',
                'film': 'film', 'arkiv': 'arkiv', 'logg': 'logg',
@@ -38,7 +38,7 @@ def jattetabell() -> str:
               '|:--|' + '--:|' * len(korpusar)]
         bast = {k: fetast([varde(m) for m in d['matningar'].values() if varde(m) is not None])
                 for k, d in korpusar}
-        for namn in r.ORDNING:
+        for namn in r.ORDER:
             celler = []
             for k, d in korpusar:
                 m = d['matningar'].get(namn)
@@ -48,7 +48,10 @@ def jattetabell() -> str:
                 if v == bast[k]: c = f'**{c}**'
                 celler.append(c)
             fet = namn.startswith('nvz')
-            rad = f'**{namn}**' if fet else namn
+            # The tool was renamed nvz -> hz on 2026-11-19; the row keys in
+            # resultat/*.json are frozen measurement ids, the display is not.
+            visat = namn.replace('nvz ', 'hz ') if fet else namn
+            rad = f'**{visat}**' if fet else visat
             ut.append(f'| {rad} | ' + ' | '.join(celler) + ' |')
         ut.append('')
         ut.append(f'*{enhet} per korpus; minsta värde per kolumn i fet. '
@@ -65,12 +68,12 @@ def jattetabell() -> str:
 def mattabeller() -> str:
     delar = []
     for namn, rubrik in NYA.items():
-        d = r.läs(namn)
+        d = r.load(namn)
         if not d: continue
         rå = d['rabyte']
         huvud = (f'### {rubrik} — {rå/MIB:,.1f} MiB i {d["filer"]:,} filer'
                  .replace(',', ' '))
-        delar.append(huvud + '\n\n' + r.tabell(d))
+        delar.append(huvud + '\n\n' + r.table(d, sv=True))
     return '\n\n'.join(delar)
 
 
@@ -78,7 +81,7 @@ def oversikt() -> str:
     """En rad per korpus: vad nvz tar hem, och vad det kostar i tid."""
     rader = []
     for namn, rubrik in ALLA.items():
-        d = r.läs(namn)
+        d = r.load(namn)
         if not d: continue
         m = d['matningar']
         idag = m.get('tar.zst -3 (dagens)')
@@ -100,8 +103,8 @@ def oversikt() -> str:
             procent(100*(nv["byte"]-bast_klassisk["byte"])/bast_klassisk["byte"]),
             f'{nv["packsek"]:.0f} / {bast_klassisk["packsek"]:.0f} s',
         ))
-    rubrik = ('korpus', 'rå MiB', 'dagens MiB', 'bästa klassiska MiB', 'bästa nvz MiB',
-              'mot dagens', 'mot bästa klassiska', 'packtid nvz/klassisk')
+    rubrik = ('korpus', 'rå MiB', 'dagens MiB', 'bästa klassiska MiB', 'bästa hz MiB',
+              'mot dagens', 'mot bästa klassiska', 'packtid hz/klassisk')
     ut = ['| ' + ' | '.join(rubrik) + ' |',
           '|' + '|'.join([':--'] + ['--:'] * 7) + '|']
     for rad in rader:
@@ -240,7 +243,7 @@ def lzma2() -> str:
     d = json.loads(f.read_text())
     NAMN = {'kod': 'Programkod', 'logg': 'Loggfiler', 'arkiv': 'Arkiv (zip/tar.gz)',
             'png': 'Bilder (PNG)', 'silesia': 'Silesia', 'enwik8': 'enwik8'}
-    ut = ['| korpus | rå MiB | LZMA2-extrem MiB | nvz MiB | nvz mot LZMA2-extrem | packtid LZMA2/nvz | exakt |',
+    ut = ['| korpus | rå MiB | LZMA2-extrem MiB | hz MiB | hz mot LZMA2-extrem | packtid LZMA2/hz | exakt |',
           '|:--|--:|--:|--:|--:|--:|:-:|']
     for k, v in d.items():
         l, n = v['lzma2'], v['nvz']
@@ -256,10 +259,10 @@ def lzma2() -> str:
 
 def tider() -> str:
     """Genomströmning i MiB/s, för att tid ska gå att jämföra mellan korpusar."""
-    ut = ['| korpus | nvz normal pack | nvz normal upp | zstd -3 pack '
+    ut = ['| korpus | hz normal pack | hz normal upp | zstd -3 pack '
           '| zstd -19 pack | xz -9e pack |', '|:--|--:|--:|--:|--:|--:|']
     for namn, rubrik in ALLA.items():
-        d = r.läs(namn)
+        d = r.load(namn)
         if not d: continue
         rå = d['rabyte'] / MIB
         m = d['matningar']
@@ -287,8 +290,8 @@ def till_engelska(block: str) -> str:
         ('| kodek |', '| codec |'), ('filer |', 'files |'), ('rå MiB', 'raw MiB'),
         ('storlek MiB', 'size MiB'), ('storlek byte', 'size bytes'),
         ('mot dagens', 'vs. current'), ('mot bästa', 'vs. best'), ('mot best', 'vs. best'), ('dagens MiB', 'current MiB'),
-        ('bästa klassiska', 'best classical'), ('bästa nvz', 'best nvz'),
-        ('packtid nvz/klassisk', 'pack time nvz/classical'),
+        ('bästa klassiska', 'best classical'), ('bästa hz', 'best hz'),
+        ('packtid hz/klassisk', 'pack time hz/classical'),
         ('packtid', 'pack time'), ('uppacktid', 'unpack time'),
         ('exakt |', 'exact |'), ('andel |', 'share |'),
         ('Arkivstorlek', 'Archive size'), ('Packtid', 'Pack time'),
@@ -308,7 +311,7 @@ def till_engelska(block: str) -> str:
         ('Skadeprov på arkivet från korpusen', 'Damage tests on the archive from corpus'),
         ('| skada |', '| damage |'), ('utfall |', 'outcome |'),
         ('godkänt |', 'passed |'), ('vägrade', 'rejected'),
-        ('nvz normal upp', 'nvz normal unpack'),
+        ('hz normal upp', 'hz normal unpack'),
         ('Vår egen mätning', 'Our own measurement'),
         ('nvcm gör enwik8 på', 'nvcm compresses enwik8 to'),
         (' byte, ', ' bytes, '), ('mindre än', 'smaller than'),
@@ -323,7 +326,7 @@ def till_engelska(block: str) -> str:
         ('stjärnkatalog, binär', 'star catalogue, binary'),
         ('ordbok, text', 'dictionary, text'), ('röntgenbild, 16-bitars', 'X-ray, 16-bit'),
         ('| fil |', '| file |'), ('innehåll |', 'contents |'),
-        ('rå byte', 'raw bytes'), ('nvcm mot bäst', 'nvcm vs. best'), ('nvz mot LZMA2-extrem', 'nvz vs. LZMA2-extreme'), ('LZMA2-extrem MiB', 'LZMA2-extreme MiB'), ('packtid LZMA2/nvz', 'pack time LZMA2/nvz'),
+        ('rå byte', 'raw bytes'), ('nvcm mot bäst', 'nvcm vs. best'), ('hz mot LZMA2-extrem', 'hz vs. LZMA2-extreme'), ('LZMA2-extrem MiB', 'LZMA2-extreme MiB'), ('packtid LZMA2/hz', 'pack time LZMA2/hz'),
         ('upp MiB/s', 'unpack MiB/s')]
     for a, b in ORD:
         t = t.replace(a, b)
@@ -332,29 +335,29 @@ def till_engelska(block: str) -> str:
 
 def main():
     md = ROT / 'rapport' / 'bred-provning.md'
-    r.infoga(md, oversikt(), 'ÖVERSIKT')
-    r.infoga(md, jattetabell(), 'MATRIS')
-    r.infoga(md, mattabeller(), 'TABELLER')
-    r.infoga(md, aterskapning(), 'ÅTERSKAPNING')
-    r.infoga(md, tider(), 'TIDER')
-    r.infoga(md, dubbletter(), 'DUBBLETTER')
-    r.infoga(md, standard(), 'STANDARD')
-    r.infoga(md, silesia_per_fil(), 'SILESIA-PER-FIL')
-    r.infoga(md, enwik8_plats(), 'ENWIK8-PLATS')
-    r.infoga(md, lzma2(), 'LZMA2')
+    r.inject(md, oversikt(), 'ÖVERSIKT')
+    r.inject(md, jattetabell(), 'MATRIS')
+    r.inject(md, mattabeller(), 'TABELLER')
+    r.inject(md, aterskapning(), 'ÅTERSKAPNING')
+    r.inject(md, tider(), 'TIDER')
+    r.inject(md, dubbletter(), 'DUBBLETTER')
+    r.inject(md, standard(), 'STANDARD')
+    r.inject(md, silesia_per_fil(), 'SILESIA-PER-FIL')
+    r.inject(md, enwik8_plats(), 'ENWIK8-PLATS')
+    r.inject(md, lzma2(), 'LZMA2')
     print(f'{md} uppdaterad')
     en = ROT / 'rapport' / 'broad-evaluation.md'
     if en.exists():
-        r.infoga(en, till_engelska(oversikt()), 'ÖVERSIKT')
-        r.infoga(en, till_engelska(jattetabell()), 'MATRIS')
-        r.infoga(en, till_engelska(mattabeller()), 'TABELLER')
-        r.infoga(en, till_engelska(aterskapning()), 'ÅTERSKAPNING')
-        r.infoga(en, till_engelska(tider()), 'TIDER')
-        r.infoga(en, till_engelska(dubbletter()), 'DUBBLETTER')
-        r.infoga(en, till_engelska(standard()), 'STANDARD')
-        r.infoga(en, till_engelska(silesia_per_fil()), 'SILESIA-PER-FIL')
-        r.infoga(en, till_engelska(enwik8_plats()), 'ENWIK8-PLATS')
-        r.infoga(en, till_engelska(lzma2()), 'LZMA2')
+        r.inject(en, till_engelska(oversikt()), 'ÖVERSIKT')
+        r.inject(en, till_engelska(jattetabell()), 'MATRIS')
+        r.inject(en, till_engelska(mattabeller()), 'TABELLER')
+        r.inject(en, till_engelska(aterskapning()), 'ÅTERSKAPNING')
+        r.inject(en, till_engelska(tider()), 'TIDER')
+        r.inject(en, till_engelska(dubbletter()), 'DUBBLETTER')
+        r.inject(en, till_engelska(standard()), 'STANDARD')
+        r.inject(en, till_engelska(silesia_per_fil()), 'SILESIA-PER-FIL')
+        r.inject(en, till_engelska(enwik8_plats()), 'ENWIK8-PLATS')
+        r.inject(en, till_engelska(lzma2()), 'LZMA2')
         print(f'{en} uppdaterad')
 
 

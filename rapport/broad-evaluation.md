@@ -1,21 +1,27 @@
-# nvz — broad evaluation
+# hz — broad evaluation
+
+> **Renamed:** the tool was named **nvz** when these measurements were
+> made and was renamed **hz** on 2026-11-19. Only the name changed — every
+> hz reads every nvz archive bit for bit. The row keys in
+> `resultat/*.json` keep the old name as frozen measurement ids.
+
 
 **Empirical evaluation of a content-aware archiver: compression ratio,
 wall-clock cost, and correctness across eight data types and two standard
 corpora.**
 
 *2026-11-16 · Ryzen AI 9 HX 470 (24 threads), 28 GiB RAM, NVMe ·
-source code, measurement data, and this report: <https://github.com/hugowikstrom/nvz> ·
+source code, measurement data, and this report: <https://github.com/hugowikstrom/hz> ·
 every figure is generated from `resultat/*.json` and can be reproduced per appendix A ·
 [svensk version](bred-provning.md)*
 
 ## Abstract
 
-nvz is an archiver that classifies its input and applies content-specific,
+hz is an archiver that classifies its input and applies content-specific,
 lossless transforms — deduplication, similarity ordering, PNG inflation with
 recipe recovery, JPEG re-encoding to arithmetic code, and context-mixing
 compression (nvcm) — before selecting a codec per block by sampling. This
-report evaluates nvz against seven established compressors on eleven corpora
+report evaluates hz against seven established compressors on eleven corpora
 and tests two hypotheses:
 
 - **H1 (compression):** content awareness yields measurably smaller archives
@@ -35,7 +41,7 @@ In summary:
 | Silesia, nvcm (single thread) | **1.677 bits/byte** | xz −9e: 1.829 |
 | enwik8, nvcm (single thread) | **1.713 bits/byte** | xz −9e: 1.986 |
 | video, all compressors | within 1 % of raw size | expected: already coded |
-| archives-of-archives, nvz vs. zstd −22 | **−0.1 %** after remedy (+20.0 % before) | diagnosed and fixed, section 4.2 |
+| archives-of-archives, hz vs. zstd −22 | **−0.1 %** after remedy (+20.0 % before) | diagnosed and fixed, section 4.2 |
 | restoration, 7 corpora | bit-exact, all entries | section 5 |
 | damage tests, 5 damage classes | all rejected | section 5.2 |
 
@@ -44,7 +50,7 @@ already-compressed archives) was diagnosed as the codec probe's sample
 selection, remedied during the evaluation, and re-measured to −0.1 %
 against zstd −22. A complementary measurement against LZMA2 at full
 strength (7-Zip, 512 MiB dictionary; section 3.6) moves the reference,
-however: there nvz trails by +2.3 % on that corpus, while its lead on
+however: there hz trails by +2.3 % on that corpus, while its lead on
 text rather grows. H1 thus stands with one known, quantified
 counterexample — archives-of-archives against LZMA2-extreme — and none
 elsewhere.
@@ -54,7 +60,7 @@ elsewhere.
 A conventional archiving pipeline (`tar | zstd`) treats the tree as an
 unordered byte stream: the compressor sees neither file duplicates outside
 its window, nor embedded compression layers (deflate in PNG, Huffman in
-JPEG), nor the opportunity to place similar files adjacently. nvz exploits
+JPEG), nor the opportunity to place similar files adjacently. hz exploits
 all three, and every transform is verified at pack time by full
 re-synthesis and comparison against the original; a transform that cannot
 be proven reversible falls back to raw storage.
@@ -74,7 +80,7 @@ enwik8), and a systematic correctness assessment.
 Seven configurations of four established tools: gzip (−6, −9 via pigz),
 bzip2 (−9), zstd (−3, −19 `--long=27`, −22 `--ultra --long=31`), and
 xz (−9e). `tar | zstd −3` is labelled *current* and serves as the baseline,
-as it matches the machine's existing archival script. nvz is measured in
+as it matches the machine's existing archival script. hz is measured in
 modes `snabb` ("fast": zstd −3, no transforms), `normal` (transforms, codec
 probe per block), and `liten` ("small": additionally nvcm as a candidate;
 the default), plus `utan knep` ("no tricks": mode normal with
@@ -109,7 +115,7 @@ excluded.
 
 | corpus | size | contents | rationale |
 |:--|--:|:--|:--|
-| `gif` | 105 files, 27.4 MiB | web graphics, animations, duplicates across several `node_modules` | LZW entropy layer that nvz does not open; high duplicate share |
+| `gif` | 105 files, 27.4 MiB | web graphics, animations, duplicates across several `node_modules` | LZW entropy layer that hz does not open; high duplicate share |
 | `film` | 67 files, 536.7 MiB | h264 (TikTok), VP9 (screen recording) | transform-coded data; expected null result |
 | `arkiv` | 133 files, 391.8 MiB | zip and tar.gz, incl. two bit-identical pairs and eight daily database backups | compressed data with redundancy *between* files |
 | `logg` | 76 files, 238.3 MiB | syslog, kern.log, app logs, JSONL transcripts | maximally repetitive text; a growing archive class |
@@ -139,22 +145,22 @@ much of a ratio is explained by deduplication rather than compression.
 
 ### 3.1 Overview
 
-Best nvz mode against the baseline and against the best classical tool per
+Best hz mode against the baseline and against the best classical tool per
 corpus. Negative values denote smaller archives.
 
 <!-- ÖVERSIKT -->
 
-| corpus | raw MiB | current MiB | best classical MiB | best nvz MiB | vs. current | vs. best klassiska | pack time nvz/classical |
+| corpus | raw MiB | current MiB | best classical MiB | best hz MiB | vs. current | vs. best klassiska | pack time hz/classical |
 |:--|--:|--:|--:|--:|--:|--:|--:|
-| Source code | 55 | 11.5 | 8.2 (xz -9e) | 7.2 (liten) | −37.1 % | −12.5 % | 68 / 47 s |
+| Source code | 55 | 11.5 | 8.2 (xz -9e) | 7.2 (liten) | −37.1 % | −12.5 % | 64 / 47 s |
 | Images (PNG) | 431 | 362.9 | 245.2 (zst -22) | 207.2 (liten) | −42.9 % | −15.5 % | 280 / 156 s |
 | Photos (JPEG) | 409 | 406.3 | 404.9 (bz2 -9) | 345.1 (normal) | −15.1 % | −14.8 % | 48 / 57 s |
 | Images (GIF) | 27 | 27.0 | 14.2 (zst -22) | 14.2 (normal) | −47.6 % | −0.0 % | 6 / 5 s |
 | Video (h264 and VP9) | 537 | 533.9 | 532.0 (zst -19) | 532.0 (normal) | −0.3 % | +0.0 % | 56 / 57 s |
 | Archives (zip and tar.gz) | 392 | 381.8 | 242.8 (zst -22) | 237.0 (liten) | −37.9 % | −2.4 % | 323 / 154 s |
-| Loggfiles | 238 | 22.4 | 11.8 (xz -9e) | 10.0 (liten) | −55.2 % | −15.4 % | 191 / 897 s |
-| Silesia (archive level) | 202 | 63.1 | 46.2 (xz -9e) | 43.5 (liten) | −31.0 % | −5.7 % | 100 / 158 s |
-| enwik8 (archive level) | 95 | 33.8 | 23.7 (xz -9e) | 20.4 (liten) | −39.6 % | −13.7 % | 129 / 121 s |
+| Loggfiles | 238 | 22.4 | 11.8 (xz -9e) | 10.2 (liten) | −54.3 % | −13.6 % | 73 / 897 s |
+| Silesia (archive level) | 202 | 63.1 | 46.2 (xz -9e) | 43.6 (liten) | −30.9 % | −5.5 % | 94 / 158 s |
+| enwik8 (archive level) | 95 | 33.8 | 23.7 (xz -9e) | 20.8 (liten) | −38.4 % | −12.1 % | 50 / 121 s |
 
 <!-- SLUT ÖVERSIKT -->
 
@@ -178,10 +184,10 @@ unpack time. The silesia and enwik8 columns refer to the archive level
 | tar.zst -19 --long | 8.5 | 252.7 | 405.1 | 14.2 | **532.0** | 261.4 | 13.1 | 50.2 | 25.2 |
 | tar.zst -22 --ultra | 8.5 | 245.2 | 405.1 | 14.2 | 532.0 | 242.8 | 12.9 | 49.8 | 24.1 |
 | tar.xz -9e | 8.2 | 266.4 | 405.4 | 14.2 | 532.9 | 251.7 | 11.8 | 46.2 | 23.7 |
-| **nvz snabb** | 11.3 | 279.3 | 408.5 | 14.4 | 536.8 | 329.0 | 22.4 | 63.2 | 33.8 |
-| **nvz utan knep** | 8.2 | 256.5 | 406.4 | 14.2 | 532.0 | 242.5 | 11.9 | 46.1 | 23.6 |
-| **nvz normal** | 8.2 | 219.8 | **345.1** | **14.2** | 532.0 | 242.5 | 11.9 | 46.1 | 23.6 |
-| **nvz liten** | **7.2** | **207.2** | **345.1** | **14.2** | 532.0 | **237.0** | **10.0** | **43.5** | **20.4** |
+| **hz snabb** | 11.3 | 279.3 | 408.5 | 14.4 | 536.8 | 329.0 | 22.4 | 63.2 | 33.8 |
+| **hz utan knep** | 8.2 | 256.5 | 406.4 | 14.2 | 532.0 | 242.5 | 11.9 | 46.1 | 23.6 |
+| **hz normal** | 8.2 | 219.8 | **345.1** | **14.2** | 532.0 | 242.5 | 11.9 | 46.1 | 23.6 |
+| **hz liten** | **7.2** | **207.2** | **345.1** | **14.2** | 532.0 | **237.0** | **10.2** | **43.6** | **20.8** |
 
 *MiB per corpus; column minimum in bold. Raw sizes: kod 55, png 431, foto 409, gif 27, film 537, arkiv 392, logg 238, silesia 202, enwik8 95 MiB.*
 
@@ -197,10 +203,10 @@ unpack time. The silesia and enwik8 columns refer to the archive level
 | tar.zst -19 --long | 35 | 40 | 53 | 4 | 57 | 47 | 113 | 63 | 61 |
 | tar.zst -22 --ultra | 56 | 156 | 225 | 5 | 266 | 154 | 986 | 179 | 118 |
 | tar.xz -9e | 47 | 128 | 157 | 8 | 154 | 144 | 897 | 158 | 121 |
-| **nvz snabb** | 1 | 2 | 2 | 0 | 3 | 2 | 2 | 1 | 1 |
-| **nvz utan knep** | 40 | 42 | 4 | 4 | 57 | 146 | 854 | 92 | 122 |
-| **nvz normal** | 40 | 127 | 48 | 6 | 56 | 153 | 851 | 92 | 122 |
-| **nvz liten** | 68 | 280 | 55 | 6 | 57 | 323 | 191 | 100 | 129 |
+| **hz snabb** | 1 | 2 | 2 | 0 | 3 | 2 | 2 | 1 | 1 |
+| **hz utan knep** | 40 | 42 | 4 | 4 | 57 | 146 | 854 | 92 | 122 |
+| **hz normal** | 40 | 127 | 48 | 6 | 56 | 153 | 851 | 92 | 122 |
+| **hz liten** | 64 | 280 | 55 | 6 | 57 | 323 | 73 | 94 | 50 |
 
 *s per corpus; column minimum in bold. Raw sizes: kod 55, png 431, foto 409, gif 27, film 537, arkiv 392, logg 238, silesia 202, enwik8 95 MiB.*
 
@@ -216,10 +222,10 @@ unpack time. The silesia and enwik8 columns refer to the archive level
 | tar.zst -19 --long | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | tar.zst -22 --ultra | 0 | 1 | 0 | 0 | 1 | 1 | 0 | 0 | 0 |
 | tar.xz -9e | 1 | 5 | 4 | 0 | 5 | 7 | 1 | 3 | 1 |
-| **nvz snabb** | 0 | 1 | 1 | 0 | 1 | 1 | 1 | 1 | 1 |
-| **nvz utan knep** | 1 | 1 | 1 | 0 | 1 | 1 | 2 | 2 | 2 |
-| **nvz normal** | 1 | 8 | 18 | 0 | 1 | 1 | 2 | 2 | 2 |
-| **nvz liten** | 67 | 11 | 17 | 0 | 1 | 8 | 198 | 99 | 132 |
+| **hz snabb** | 0 | 1 | 1 | 0 | 1 | 1 | 1 | 1 | 1 |
+| **hz utan knep** | 1 | 1 | 1 | 0 | 1 | 1 | 2 | 2 | 2 |
+| **hz normal** | 1 | 8 | 18 | 0 | 1 | 1 | 2 | 2 | 2 |
+| **hz liten** | 62 | 11 | 17 | 0 | 1 | 8 | 42 | 38 | 43 |
 
 *s per corpus; column minimum in bold. Raw sizes: kod 55, png 431, foto 409, gif 27, film 537, arkiv 392, logg 238, silesia 202, enwik8 95 MiB.*
 
@@ -244,10 +250,10 @@ relative to `tar.zst −3`; *exakt* is the bit-exactness outcome.
 | tar.zst -19 --long | 14.18 | 1.93× | −47.6 % | 4 s | 0 s | yes |
 | tar.zst -22 --ultra | 14.18 | 1.93× | −47.6 % | 5 s | 0 s | yes |
 | tar.xz -9e | 14.19 | 1.93× | −47.5 % | 8 s | 0 s | yes |
-| **nvz snabb** | 14.44 | 1.90× | −46.6 % | 0 s | 0 s | yes |
-| **nvz utan knep** | 14.18 | 1.93× | −47.6 % | 4 s | 0 s | yes |
-| **nvz normal** | **14.18** | 1.93× | −47.6 % | 6 s | 0 s | yes |
-| **nvz liten** | **14.18** | 1.93× | −47.6 % | 6 s | 0 s | yes |
+| **hz snabb** | 14.44 | 1.90× | −46.6 % | 0 s | 0 s | yes |
+| **hz utan knep** | 14.18 | 1.93× | −47.6 % | 4 s | 0 s | yes |
+| **hz normal** | **14.18** | 1.93× | −47.6 % | 6 s | 0 s | yes |
+| **hz liten** | **14.18** | 1.93× | −47.6 % | 6 s | 0 s | yes |
 
 ### Video (h264 and VP9) — 536.7 MiB i 67 filer
 
@@ -261,10 +267,10 @@ relative to `tar.zst −3`; *exakt* is the bit-exactness outcome.
 | tar.zst -19 --long | **532.02** | 1.01× | −0.3 % | 57 s | 0 s | yes |
 | tar.zst -22 --ultra | 532.03 | 1.01× | −0.3 % | 266 s | 1 s | yes |
 | tar.xz -9e | 532.86 | 1.01× | −0.2 % | 154 s | 5 s | yes |
-| **nvz snabb** | 536.75 | 1.00× | +0.5 % | 3 s | 1 s | yes |
-| **nvz utan knep** | 532.04 | 1.01× | −0.3 % | 57 s | 1 s | yes |
-| **nvz normal** | 532.04 | 1.01× | −0.3 % | 56 s | 1 s | yes |
-| **nvz liten** | 532.04 | 1.01× | −0.3 % | 57 s | 1 s | yes |
+| **hz snabb** | 536.75 | 1.00× | +0.5 % | 3 s | 1 s | yes |
+| **hz utan knep** | 532.04 | 1.01× | −0.3 % | 57 s | 1 s | yes |
+| **hz normal** | 532.04 | 1.01× | −0.3 % | 56 s | 1 s | yes |
+| **hz liten** | 532.04 | 1.01× | −0.3 % | 57 s | 1 s | yes |
 
 ### Archives (zip and tar.gz) — 391.8 MiB i 133 filer
 
@@ -278,10 +284,10 @@ relative to `tar.zst −3`; *exakt* is the bit-exactness outcome.
 | tar.zst -19 --long | 261.37 | 1.50× | −31.5 % | 47 s | 0 s | yes |
 | tar.zst -22 --ultra | 242.77 | 1.61× | −36.4 % | 154 s | 1 s | yes |
 | tar.xz -9e | 251.75 | 1.56× | −34.1 % | 144 s | 7 s | yes |
-| **nvz snabb** | 329.03 | 1.19× | −13.8 % | 2 s | 1 s | yes |
-| **nvz utan knep** | 242.51 | 1.62× | −36.5 % | 146 s | 1 s | yes |
-| **nvz normal** | 242.51 | 1.62× | −36.5 % | 153 s | 1 s | yes |
-| **nvz liten** | **237.00** | 1.65× | −37.9 % | 323 s | 8 s | yes |
+| **hz snabb** | 329.03 | 1.19× | −13.8 % | 2 s | 1 s | yes |
+| **hz utan knep** | 242.51 | 1.62× | −36.5 % | 146 s | 1 s | yes |
+| **hz normal** | 242.51 | 1.62× | −36.5 % | 153 s | 1 s | yes |
+| **hz liten** | **237.00** | 1.65× | −37.9 % | 323 s | 8 s | yes |
 
 ### Log files — 238.3 MiB i 76 filer
 
@@ -295,10 +301,10 @@ relative to `tar.zst −3`; *exakt* is the bit-exactness outcome.
 | tar.zst -19 --long | 13.09 | 18.21× | −41.5 % | 113 s | 0 s | yes |
 | tar.zst -22 --ultra | 12.92 | 18.45× | −42.3 % | 986 s | 0 s | yes |
 | tar.xz -9e | 11.84 | 20.12× | −47.1 % | 897 s | 1 s | yes |
-| **nvz snabb** | 22.41 | 10.63× | +0.1 % | 2 s | 1 s | yes |
-| **nvz utan knep** | 11.87 | 20.08× | −47.0 % | 854 s | 2 s | yes |
-| **nvz normal** | 11.87 | 20.08× | −47.0 % | 851 s | 2 s | yes |
-| **nvz liten** | **10.03** | 23.77× | −55.2 % | 191 s | 198 s | yes |
+| **hz snabb** | 22.41 | 10.63× | +0.1 % | 2 s | 1 s | yes |
+| **hz utan knep** | 11.87 | 20.08× | −47.0 % | 854 s | 2 s | yes |
+| **hz normal** | 11.87 | 20.08× | −47.0 % | 851 s | 2 s | yes |
+| **hz liten** | **10.23** | 23.30× | −54.3 % | 73 s | 42 s | yes |
 
 <!-- SLUT TABELLER -->
 
@@ -306,7 +312,7 @@ relative to `tar.zst −3`; *exakt* is the bit-exactness outcome.
 
 This comparison isolates the nvcm compressor — one file at a time, one
 thread — since published figures for these corpora are defined that way.
-nvz as an archiver appears in 3.1–3.3.
+hz as an archiver appears in 3.1–3.3.
 
 <!-- STANDARD -->
 
@@ -386,7 +392,7 @@ therefore reports MiB/s of raw data through the wall clock.
 
 <!-- TIDER -->
 
-| corpus | nvz normal pack | nvz normal unpack | zstd -3 pack | zstd -19 pack | xz -9e pack |
+| corpus | hz normal pack | hz normal unpack | zstd -3 pack | zstd -19 pack | xz -9e pack |
 |:--|--:|--:|--:|--:|--:|
 | Source code | 1 | 97 | 326 | 2 | 1 |
 | Images (PNG) | 3 | 51 | 743 | 11 | 3 |
@@ -407,14 +413,14 @@ therefore reports MiB/s of raw data through the wall clock.
 `xz −9e` in the tables above is LZMA2 with a 64 MiB dictionary. The
 format's full form is a different opponent: 7-Zip at `-mx=9` with a
 **512 MiB dictionary** and solid archive — the dictionary then covers
-each corpus in full except video, the same playing field as nvz's large
+each corpus in full except video, the same playing field as hz's large
 blocks. The comparison ran as complete cycles
-(`experiment/lzma2-extrem.sh`), no filters, LZMA2 alone against nvz in
+(`experiment/lzma2-extrem.sh`), no filters, LZMA2 alone against hz in
 its default mode:
 
 <!-- LZMA2 -->
 
-| corpus | raw MiB | LZMA2-extreme MiB | nvz MiB | nvz vs. LZMA2-extreme | pack time LZMA2/nvz | exact |
+| corpus | raw MiB | LZMA2-extreme MiB | hz MiB | hz vs. LZMA2-extreme | pack time LZMA2/hz | exact |
 |:--|--:|--:|--:|--:|--:|:-:|
 | Source code | 55 | 8.22 | **7.28** | −11.4 % | 19 / 70 s | yes |
 | Loggfiles | 238 | 14.16 | **10.03** | −29.2 % | 70 / 196 s | yes |
@@ -425,18 +431,18 @@ its default mode:
 
 <!-- SLUT LZMA2 -->
 
-Two observations. nvz's lead on text persists against even the strongest
+Two observations. hz's lead on text persists against even the strongest
 LZMA2 form — context mixing collects what a larger dictionary cannot. On
 the archive corpus, however, LZMA2 at full strength beats zstd −22 and
-thus became the new best classical reference there: **nvz trailed by
+thus became the new best classical reference there: **hz trailed by
 +2.3 %**. 7-Zip also packs consistently faster (multithreaded LZMA2).
 
 **Remedied 2026-11-18.** The gap had a mechanism, not merely a number:
-nvz's LZMA codec ran `preset 9e`'s fixed 64 MiB dictionary, while 7-Zip at
-maximum had 512 MiB and therefore covered the whole block. nvz's dictionary
+hz's LZMA codec ran `preset 9e`'s fixed 64 MiB dictionary, while 7-Zip at
+maximum had 512 MiB and therefore covered the whole block. hz's dictionary
 is now scaled to the block (see 4.2 and the comment in
 `src/cpp/kodek.cpp`), and LZMA was given a place as a candidate in the
-opaque escalation. Re-measured, nvz is 0.05 % **below** LZMA2 at maximum on
+opaque escalation. Re-measured, hz is 0.05 % **below** LZMA2 at maximum on
 the archive corpus — 248,512,199 against 248,636,548 bytes. The archive row
 in the table above is therefore out of date; it stands as measured on
 2026-11-17, and the re-measurement is in 4.2.
@@ -447,7 +453,7 @@ Every corpus above was chosen by us, and the objection that a result may be
 tuned to its test data cannot be answered with more of the same data.
 `experiment/karntest.sh` therefore runs the whole round trip on a third-party
 tree: Linux kernel 6.12, downloaded from `cdn.kernel.org`, with a checksum we
-did not set ourselves. No threshold and no parameter in nvz was chosen with
+did not set ourselves. No threshold and no parameter in hz was chosen with
 it in view.
 
 <!-- KARNTEST -->
@@ -458,21 +464,21 @@ it in view.
 | `tar.zst -19 --long` | 147,274,821 | -0.4 % | 117 s |
 | `7z` LZMA2 `-mx=9`, 512 MiB dictionary, solid | 141,350,334 | -4.4 % | 264 s |
 | `tar.xz -9e` (local, 64 MiB dictionary) | 140,072,812 | -5.3 % | 304 s |
-| `nvz --läge normal` | 141,787,458 | -4.1 % | 201 s |
-| **`nvz --läge liten`** | **123,217,795** | **-16.7 %** | 443 s |
+| `hz --läge normal` | 141,787,458 | -4.1 % | 201 s |
+| **`hz --läge liten`** | **123,217,795** | **-16.7 %** | 443 s |
 
 *1,476,500,559 bytes in 86,618 files. Unpacking `liten`: 439 s.*
 
 <!-- SLUT KARNTEST -->
 
-Against the best classical tool on the same machine nvz is 12.0 % smaller,
+Against the best classical tool on the same machine hz is 12.0 % smaller,
 and against LZMA2 in its maximum form (3.6) 12.8 % smaller. `normal` trails
 `xz -9e` by 1.2 % but packs 1.5 times faster. That the outcome (-12.0 %) is
 of the same order as our own code corpus (-11.6 %, 3.1) is the real result of
 this test: the margin carries over to data we did not choose.
 
 The correctness half was run as a manifest before and after, checked by
-`md5sum -c` rather than by nvz's own code: **86,618 of 86,618 files OK, 0
+`md5sum -c` rather than by hz's own code: **86,618 of 86,618 files OK, 0
 FAILED**, with the manifests identical line by line.
 
 ### 3.8 zlib-ng/corpora: eight corpora chosen by someone else
@@ -481,13 +487,13 @@ The suggestion came from outside, and the value lies in the selection:
 `zlib-ng/corpora` collects the literature's old standard corpora — Calgary
 and Canterbury — alongside `artificial` (pathological cases), `neuro`
 (measurement data), `snappy`, `large` and Silesia. Calgary and Canterbury
-consist of **small** files, which is where nvz is weakest (section 8, item
+consist of **small** files, which is where hz is weakest (section 8, item
 3), so the selection is not a favourable one. Every row was run as a full
 round trip with bit-exact comparison.
 
 <!-- CORPORA -->
 
-| corpus | raw | gzip -9 | bzip2 -9 | zstd -19 | xz -9e | nvz `normal` | nvz `liten` | nvz vs. best classical |
+| corpus | raw | gzip -9 | bzip2 -9 | zstd -19 | xz -9e | hz `normal` | hz `liten` | hz vs. best classical |
 |:--|--:|--:|--:|--:|--:|--:|--:|--:|
 | artificial | 300,001 | 77,226 | 76,304 | 75,598 | 77,128 | 75,521 | **75,521** | **-0.1 %** |
 | calgary | 3,251,493 | 1,061,241 | 893,979 | 896,593 | 855,732 | 851,964 | **726,530** | **-15.1 %** |
@@ -503,29 +509,29 @@ bit-exact in all 24 runs (three modes × eight corpora).*
 
 <!-- SLUT CORPORA -->
 
-Seven of eight corpora go to nvz, with -15.8 % on Canterbury as the best
-outcome. The eighth is `neuro`, where nvz trails `xz -9e` by **1.0 %**: the
+Seven of eight corpora go to hz, with -15.8 % on Canterbury as the best
+outcome. The eighth is `neuro`, where hz trails `xz -9e` by **1.0 %**: the
 material is binary measurement data without the between-file similarity that
-nvz's transforms and deduplication live on, leaving only the codec — and
+hz's transforms and deduplication live on, leaving only the codec — and
 there LZMA with a 64 MiB dictionary is stronger than nvcm on that particular
 data. It is the same pattern as the archive corpus in 4.2 and should be read
-as the boundary of H1: nvz improves data with exploitable structure, and on
+as the boundary of H1: hz improves data with exploitable structure, and on
 data without it the result is a bare percent worse, not better.
 
 ### 3.9 Dominance: smaller AND faster, corpus by corpus
 
 The tables above compare size and time separately. The harder question is
-whether nvz can beat the **same** opponent on both axes at once — a
+whether hz can beat the **same** opponent on both axes at once — a
 requirement raised on 2026-11-18: *better than the established tools,
 everywhere, faster and at least as good.* `experiment/dominans.py` tests it:
 the opponent per corpus is whichever established packer produced the
 smallest archive, with its own measured pack time on the same machine, and
-of nvz's modes the smallest of those that dominate is counted.
+of hz's modes the smallest of those that dominate is counted.
 
 <!-- DOMINANS -->
 
 ```
-korpus     bästa etablerade                  byte    sek | nvz               byte    sek | utfall
+korpus     bästa etablerade                  byte    sek | hz               byte    sek | utfall
 kod        tar.xz -9e                   8 629 516     47 | normal       8 580 323     40 | DOMINERAR (-0.57 % storlek, -15 % tid)
 png        tar.zst -22 --ultra        257 132 369    156 | normal     230 452 176    127 | DOMINERAR (-10.38 % storlek, -18 % tid)
 foto       tar.bz2 -9                 424 611 032     57 | normal     361 834 581     48 | DOMINERAR (-14.78 % storlek, -16 % tid)
@@ -541,12 +547,12 @@ dominerar på 6 av 9 korpusar
 
 <!-- SLUT DOMINANS -->
 
-The pattern is not random. nvz dominates where there is structure to exploit
+The pattern is not random. hz dominates where there is structure to exploit
 — source code, logs, photographs, images, mixed trees — and falls short on
 TIME, never on size, where there is nothing to exploit: film and gif are
 already entropy-coded, the archive corpus needs an entire extra LZMA pass for
 its last percent, and enwik8 is a single text file where neither
-deduplication, sorting nor transforms have anything to contribute and nvz's
+deduplication, sorting nor transforms have anything to contribute and hz's
 five sweeps over the data (README, "The floor is not the codec") become pure
 cost.
 
@@ -569,7 +575,7 @@ differ only in whether nvcm participates in the codec probe.
 
 nvcm won the probe for every text block, which the archive register
 confirms (2 blocks, both nvcm; 192.03 → 9.00 MiB and 46.29 → 1.03 MiB).
-That the smaller archive also packs faster is a parallelism effect: nvz's
+That the smaller archive also packs faster is a parallelism effect: hz's
 blocks compress independently, whereas `xz -9e -T0` on this input
 effectively runs single-threaded due to its per-thread memory budget. The
 blocks' differing ratios (21.4× vs. 45.1×) illustrate adaptation: a model
@@ -578,7 +584,7 @@ better.
 
 ### 4.2 Already-compressed archives: the limit of sampling
 
-On the archive corpus, nvz is 20.0 % larger than
+On the archive corpus, hz is 20.0 % larger than
 `zstd −22 --ultra --long=31` (291.3 vs. 242.8 MiB). Two explanatory
 hypotheses were tested experimentally (`experiment/arkiv-fonster.sh`):
 (a) block partitioning prevents cross-block matching; (b) the codec probe
@@ -589,9 +595,9 @@ selects the wrong codec.
 | zstd −19, default window (8 MiB) | 365.3 MiB |
 | zstd −19 `--long=27`, whole stream | 261.4 MiB |
 | zstd −22 `--ultra --long=31`, whole stream | 242.8 MiB |
-| nvz, probe selects | 291.3 MiB |
-| nvz, `--kodek zstd19` | 260.2 MiB |
-| nvz, `--kodek zstd22` | **244.6 MiB** |
+| hz, probe selects | 291.3 MiB |
+| hz, `--kodek zstd19` | 260.2 MiB |
+| hz, `--kodek zstd22` | **244.6 MiB** |
 
 Hypothesis (a) is falsified: with a manually chosen codec, partitioning
 costs 1.2 MiB (0.7 %). Hypothesis (b) is confirmed: the probe compresses
@@ -619,18 +625,18 @@ expensive path. Re-measured:
 | configuration | size |
 |:--|--:|
 | zstd −22 `--ultra --long=31`, whole stream | 242.8 MiB |
-| nvz after remedy (1 block, escalated to zstd22) | **242.5 MiB** |
+| hz after remedy (1 block, escalated to zstd22) | **242.5 MiB** |
 
 The video corpus exercises the rule's other branch: escalation does not
 trigger (zstd −19 gains 0.9 %), and pack time stays at 60 s against the
 255 s an unconditional zstd −22 would have cost.
 
-nvz thus moves from +20.0 % to −0.1 % against the best classical tool on
+hz thus moves from +20.0 % to −0.1 % against the best classical tool on
 this corpus; the margin is deduplication's 62.8 MiB, which the classical
 pipeline must rediscover as matches rather than never storing.
 
 **Second re-measurement, 2026-11-18.** The two-step rule had two weaknesses
-that surfaced when the question was raised whether nvz can beat the best
+that surfaced when the question was raised whether hz can beat the best
 established tool *everywhere*:
 
 *The cheap step was not cheap.* The rule used `zstd -19` to answer the
@@ -654,15 +660,15 @@ than `zstd -22` on such data (film: 557,863,118 bytes in 56 s versus
 has shown that the block holds between-file similarity, mode `liten` now also
 tries **LZMA with a dictionary covering the whole block** — the only
 candidate whose window can reach across an opaque block of several hundred
-megabytes, and precisely the form 7-Zip beat nvz with in 3.6. With it:
+megabytes, and precisely the form 7-Zip beat hz with in 3.6. With it:
 
-| configuration | size | vs. nvz |
+| configuration | size | vs. hz |
 |:--|--:|--:|
 | `zstd -22 --ultra --long=31`, whole stream | 254,310,751 | +2.3 % |
 | 7-Zip LZMA2 `-mx=9`, 512 MiB dictionary, solid | 248,636,548 | +0.04 % |
-| **nvz `liten` after the remedy** | **248,512,199** | — |
+| **hz `liten` after the remedy** | **248,512,199** | — |
 
-nvz is thus **0.04 % smaller than LZMA2 in its maximum form** on the corpus
+hz is thus **0.04 % smaller than LZMA2 in its maximum form** on the corpus
 that was the evaluation's only counter-instance to H1. The price is time:
 188 s against 7-Zip's 43 s, since the step is an entire additional
 compression of the block. That trade-off is framed by the modes — `normal`
@@ -674,7 +680,7 @@ does not make it, `liten` does.
 All twelve configurations land within 1 % of raw size — expected, since
 transform-coded video has no entropy layer accessible to generic
 compression. The relevant comparison is thus the cost of establishing
-this: nvz `normal` reaches the same size as `zstd −22` in 16 % of the time
+this: hz `normal` reaches the same size as `zstd −22` in 16 % of the time
 (61 vs. 266 s), because the codec probe classifies the blocks as
 raw-storage cases from samples instead of compressing them in full.
 
@@ -682,8 +688,8 @@ raw-storage cases from samples instead of compressing them in full.
 
 The GIF corpus's 1.93× ratio is fully explained by duplicates (47.3 % of
 the corpus) and by the corpus (27.4 MiB) fitting inside every modern
-compressor's window: nvz, zstd −19/−22 and xz reach the same size, and
-`nvz utan knep` is identical to `nvz normal`. nvz's transforms contribute
+compressor's window: hz, zstd −19/−22 and xz reach the same size, and
+`hz utan knep` is identical to `hz normal`. hz's transforms contribute
 nothing on LZW-coded content — the format is not opened. A GIF
 counterpart to nvjpg (LZW → arithmetic coding of the frames) is thus an
 identified but unmeasured opportunity; the corpus to measure it now
@@ -735,7 +741,7 @@ in 156 s. `normal` is therefore 10.4 % smaller **and** 18 % faster, while
 `liten` still takes the last 5.7 % for those who want them. That is the
 trade-off the modes exist for, now measured at both ends.
 
-The price of this whole section is on the record too: nvz's dictionary — and
+The price of this whole section is on the record too: hz's dictionary — and
 with it both ratio and time — now depends on how much memory the machine has
 free. Measurements must therefore be made on an otherwise unloaded machine,
 or one measures the gate rather than the compression.
@@ -829,14 +835,14 @@ to 1.79 % — and the whole archive from 8,675,609 to 8,578,823 bytes. **Reading
 hash, zstd) and v3 are all read by the same binary, and which compressor the
 register used is decided by the stream's own magic rather than by the version
 field, which sits inside the compressed register. The reverse does not hold:
-an nvz built before 2026-11-18 cannot read a v3 archive. The test suite
+an hz built before 2026-11-18 cannot read a v3 archive. The test suite
 covers all three versions.
 
 ### 5.4 The evaluation's own error source: a living corpus
 
 During the re-measurement on 2026-11-18, two rows reported "SKILJER" on the
 `kod` corpus — the recursive comparison found three files that did not come
-back identical. The fault was not in nvz.
+back identical. The fault was not in hz.
 
 `korpus/bygg-korpus.py` **hard-links** rather than copies, to save disk. The
 file in `korpus/kod` is therefore the same inode as the file in the live
@@ -880,7 +886,7 @@ test suite is correctly built — not that the corpus was.
 
 ## 6. Implementation
 
-During the evaluation, nvz was rewritten from Python into a standalone
+During the evaluation, hz was rewritten from Python into a standalone
 C++17 binary (367 kB, 318 kB stripped): nvcm and nvjpg are linked in and executed as worker
 processes via `/proc/self/exe`, zstd/xz/zlib are called as in-process
 libraries, and `liten` is the default mode. Compression results are
@@ -913,11 +919,11 @@ concurrency or format migration, documented here for their generality:
    first 16 hex characters of the object hash — 8 bytes. A reader
    comparing 16 bytes rejects healthy archives.
 4. **Incomplete header dependencies in the build.** The object-file rule read
-   `%.o: %.cpp src/cpp/nvz.hpp` and therefore tracked a single header. A
+   `%.o: %.cpp src/cpp/hz.hpp` and therefore tracked a single header. A
    field added to `struct Val` (arkiv.hpp) rebuilt `huvud.o` and `arkiv.o`
    but not `yta.o`, and the binary was linked from object files that
    disagreed about the struct's layout. The result was a binary where
-   `nvz packa` worked flawlessly while `nvz -t` crashed with SIGSEGV — no
+   `hz packa` worked flawlessly while `hz -t` crashed with SIGSEGV — no
    compiler warning, no link error. The fault was found by
    `prov/slumpprov.py` (section 5) on its first round and is the clearest
    illustration of why the randomized test exists: it exercises the whole
@@ -935,7 +941,7 @@ the opaque two-step rule is `zstd -3` instead of `zstd -19`; and in mode
 `liten` the choice is re-tested on the whole block when the sample's margin
 was thin. The register is version 3 (5.3). All changes are backward
 compatible for READING — v1, v2 and v3 are read by the same binary — but a v3
-archive cannot be read by an nvz built before that day.
+archive cannot be read by an hz built before that day.
 
 5. **The boundary of the self-check, and three faults that lived outside
    it.** A code review by Ted Lyngmo on 2026-11-18 found three flaws that
@@ -955,7 +961,7 @@ archive cannot be read by an nvz built before that day.
    fingerprint of the deflate engine (fixed probe string, crc32 of the
    output), and on a miss the level, memory level and strategy are searched
    again; the window is not varied, as it is stated in the file's own zlib
-   header. If the stream still cannot be reproduced, nvz refuses with both
+   header. If the stream still cannot be reproduced, hz refuses with both
    fingerprints in the message. What remains is that a PNG-heavy archive may
    need a machine with the same engine — that is the format's price and it
    belongs where it can be seen.
@@ -966,9 +972,9 @@ archive cannot be read by an nvz built before that day.
    and a deleted original. Every `fwrite`, `fflush` and `fclose` is now
    checked, the file is `fsync`ed before closing, and an archive that did
    not finish is removed. SIGXFSZ is deliberately ignored: gzip dies at 153
-   and never cleans up, while nvz gets EFBIG and returns 1.
+   and never cleans up, while hz gets EFBIG and returns 1.
 
-   *An unreadable file killed the process.* `nvz a b c` with b unreadable
+   *An unreadable file killed the process.* `hz a b c` with b unreadable
    escaped through `main` and died in `std::terminate` — SIGABRT, exit 134,
    with a's original already deleted and c never processed. Each operand is
    now caught on its own: warning, the rest are packed, exit status 1. That
@@ -986,18 +992,18 @@ aliases — so every command in this report still works unchanged.
 ## 7. Related work
 
 One objection raised in the public discussion of this work belongs in the
-report rather than in a comment thread: *every individual method nvz uses is
+report rather than in a comment thread: *every individual method hz uses is
 known and has been published for years.* That is correct. The table below
-credits each part, and the last column states where nvz sits relative to it.
+credits each part, and the last column states where hz sits relative to it.
 
-| nvz component | known prior art | nvz vs. the prior art |
+| hz component | known prior art | hz vs. the prior art |
 |:--|:--|:--|
-| similarity sorting before compression | *Sort Before Compression* (<https://gwern.net/sort>); solid archives in RAR and 7-Zip; lrzip | same idea. nvz sorts on content class and extension, and measures the effect separately (7.1) |
-| deduplication of identical files | borg, restic, ZFS; content-defined chunking since LBFS (2001) | weaker: nvz deduplicates whole files, not chunks |
-| deflate stream back to raw data plus a recipe | precomp (Christian Schneider), preflate, reflate | narrower: nvz only handles streams zlib itself wrote |
+| similarity sorting before compression | *Sort Before Compression* (<https://gwern.net/sort>); solid archives in RAR and 7-Zip; lrzip | same idea. hz sorts on content class and extension, and measures the effect separately (7.1) |
+| deduplication of identical files | borg, restic, ZFS; content-defined chunking since LBFS (2001) | weaker: hz deduplicates whole files, not chunks |
+| deflate stream back to raw data plus a recipe | precomp (Christian Schneider), preflate, reflate | narrower: hz only handles streams zlib itself wrote |
 | lossless JPEG recompression | packJPG (Matthias Stirner), Lepton (Dropbox, 2016), brunsli -> JPEG XL | **worse**: nvjpg achieves -15.1 %, published figures for the others are around -20 to -22 % |
 | context mixing, logistic mixer, APM/SSE | the PAQ family (Matt Mahoney), lpaq, zpaq, cmix | smaller model: paq8px beats nvcm on enwik8, 15.8 vs. 20.4 MB (3.4) |
-| content-aware filter selection per data type | FreeArc (Bulat Ziganshin), zpaq method strings | same thought, different mechanism: nvz decides by probing the data rather than by a rule on file type |
+| content-aware filter selection per data type | FreeArc (Bulat Ziganshin), zpaq method strings | same thought, different mechanism: hz decides by probing the data rather than by a rule on file type |
 | transform verified in both directions before use | precomp and Lepton do the same | same |
 
 The figures for packJPG, Lepton, brunsli and paq8px are **published values,
@@ -1008,7 +1014,7 @@ things: that the parts sit in one tool with one archive format and one
 reconstruction guarantee; that the choice between codecs is settled by
 probing the data rather than by following the file extension; and the
 evaluation in this report, including the counter-instance it found and fixed
-(4.2). nvz does not beat information theory, and does nothing nobody has
+(4.2). hz does not beat information theory, and does nothing nobody has
 done: it packages known technique and reports what the packaging is worth.
 
 ### 7.1 How much comes from the sorting?
@@ -1029,8 +1035,8 @@ from every other file on every row:
 
 | step | bytes | vs. tar | the step itself |
 |:--|--:|--:|--:|
-| tar in directory order (no nvz) | 8,611,308 | ±0 | — |
-| nvz, all tricks off | 8,673,944 | +0.73 % | +0.73 % |
+| tar in directory order (no hz) | 8,611,308 | ±0 | — |
+| hz, all tricks off | 8,673,944 | +0.73 % | +0.73 % |
 | + one block per content class | 8,673,942 | +0.73 % | -0.00 % |
 | + sorting within the class | 8,676,765 | +0.76 % | +0.03 % |
 | + deduplication | 8,675,644 | +0.75 % | -0.01 % |
@@ -1040,8 +1046,8 @@ from every other file on every row:
 
 | step | bytes | vs. tar | the step itself |
 |:--|--:|--:|--:|
-| tar in directory order (no nvz) | 264,771,708 | ±0 | — |
-| nvz, all tricks off | 268,949,955 | +1.58 % | +1.58 % |
+| tar in directory order (no hz) | 264,771,708 | ±0 | — |
+| hz, all tricks off | 268,949,955 | +1.58 % | +1.58 % |
 | + one block per content class | 268,949,973 | +1.58 % | ±0 |
 | + sorting within the class | 268,949,972 | +1.58 % | -0.00 % |
 | + deduplication | 258,596,586 | -2.33 % | **-3.85 %** |
@@ -1051,7 +1057,7 @@ The result is clear and partly uncomfortable. **Sorting measures ±0 on both
 corpora**, and so does class blocking. What does measure is the transforms
 (-12.0 % on png) and deduplication where duplicates exist (-3.9 % on png,
 where 28.7 % of the bytes are duplicates; ±0 on kod, where 0.7 % are).
-nvz's own archive layer also costs +0.7 to +1.6 % on the rows where nothing
+hz's own archive layer also costs +0.7 to +1.6 % on the rows where nothing
 is enabled — register, block headers, and the fact that blocks are
 compressed separately.
 
@@ -1072,15 +1078,15 @@ order loses all locality while the content is unchanged.
 | ordering | `zstd -3` (2 MiB window) | `xz -9e` (64 MiB dictionary) |
 |:--|--:|--:|
 | tar in directory order | 13,926,644 | 8,977,616 |
-| nvz without sorting | 13,945,434 | 9,066,545 |
-| nvz **with** sorting | **12,833,126** | **8,869,852** |
+| hz without sorting | 13,945,434 | 9,066,545 |
+| hz **with** sorting | **12,833,126** | **8,869,852** |
 | value of the sorting | **-8.0 %** | **-2.2 %** |
 
 That is the answer, and it concedes the objection: the value of the sorting is
 a function of the window and of how scattered the similarity was to begin
 with. With a small window and scattered similarity it is worth 8 %; with a
 dictionary covering the whole corpus, 2.2 %; on corpora that are already
-ordered, zero. nvz's measurable gains on the material in this report
+ordered, zero. hz's measurable gains on the material in this report
 therefore come from the transforms, from deduplication where duplicates
 exist, and from nvcm in mode `liten` — **not** from the sorting.
 
@@ -1103,12 +1109,12 @@ they carry a measured value rather than a guess.
    `normal` and 3.3 GiB in `liten` — 1.4 and 2.2 times the raw data. The
    Python implementation streamed each block to a temporary file; the C++
    rewrite instead holds each block's raw bytes in `Bygge::ra` until the
-   block is compressed. The largest tree nvz can pack is therefore roughly
+   block is compressed. The largest tree hz can pack is therefore roughly
    available RAM divided by 1.4, and less for PNG-heavy trees, since an
    unfolded PNG is allowed to be up to 150 times its file size
    (`PNG_UPPBLASNING_TAK`). Remedy: keep `Bygge::ra` in a write-through
    temporary file and stream it back in step 5. This removes the tool's
-   hardest limit and is the only item on this list that changes what nvz can
+   hardest limit and is the only item on this list that changes what hz can
    handle at all.
 
 2. **The default mode is the most extreme one.** `liten` is the default.
@@ -1124,19 +1130,19 @@ they carry a measured value rather than a guess.
 
 3. **The small-file floor — and it is the register, not the compression.**
    An empty archive is 175 bytes (gzip: 25), and below roughly 30 kB of
-   input nvz is larger than `xz -9e`: +14.2 % at 1 kB, +2.9 % at 10 kB,
+   input hz is larger than `xz -9e`: +14.2 % at 1 kB, +2.9 % at 10 kB,
    -11.8 % at 100 kB, -14.6 % at 1 MiB (the same text file, growing
    prefix). Breaking down a 1 kB case shows where the bytes are:
 
    | | bytes |
    |:--|--:|
-   | nvz, whole archive | 791 |
+   | hz, whole archive | 791 |
    | &nbsp;&nbsp;of which compressed payload | 616 |
    | &nbsp;&nbsp;of which register and tail | 175 |
    | `xz -9e`, whole file | 696 |
    | &nbsp;&nbsp;of which xz's container (header, block header, index, footer) | ~60 |
 
-   nvz's **payload is 80 bytes smaller than xz's entire file** — it is the
+   hz's **payload is 80 bytes smaller than xz's entire file** — it is the
    register that loses the race, at three times xz's container. The fat
    entries are the object hash (16 raw bytes, and with a single object there
    is nothing to deduplicate against), the timestamp as an ISO string
@@ -1174,7 +1180,7 @@ they carry a measured value rather than a guess.
    raw.
 
 6. **PNG coverage stops at zlib.** Streams written by zlib-ng, libdeflate or
-   Chrome cannot be reconstructed by nvz's recipe search. preflate solves
+   Chrome cannot be reconstructed by hz's recipe search. preflate solves
    the general case (7); linking it in widens coverage without touching the
    format.
 
@@ -1229,7 +1235,7 @@ they carry a measured value rather than a guess.
     figure measured before 2026-11-18 carries that uncertainty.
 14. **The memory budget is not deterministic.** The dictionary size — and
     with it both ratio and pack time — depends on how much memory the machine
-    has free when nvz starts (4.5). That makes measurements dependent on
+    has free when hz starts (4.5). That makes measurements dependent on
     other load. Remedy: set the budget to a share of the machine's TOTAL
     memory rather than its free memory, and state the share in the report.
 
@@ -1241,13 +1247,13 @@ the whole (Amdahl; see README).
 ## Appendix A: Reproduction
 
 Source code and all measurement data are published at
-<https://github.com/hugowikstrom/nvz>. Dependencies: g++ (C++17),
+<https://github.com/hugowikstrom/hz>. Dependencies: g++ (C++17),
 libzstd-dev, liblzma-dev, zlib1g-dev; for the reference measurements also
 gzip, pigz, bzip2, zstd, and xz.
 
 ```bash
-git clone https://github.com/hugowikstrom/nvz && cd nvz
-make                                                  # builds nvz, nvcm, nvjpg
+git clone https://github.com/hugowikstrom/hz && cd hz
+make                                                  # builds hz, nvcm, nvjpg
 python3 korpus/bygg-korpus.py gif film arkiv logg     # local corpora
 export NVPACK_SKRAP=$PWD/.skrap
 python3 matning/matning.py <corpus>                   # archive level, per corpus

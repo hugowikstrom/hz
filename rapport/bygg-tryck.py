@@ -11,7 +11,7 @@ Typsnitten refereras vid FAMILJENAMN och laddas aldrig via @font-face. Chrome
 bäddar in varje typsnitt som kommit in genom @font-face som en Type 3-font, och
 sådana underkänner tryckerier. Archivo, Noto Serif och Liberation Mono finns
 statiskt installerade på maskinen; verifiera alltid efteråt med
-`pdffonts rapport/nvz-rapport.pdf | grep 'Type 3'`.
+`pdffonts rapport/hz-rapport.pdf | grep 'Type 3'`.
 
 Alla tal läses ur resultat/*.json. Ingenting skrivs av för hand.
 
@@ -64,6 +64,12 @@ def läs(namn):
 # Byggstenar
 # ---------------------------------------------------------------------------
 
+# Rows keep their frozen measurement ids ('nvz liten' ...); only the
+# printed label says hz (the tool was renamed 2026-11-19).
+def visa(namn):
+    return namn.replace('nvz ', 'hz ') if namn.startswith('nvz') else namn
+
+
 def sort_av(namn):
     if namn.startswith('nvz'): return 'nv'
     if 'dagens' in namn: return 'idag'
@@ -92,12 +98,12 @@ def diagram(data) -> str:
         andel = byte / max_b * 100
         delta = (byte - idag) / idag * 100
         d_text = '—' if sort == 'idag' else tecken(delta)
-        # En nvz-rad som ligger ÖVER dagens nivå ska inte målas i
-        # vinstfärg bara för att den heter nvz.
+        # En hz-rad som ligger ÖVER dagens nivå ska inte målas i
+        # vinstfärg bara för att den heter hz.
         plus = ' plus' if delta > 0 and sort != 'idag' else ''
         ut.append(
             f'<div class="brad {sort}{plus}">'
-            f'<span class="bnamn">{namn}</span>'
+            f'<span class="bnamn">{visa(namn)}</span>'
             f'<span class="bspår"><i class="bstapel" style="width:{andel:.2f}%"></i>'
             f'<i class="bmärke" style="left:{idag / max_b * 100:.2f}%"></i></span>'
             f'<span class="bmib">{tal(byte / MIB, 1 if byte / MIB >= 100 else 2)}</span>'
@@ -105,7 +111,7 @@ def diagram(data) -> str:
             f'</div>')
     ut.append(
         f'<div class="bfot"><span>'
-        f'<i class="prick nv"></i> nvz &nbsp; <i class="prick idag"></i> dagens arkivskript'
+        f'<i class="prick nv"></i> hz &nbsp; <i class="prick idag"></i> dagens arkivskript'
         f' &nbsp; <i class="prick kl"></i> klassiska verktyg</span>'
         f'<span>stapel = andel av originalets {tal(rå / MIB, 1)} MiB · streck = dagens nivå</span></div>')
     ut.append('</div>')
@@ -126,7 +132,7 @@ def tabell(data) -> str:
         delta = (v['byte'] - idag) / idag * 100
         d_text = '—' if sort == 'idag' else tecken(delta, 1, ' %')
         rader.append(
-            f'<tr class="{sort}{" plus" if delta > 0 and sort != "idag" else ""}"><td>{namn}</td>'
+            f'<tr class="{sort}{" plus" if delta > 0 and sort != "idag" else ""}"><td>{visa(namn)}</td>'
             f'<td>{tal(v["byte"] / MIB, 2)}</td>'
             f'<td>{tal(rå / v["byte"], 2)}×</td>'
             f'<td>{d_text}</td>'
@@ -314,7 +320,7 @@ pre {
 """
 
 
-def sida(nr, tot, innehåll, fot_vänster='nvz · mätrapport'):
+def sida(nr, tot, innehåll, fot_vänster='hz · mätrapport'):
     return (f'<div class="sida">{innehåll}'
             f'<div class="fot"><span>{fot_vänster}</span>'
             f'<span>sida {nr} av {tot}</span></div></div>')
@@ -362,7 +368,7 @@ def bygg():
 <div class="titel">
   <div class="topp">
     <span class="etikett">Mätrapport · 16 november 2026 · Hugo Wikström</span>
-    <h1>nvz</h1>
+    <h1>hz</h1>
     <p class="under">En arkivpackare som <b>vet vad den packar</b> — och som mäter
       sig mot allt annat som finns installerat på maskinen. Fyra riktiga filträd,
       tolv packare, fyrtiosju rundgångar, <b>varje enskild bit-exakt</b>.</p>
@@ -371,9 +377,9 @@ def bygg():
   <div class="nyckeltal">{''.join(nk)}</div>
   <div class="botten">
     Mätt på en Ryzen AI 9 HX 470 (24 trådar, 2,0 GHz) med NVMe-disk.<br>
-    Koden, korpusbyggaren och alla mätvärden ligger i <code>~/nvz</code>.
+    Koden, korpusbyggaren och alla mätvärden ligger i <code>~/hz</code>.
   </div>
-</div>''', 'nvz · mätrapport · november 2026'))
+</div>''', 'hz · mätrapport · november 2026'))
 
     # ---------------------------------------------------------------- 2 --
     rader_sam = []
@@ -388,7 +394,7 @@ def bygg():
             f'<td class="ja">{tecken(mot_idag(k, bästa), 1, " %")}</td></tr>')
     sammanfattning = (
         '<table class="mät"><thead><tr><th>träd</th><th>original MiB</th>'
-        '<th>dagens MiB</th><th>bästa klassiska</th><th>nvz MiB</th>'
+        '<th>dagens MiB</th><th>bästa klassiska</th><th>hz MiB</th>'
         '<th>mot dagens</th></tr></thead><tbody>'
         + ''.join(rader_sam) + '</tbody></table>')
 
@@ -403,7 +409,7 @@ enda byteström. zstd ser den strömmen genom ett fönster och får aldrig veta 
 verket är en deflate-ström som går att veckla ut, eller att de 400 MB foton den
 maler igenom har ett entropilager från 1992 som går att byta ut.</p>
 
-<p>nvz fyller tomrummet mellan behållaren och komprimeraren. Den klassar
+<p>hz fyller tomrummet mellan behållaren och komprimeraren. Den klassar
 innehållet, byter ut representationen där det finns en bättre, grupperar likt med
 likt, och väljer kodek per block genom att faktiskt prova. Fem mekanismer — och
 den här rapporten redovisar vad var och en gav, inklusive de som gav noll.</p>
@@ -465,10 +471,10 @@ ihop (−11,6 %, den långsamma takten drog medelvärdet mot 50 % hela bilden ig
 
 <h3>PNG vecklas ut och packas om &nbsp;<span class="mono" style="font-size:7.6pt;color:#717f7a">src/png.py</span></h3>
 <p>Deflate från 1996 är ett dåligt skal runt bilddata: 32 kB fönster, en fil i taget.
-nvz vecklar ut IDAT-strömmen till råa filterrader och packar dem tillsammans med
+hz vecklar ut IDAT-strömmen till råa filterrader och packar dem tillsammans med
 alla andra bilders rådata. Vägen tillbaka är det svåra — deflate är inte en kanonisk
 kodning, så samma indata ger olika utdata beroende på nivå, minnesnivå och strategi.
-nvz letar därför upp <b>receptet</b>: den uppsättning zlib-parametrar som råkar ge
+hz letar därför upp <b>receptet</b>: den uppsättning zlib-parametrar som råkar ge
 precis den ström filen redan har. Sökningen är billig eftersom zlib-huvudet röjer
 fönsterstorlek och nivågrupp, eftersom fel kandidat avviker inom de första hundra
 kilobytena och då avbryts, och eftersom receptet som senast fungerade provas först.</p>
@@ -478,7 +484,7 @@ PNG-korpusen gick 281 av 4 422 provade filer att veckla ut — vinsten på dem s
 är desto större.</p>
 
 <h3>En egen kompressor för källkod &nbsp;<span class="mono" style="font-size:7.6pt;color:#717f7a">src/nvcm.c · 450 rader C</span></h3>
-<p>xz var det starkaste som fanns installerat, så nvz fick något starkare. I
+<p>xz var det starkaste som fanns installerat, så hz fick något starkare. I
 stället för att hänvisa bakåt i en ordbok gissar nvcm nästa <em>bit</em>, med åtta
 modeller samtidigt: ordning 0–8, en ordmodell, och en matchmodell som gör
 ordbokspackarens trick som en röst bland andra. En blandare lär sig under tiden vem
@@ -517,10 +523,10 @@ stället för att väljas på filtyp.</p>'''))
 <ul>
 <li><b>Foton är det tydligaste fallet.</b> Varje klassiskt verktyg — gzip, bzip2,
 zstd −22, xz −9e — stannar inom en procent från där det började. De kan bara leta
-efter upprepningar i en ström som redan är entropikodad. nvz byter ut
+efter upprepningar i en ström som redan är entropikodad. hz byter ut
 entropikodningen och tar 15 %.</li>
-<li><b>På det blandade trädet vinner nvz även på tid.</b> zstd −22 behövde 623 s
-för 301,2 MiB; nvz tog 325 s för 279,1 MiB — halva tiden, 7 % mindre. Mot xz −9e
+<li><b>På det blandade trädet vinner hz även på tid.</b> zstd −22 behövde 623 s
+för 301,2 MiB; hz tog 325 s för 279,1 MiB — halva tiden, 7 % mindre. Mot xz −9e
 är det 6 % mindre på i stort sett samma tid.</li>
 <li><b>Läget <code>snabb</code> är gratislunchen.</b> 10 % under dagens arkiv på
 fjorton sekunder, helt och hållet på dedup och sortering. Där finns dubbletter som
@@ -533,7 +539,7 @@ tar aldrig ser.</li>
 <span class="etikett">Fynd</span>
 <h2>Tre gånger hade jag fel</h2>
 <hr class="regel">
-<p class="lead">Varje designbeslut i nvz är mätt fram, och tre av dem gick tvärtemot
+<p class="lead">Varje designbeslut i hz är mätt fram, och tre av dem gick tvärtemot
 vad som verkade självklart. De tre är anledningen till att siffrorna ser ut som de gör.</p>
 
 <div class="fynd"><div class="nr">1</div><div>
@@ -560,7 +566,7 @@ Det kunde deflate aldrig se genom sitt 32 kB-fönster, en fil i taget.</p></div>
 <h4>"Redan packat" får inte vara ett antagande</h4>
 <p>Film, zip och PNG som inte kunde vecklas ut lagrades rått per definition — det
 sparar packtid på data där ingen komprimerare ändå hittar något. På PNG-korpusen
-kostade det <b>175 MiB</b>, och på det skarpa lostconnection-arkivet gjorde det nvz
+kostade det <b>175 MiB</b>, och på det skarpa lostconnection-arkivet gjorde det hz
 <b>sämre än dagens</b>: en halv procent av 2,9 GB film är fjorton megabyte, och
 <code>zstd -3</code> tar dem på några sekunder. Nu provpackas varje block på åtta
 ställen med varje kodek, och tröskeln har tre utfall i stället för två — rått under
@@ -584,7 +590,7 @@ rättigheter, tidsstämplar från 1985 och 2031.</p></div></div>'''))
 <hr class="regel">
 <p class="lead">gzip, bzip2, xz och zstd är byteströmspackare: de ser en enda ström och
 vet ingenting om filer eller filtyper. tar är en behållare utan komprimering, utan
-index och utan dedup. nvz bor i tomrummet mellan dem.</p>
+index och utan dedup. hz bor i tomrummet mellan dem.</p>
 
 <table class="jämför">
 <thead><tr><th></th><th class="mitt">ser filer</th><th class="mitt">index</th>
@@ -600,7 +606,7 @@ index och utan dedup. nvz bor i tomrummet mellan dem.</p>
   <td class="mitt">delvis</td><td class="mitt">per typ</td></tr>
 <tr><td>restic / borg</td><td class="mitt">ja</td><td class="mitt">ja</td>
   <td class="mitt">starkare</td><td class="mitt">nej</td><td class="mitt">nej</td></tr>
-<tr class="nv"><td>nvz</td><td class="mitt">ja</td><td class="mitt">ja</td>
+<tr class="nv"><td>hz</td><td class="mitt">ja</td><td class="mitt">ja</td>
   <td class="mitt">ja</td><td class="mitt">ja</td><td class="mitt">mätt, per block</td></tr>
 </tbody></table>
 
@@ -615,17 +621,17 @@ att vända innan den används. Inget av de klassiska verktygen försöker ens; d
 specialiserade gör det var och en för sin filtyp, och ingen av dem fanns installerad
 på den här maskinen.</p>
 
-<h3>Vad nvz inte kan som de andra kan</h3>
+<h3>Vad hz inte kan som de andra kan</h3>
 <ul>
-<li><b>Inte strömmande.</b> tar kan rapa rakt in i ssh eller på band. nvz behöver en
+<li><b>Inte strömmande.</b> tar kan rapa rakt in i ssh eller på band. hz behöver en
 katalog och arbetsyta på disk — upp till flera GB när PNG-utvecklingen är igång.</li>
-<li><b>Oberoende block kostar korsredundans.</b> Därför förlorar nvz mot
+<li><b>Oberoende block kostar korsredundans.</b> Därför förlorar hz mot
 <code>tar.zst -19</code> på PNG-korpusen när dedup och omvandlingar är avstängda:
-256,4 mot 252,7 MiB. zstd ser en enda 431 MB-ström genom ett 2 GB-fönster; nvz
+256,4 mot 252,7 MiB. zstd ser en enda 431 MB-ström genom ett 2 GB-fönster; hz
 klipper vid 192 MB och packar varje bit för sig. Oberoendet köper parallellitet och
 delvis uppackning, och det kostar det här.</li>
 <li><b>Inget standardformat.</b> En <code>tar.gz</code> går att läsa år 2050. En
-<code>.nv</code> går att läsa så länge <code>~/nvz</code> finns.</li>
+<code>.nv</code> går att läsa så länge <code>~/hz</code> finns.</li>
 <li><b>Ingen kryptering, ingen felkorrigering, inga inkrementella snapshots.</b> Där är
 restic rätt verktyg.</li>
 <li><b>Hårda länkar blir fristående kopior</b>, och rör, uttag och enheter hoppas över
@@ -667,20 +673,20 @@ på maskinen, som hårdlänkar — noll extra diskutrymme, exakt samma bytes.</p
 
     sidor.append(sida(9, TOT, tab_block(2) + tab_block(3) + '''
 <h3>Så kör du det</h3>
-<pre>cd ~/nvz &amp;&amp; make                         <span style="color:#8b9a94"># bygger C-delarna</span>
+<pre>cd ~/hz &amp;&amp; make                         <span style="color:#8b9a94"># bygger C-delarna</span>
 bash prov/prova-allt.sh                      <span style="color:#8b9a94"># provsviten, alla kantfall</span>
 
-./src/nvz ~/projekt                       <span style="color:#8b9a94"># -&gt; ~/projekt.nv, trädet kvar</span>
-./src/nvz -d projekt.nv                   <span style="color:#8b9a94"># trädet tillbaka, arkivet borta</span>
-./src/nvz -l projekt.nv -v                <span style="color:#8b9a94"># block, kodek och kvot</span>
-./src/nvz -t projekt.nv                   <span style="color:#8b9a94"># packa upp och jämför mot registret</span>
+./src/hz ~/projekt                       <span style="color:#8b9a94"># -&gt; ~/projekt.nv, trädet kvar</span>
+./src/hz -d projekt.nv                   <span style="color:#8b9a94"># trädet tillbaka, arkivet borta</span>
+./src/hz -l projekt.nv -v                <span style="color:#8b9a94"># block, kodek och kvot</span>
+./src/hz -t projekt.nv                   <span style="color:#8b9a94"># packa upp och jämför mot registret</span>
 
 python3 matning/matning.py kod               <span style="color:#8b9a94"># mät om en korpus</span>
 python3 matning/rapport.py --in-i-readme     <span style="color:#8b9a94"># bygg om tabellerna</span>
 python3 rapport/bygg-tryck.py                <span style="color:#8b9a94"># bygg om den här PDF:en</span></pre>
 <p style="font-size:7.8pt;color:#717f7a">Kommandoraden är gzips: <code>-c -d -f -k -l -r
 -t -v</code> och <code>-1</code>…<code>-9</code> betyder vad de betyder där. Enda avvikelsen
-är att en KATALOG packas till ett enda arkiv av trädet — det är vad nvz är till för — och
+är att en KATALOG packas till ett enda arkiv av trädet — det är vad hz är till för — och
 att källträdet då alltid lämnas kvar. Underkommandona <code>packa</code>, <code>packa-upp</code>,
 <code>lista</code> och <code>prova</code> finns kvar; mätningarna anropar dem.</p>
 <p style="font-size:7.8pt;color:#717f7a">Tre lägen: <code>snabb</code> motsvarar dagens
@@ -713,7 +719,7 @@ vinner.</p>'''))
             t = t.replace(enhet, '\u00a0' + enhet.lstrip())
         return t
 
-    html = ('<meta charset="utf-8">\n<title>nvz — mätrapport</title>\n'
+    html = ('<meta charset="utf-8">\n<title>hz — mätrapport</title>\n'
             f'<style>{CSS}</style>\n' + hårda_mellanrum('\n'.join(sidor)) + KONTROLL + '\n')
     ut = ROT / 'rapport' / 'tryck.html'
     ut.write_text(html)

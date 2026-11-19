@@ -1,19 +1,25 @@
-# nvz — bred provning
+# hz — bred provning
+
+> **Namnbyte:** verktyget hette **nvz** när mätningarna gjordes och döptes
+> om till **hz** 2026-11-19. Bara namnet ändrades — varje hz läser varje
+> nvz-arkiv bit för bit. Radnycklarna i `resultat/*.json` behåller det
+> gamla namnet som frysta mät-id:n.
+
 
 **Empirisk utvärdering av en innehållsmedveten arkivpackare: kompressionskvot,
 tidsåtgång och korrekthet över åtta datatyper och två standardkorpusar.**
 
 *2026-11-16 · Ryzen AI 9 HX 470 (24 trådar), 28 GiB RAM, NVMe ·
-källkod, mätdata och denna rapport: <https://github.com/hugowikstrom/nvz> ·
+källkod, mätdata och denna rapport: <https://github.com/hugowikstrom/hz> ·
 alla tal genereras ur `resultat/*.json` och kan reproduceras enligt appendix A*
 
 ## Sammanfattning
 
-nvz är en arkivpackare som klassificerar sitt innehåll och tillämpar
+hz är en arkivpackare som klassificerar sitt innehåll och tillämpar
 innehållsspecifika, förlustfria omvandlingar — deduplicering, likhetssortering,
 PNG-utveckling med receptåtersökning, JPEG-omkodning till aritmetisk kod samt
 kontextblandande kompression (nvcm) — innan den väljer kodek per block genom
-stickprov. Denna rapport utvärderar nvz mot sju etablerade packare på elva
+stickprov. Denna rapport utvärderar hz mot sju etablerade packare på elva
 korpusar och prövar två hypoteser:
 
 - **H1 (kompression):** innehållsmedvetenhet ger mätbart mindre arkiv än
@@ -33,7 +39,7 @@ I sammandrag:
 | Silesia, nvcm (en tråd) | **1,677 bit/byte** | xz −9e: 1,829 |
 | enwik8, nvcm (en tråd) | **1,713 bit/byte** | xz −9e: 1,986 |
 | film, samtliga packare | inom 1 % av råstorlek | väntat: redan kodad |
-| arkiv-av-arkiv, nvz mot zstd −22 | **−0,1 %** efter åtgärd (+20,0 % före) | felsökt och rättat, avsnitt 4.2 |
+| arkiv-av-arkiv, hz mot zstd −22 | **−0,1 %** efter åtgärd (+20,0 % före) | felsökt och rättat, avsnitt 4.2 |
 | återskapning, 7 korpusar | bitexakt, samtliga poster | avsnitt 5 |
 | skadeprov, 5 skadetyper | samtliga avvisade | avsnitt 5.2 |
 
@@ -41,7 +47,7 @@ Den ursprungligen uppmätta avvikelsen från H1 (+20,0 % på korpusen av
 redan komprimerade arkiv) felsöktes till kodekprovets stickprovsurval,
 åtgärdades under provningen och ommättes till −0,1 % mot zstd −22.
 En kompletterande mätning mot LZMA2:s maxform (7-Zip, 512 MiB ordbok;
-avsnitt 3.6) flyttar dock referensen: där ligger nvz +2,3 % efter på just
+avsnitt 3.6) flyttar dock referensen: där ligger hz +2,3 % efter på just
 den korpusen, medan försprånget på text snarare växer. H1 står därmed
 med en känd, kvantifierad motinstans — arkiv-av-arkiv mot LZMA2-extrem —
 och utan motinstans i övrigt.
@@ -51,7 +57,7 @@ och utan motinstans i övrigt.
 En konventionell arkivkedja (`tar | zstd`) behandlar trädet som en oordnad
 byteström: komprimeraren ser varken fildubbletter utanför sitt fönster,
 inbäddade komprimeringslager (deflate i PNG, Huffman i JPEG) eller
-möjligheten att placera likartade filer intill varandra. nvz utnyttjar
+möjligheten att placera likartade filer intill varandra. hz utnyttjar
 samtliga tre, och varje omvandling verifieras vid packning genom fullständig
 återsyntes och jämförelse mot originalet; en omvandling som inte kan bevisas
 reversibel faller tillbaka till rålagring.
@@ -71,7 +77,7 @@ korrekthetsprövning.
 Sju konfigurationer av fyra etablerade verktyg: gzip (−6, −9 via pigz),
 bzip2 (−9), zstd (−3, −19 `--long=27`, −22 `--ultra --long=31`) och
 xz (−9e). `tar | zstd −3` betecknas *dagens* och utgör referensnivå, då den
-motsvarar maskinens befintliga arkivskript. nvz mäts i lägena `snabb`
+motsvarar maskinens befintliga arkivskript. hz mäts i lägena `snabb`
 (zstd −3, inga omvandlingar), `normal` (omvandlingar, kodekprov per block)
 och `liten` (därtill nvcm som kandidat; standardläge), samt som `utan knep`
 (läge normal med deduplicering och omvandlingar avslagna) för att isolera
@@ -103,7 +109,7 @@ cykeljämförelsen. Filer ändrade de senaste 15 minuterna utesluts.
 
 | korpus | omfång | innehåll | motivering |
 |:--|--:|:--|:--|
-| `gif` | 105 filer, 27,4 MiB | webbgrafik, animationer, dubbletter i flera `node_modules` | LZW-kodat entropilager som nvz inte öppnar; hög dubblettandel |
+| `gif` | 105 filer, 27,4 MiB | webbgrafik, animationer, dubbletter i flera `node_modules` | LZW-kodat entropilager som hz inte öppnar; hög dubblettandel |
 | `film` | 67 filer, 536,7 MiB | h264 (TikTok), VP9 (skärminspelning) | redan transformkodad data; förväntat nollresultat |
 | `arkiv` | 133 filer, 391,8 MiB | zip och tar.gz, varav två bitidentiska par och åtta dagliga säkerhetskopior av samma databas | komprimerad data med redundans *mellan* filer |
 | `logg` | 76 filer, 238,3 MiB | syslog, kern.log, apploggar, JSONL-transkript | maximalt repetitiv text; växande arkivtyp |
@@ -134,22 +140,22 @@ kompression.
 
 ### 3.1 Översikt
 
-Tabellen sammanfattar bästa nvz-läge mot referensnivån och mot det bästa
+Tabellen sammanfattar bästa hz-läge mot referensnivån och mot det bästa
 klassiska verktyget per korpus. Negativa värden anger mindre arkiv.
 
 <!-- ÖVERSIKT -->
 
-| korpus | rå MiB | dagens MiB | bästa klassiska MiB | bästa nvz MiB | mot dagens | mot bästa klassiska | packtid nvz/klassisk |
+| korpus | rå MiB | dagens MiB | bästa klassiska MiB | bästa hz MiB | mot dagens | mot bästa klassiska | packtid hz/klassisk |
 |:--|--:|--:|--:|--:|--:|--:|--:|
-| Programkod | 55 | 11,5 | 8,2 (xz -9e) | 7,2 (liten) | −37,1 % | −12,5 % | 68 / 47 s |
+| Programkod | 55 | 11,5 | 8,2 (xz -9e) | 7,2 (liten) | −37,1 % | −12,5 % | 64 / 47 s |
 | Bilder (PNG) | 431 | 362,9 | 245,2 (zst -22) | 207,2 (liten) | −42,9 % | −15,5 % | 280 / 156 s |
 | Foton (JPEG) | 409 | 406,3 | 404,9 (bz2 -9) | 345,1 (normal) | −15,1 % | −14,8 % | 48 / 57 s |
 | Bilder (GIF) | 27 | 27,0 | 14,2 (zst -22) | 14,2 (normal) | −47,6 % | −0,0 % | 6 / 5 s |
 | Film (h264 och VP9) | 537 | 533,9 | 532,0 (zst -19) | 532,0 (normal) | −0,3 % | +0,0 % | 56 / 57 s |
 | Arkiv (zip och tar.gz) | 392 | 381,8 | 242,8 (zst -22) | 237,0 (liten) | −37,9 % | −2,4 % | 323 / 154 s |
-| Loggfiler | 238 | 22,4 | 11,8 (xz -9e) | 10,0 (liten) | −55,2 % | −15,4 % | 191 / 897 s |
-| Silesia (arkivnivå) | 202 | 63,1 | 46,2 (xz -9e) | 43,5 (liten) | −31,0 % | −5,7 % | 100 / 158 s |
-| enwik8 (arkivnivå) | 95 | 33,8 | 23,7 (xz -9e) | 20,4 (liten) | −39,6 % | −13,7 % | 129 / 121 s |
+| Loggfiler | 238 | 22,4 | 11,8 (xz -9e) | 10,2 (liten) | −54,3 % | −13,6 % | 73 / 897 s |
+| Silesia (arkivnivå) | 202 | 63,1 | 46,2 (xz -9e) | 43,6 (liten) | −30,9 % | −5,5 % | 94 / 158 s |
+| enwik8 (arkivnivå) | 95 | 33,8 | 23,7 (xz -9e) | 20,8 (liten) | −38,4 % | −12,1 % | 50 / 121 s |
 
 <!-- SLUT ÖVERSIKT -->
 
@@ -173,10 +179,10 @@ genom tar-ekvivalent väg), inte kodeknivån i 3.4.
 | tar.zst -19 --long | 8,5 | 252,7 | 405,1 | 14,2 | **532,0** | 261,4 | 13,1 | 50,2 | 25,2 |
 | tar.zst -22 --ultra | 8,5 | 245,2 | 405,1 | 14,2 | 532,0 | 242,8 | 12,9 | 49,8 | 24,1 |
 | tar.xz -9e | 8,2 | 266,4 | 405,4 | 14,2 | 532,9 | 251,7 | 11,8 | 46,2 | 23,7 |
-| **nvz snabb** | 11,3 | 279,3 | 408,5 | 14,4 | 536,8 | 329,0 | 22,4 | 63,2 | 33,8 |
-| **nvz utan knep** | 8,2 | 256,5 | 406,4 | 14,2 | 532,0 | 242,5 | 11,9 | 46,1 | 23,6 |
-| **nvz normal** | 8,2 | 219,8 | **345,1** | **14,2** | 532,0 | 242,5 | 11,9 | 46,1 | 23,6 |
-| **nvz liten** | **7,2** | **207,2** | **345,1** | **14,2** | 532,0 | **237,0** | **10,0** | **43,5** | **20,4** |
+| **hz snabb** | 11,3 | 279,3 | 408,5 | 14,4 | 536,8 | 329,0 | 22,4 | 63,2 | 33,8 |
+| **hz utan knep** | 8,2 | 256,5 | 406,4 | 14,2 | 532,0 | 242,5 | 11,9 | 46,1 | 23,6 |
+| **hz normal** | 8,2 | 219,8 | **345,1** | **14,2** | 532,0 | 242,5 | 11,9 | 46,1 | 23,6 |
+| **hz liten** | **7,2** | **207,2** | **345,1** | **14,2** | 532,0 | **237,0** | **10,2** | **43,6** | **20,8** |
 
 *MiB per korpus; minsta värde per kolumn i fet. Råstorlekar: kod 55, png 431, foto 409, gif 27, film 537, arkiv 392, logg 238, silesia 202, enwik8 95 MiB.*
 
@@ -192,10 +198,10 @@ genom tar-ekvivalent väg), inte kodeknivån i 3.4.
 | tar.zst -19 --long | 35 | 40 | 53 | 4 | 57 | 47 | 113 | 63 | 61 |
 | tar.zst -22 --ultra | 56 | 156 | 225 | 5 | 266 | 154 | 986 | 179 | 118 |
 | tar.xz -9e | 47 | 128 | 157 | 8 | 154 | 144 | 897 | 158 | 121 |
-| **nvz snabb** | 1 | 2 | 2 | 0 | 3 | 2 | 2 | 1 | 1 |
-| **nvz utan knep** | 40 | 42 | 4 | 4 | 57 | 146 | 854 | 92 | 122 |
-| **nvz normal** | 40 | 127 | 48 | 6 | 56 | 153 | 851 | 92 | 122 |
-| **nvz liten** | 68 | 280 | 55 | 6 | 57 | 323 | 191 | 100 | 129 |
+| **hz snabb** | 1 | 2 | 2 | 0 | 3 | 2 | 2 | 1 | 1 |
+| **hz utan knep** | 40 | 42 | 4 | 4 | 57 | 146 | 854 | 92 | 122 |
+| **hz normal** | 40 | 127 | 48 | 6 | 56 | 153 | 851 | 92 | 122 |
+| **hz liten** | 64 | 280 | 55 | 6 | 57 | 323 | 73 | 94 | 50 |
 
 *s per korpus; minsta värde per kolumn i fet. Råstorlekar: kod 55, png 431, foto 409, gif 27, film 537, arkiv 392, logg 238, silesia 202, enwik8 95 MiB.*
 
@@ -211,10 +217,10 @@ genom tar-ekvivalent väg), inte kodeknivån i 3.4.
 | tar.zst -19 --long | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | tar.zst -22 --ultra | 0 | 1 | 0 | 0 | 1 | 1 | 0 | 0 | 0 |
 | tar.xz -9e | 1 | 5 | 4 | 0 | 5 | 7 | 1 | 3 | 1 |
-| **nvz snabb** | 0 | 1 | 1 | 0 | 1 | 1 | 1 | 1 | 1 |
-| **nvz utan knep** | 1 | 1 | 1 | 0 | 1 | 1 | 2 | 2 | 2 |
-| **nvz normal** | 1 | 8 | 18 | 0 | 1 | 1 | 2 | 2 | 2 |
-| **nvz liten** | 67 | 11 | 17 | 0 | 1 | 8 | 198 | 99 | 132 |
+| **hz snabb** | 0 | 1 | 1 | 0 | 1 | 1 | 1 | 1 | 1 |
+| **hz utan knep** | 1 | 1 | 1 | 0 | 1 | 1 | 2 | 2 | 2 |
+| **hz normal** | 1 | 8 | 18 | 0 | 1 | 1 | 2 | 2 | 2 |
+| **hz liten** | 62 | 11 | 17 | 0 | 1 | 8 | 42 | 38 | 43 |
 
 *s per korpus; minsta värde per kolumn i fet. Råstorlekar: kod 55, png 431, foto 409, gif 27, film 537, arkiv 392, logg 238, silesia 202, enwik8 95 MiB.*
 
@@ -239,10 +245,10 @@ relativt `tar.zst −3`.
 | tar.zst -19 --long | 14,18 | 1,93× | −47,6 % | 4 s | 0 s | ja |
 | tar.zst -22 --ultra | 14,18 | 1,93× | −47,6 % | 5 s | 0 s | ja |
 | tar.xz -9e | 14,19 | 1,93× | −47,5 % | 8 s | 0 s | ja |
-| **nvz snabb** | 14,44 | 1,90× | −46,6 % | 0 s | 0 s | ja |
-| **nvz utan knep** | 14,18 | 1,93× | −47,6 % | 4 s | 0 s | ja |
-| **nvz normal** | **14,18** | 1,93× | −47,6 % | 6 s | 0 s | ja |
-| **nvz liten** | **14,18** | 1,93× | −47,6 % | 6 s | 0 s | ja |
+| **hz snabb** | 14,44 | 1,90× | −46,6 % | 0 s | 0 s | ja |
+| **hz utan knep** | 14,18 | 1,93× | −47,6 % | 4 s | 0 s | ja |
+| **hz normal** | **14,18** | 1,93× | −47,6 % | 6 s | 0 s | ja |
+| **hz liten** | **14,18** | 1,93× | −47,6 % | 6 s | 0 s | ja |
 
 ### Film (h264 och VP9) — 536.7 MiB i 67 filer
 
@@ -256,10 +262,10 @@ relativt `tar.zst −3`.
 | tar.zst -19 --long | **532,02** | 1,01× | −0,3 % | 57 s | 0 s | ja |
 | tar.zst -22 --ultra | 532,03 | 1,01× | −0,3 % | 266 s | 1 s | ja |
 | tar.xz -9e | 532,86 | 1,01× | −0,2 % | 154 s | 5 s | ja |
-| **nvz snabb** | 536,75 | 1,00× | +0,5 % | 3 s | 1 s | ja |
-| **nvz utan knep** | 532,04 | 1,01× | −0,3 % | 57 s | 1 s | ja |
-| **nvz normal** | 532,04 | 1,01× | −0,3 % | 56 s | 1 s | ja |
-| **nvz liten** | 532,04 | 1,01× | −0,3 % | 57 s | 1 s | ja |
+| **hz snabb** | 536,75 | 1,00× | +0,5 % | 3 s | 1 s | ja |
+| **hz utan knep** | 532,04 | 1,01× | −0,3 % | 57 s | 1 s | ja |
+| **hz normal** | 532,04 | 1,01× | −0,3 % | 56 s | 1 s | ja |
+| **hz liten** | 532,04 | 1,01× | −0,3 % | 57 s | 1 s | ja |
 
 ### Arkiv (zip och tar.gz) — 391.8 MiB i 133 filer
 
@@ -273,10 +279,10 @@ relativt `tar.zst −3`.
 | tar.zst -19 --long | 261,37 | 1,50× | −31,5 % | 47 s | 0 s | ja |
 | tar.zst -22 --ultra | 242,77 | 1,61× | −36,4 % | 154 s | 1 s | ja |
 | tar.xz -9e | 251,75 | 1,56× | −34,1 % | 144 s | 7 s | ja |
-| **nvz snabb** | 329,03 | 1,19× | −13,8 % | 2 s | 1 s | ja |
-| **nvz utan knep** | 242,51 | 1,62× | −36,5 % | 146 s | 1 s | ja |
-| **nvz normal** | 242,51 | 1,62× | −36,5 % | 153 s | 1 s | ja |
-| **nvz liten** | **237,00** | 1,65× | −37,9 % | 323 s | 8 s | ja |
+| **hz snabb** | 329,03 | 1,19× | −13,8 % | 2 s | 1 s | ja |
+| **hz utan knep** | 242,51 | 1,62× | −36,5 % | 146 s | 1 s | ja |
+| **hz normal** | 242,51 | 1,62× | −36,5 % | 153 s | 1 s | ja |
+| **hz liten** | **237,00** | 1,65× | −37,9 % | 323 s | 8 s | ja |
 
 ### Loggfiler — 238.3 MiB i 76 filer
 
@@ -290,17 +296,17 @@ relativt `tar.zst −3`.
 | tar.zst -19 --long | 13,09 | 18,21× | −41,5 % | 113 s | 0 s | ja |
 | tar.zst -22 --ultra | 12,92 | 18,45× | −42,3 % | 986 s | 0 s | ja |
 | tar.xz -9e | 11,84 | 20,12× | −47,1 % | 897 s | 1 s | ja |
-| **nvz snabb** | 22,41 | 10,63× | +0,1 % | 2 s | 1 s | ja |
-| **nvz utan knep** | 11,87 | 20,08× | −47,0 % | 854 s | 2 s | ja |
-| **nvz normal** | 11,87 | 20,08× | −47,0 % | 851 s | 2 s | ja |
-| **nvz liten** | **10,03** | 23,77× | −55,2 % | 191 s | 198 s | ja |
+| **hz snabb** | 22,41 | 10,63× | +0,1 % | 2 s | 1 s | ja |
+| **hz utan knep** | 11,87 | 20,08× | −47,0 % | 854 s | 2 s | ja |
+| **hz normal** | 11,87 | 20,08× | −47,0 % | 851 s | 2 s | ja |
+| **hz liten** | **10,23** | 23,30× | −54,3 % | 73 s | 42 s | ja |
 
 <!-- SLUT TABELLER -->
 
 ### 3.4 Standardkorpusar, kodeknivå
 
 Jämförelsen avser kompressorn nvcm isolerad — en fil i taget, en tråd —
-eftersom publicerade tal för dessa korpusar är definierade så. nvz som
+eftersom publicerade tal för dessa korpusar är definierade så. hz som
 arkivpackare ingår i 3.1–3.3.
 
 <!-- STANDARD -->
@@ -381,7 +387,7 @@ därför MiB/s rådata genom väggklockan.
 
 <!-- TIDER -->
 
-| korpus | nvz normal pack | nvz normal upp | zstd -3 pack | zstd -19 pack | xz -9e pack |
+| korpus | hz normal pack | hz normal upp | zstd -3 pack | zstd -19 pack | xz -9e pack |
 |:--|--:|--:|--:|--:|--:|
 | Programkod | 1 | 97 | 326 | 2 | 1 |
 | Bilder (PNG) | 3 | 51 | 743 | 11 | 3 |
@@ -402,13 +408,13 @@ därför MiB/s rådata genom väggklockan.
 `xz −9e` i tabellerna ovan är LZMA2 med 64 MiB ordbok. Formatets maxform
 är en annan motståndare: 7-Zip med `-mx=9`, **512 MiB ordbok** och solid
 arkiv — ordboken täcker då hela varje korpus utom film, samma spelplan
-som nvz:s stora block. Jämförelsen kördes som hel rundgång
-(`experiment/lzma2-extrem.sh`), inga filter, enbart LZMA2 mot nvz i
+som hz:s stora block. Jämförelsen kördes som hel rundgång
+(`experiment/lzma2-extrem.sh`), inga filter, enbart LZMA2 mot hz i
 standardläget:
 
 <!-- LZMA2 -->
 
-| korpus | rå MiB | LZMA2-extrem MiB | nvz MiB | nvz mot LZMA2-extrem | packtid LZMA2/nvz | exakt |
+| korpus | rå MiB | LZMA2-extrem MiB | hz MiB | hz mot LZMA2-extrem | packtid LZMA2/hz | exakt |
 |:--|--:|--:|--:|--:|--:|:-:|
 | Programkod | 55 | 8,22 | **7,28** | −11,4 % | 19 / 70 s | ja |
 | Loggfiler | 238 | 14,16 | **10,03** | −29,2 % | 70 / 196 s | ja |
@@ -419,18 +425,18 @@ standardläget:
 
 <!-- SLUT LZMA2 -->
 
-Två observationer. nvz:s försprång på text består mot även den starkaste
+Två observationer. hz:s försprång på text består mot även den starkaste
 LZMA2-formen — kontextblandningen tar hem det en större ordbok inte kan.
 På arkivkorpusen var LZMA2-maxformen däremot starkare än både zstd −22 och
-nvz, och därmed den nya bästa klassiska referensen där: **nvz låg +2,3 %
+hz, och därmed den nya bästa klassiska referensen där: **hz låg +2,3 %
 efter**. 7-Zip är dessutom genomgående snabbare i packning (flertrådad
 LZMA2).
 
 **Åtgärdat 2026-11-18.** Avståndet hade en mekanism och inte bara en
-siffra: nvz:s LZMA-kodek körde `preset 9e`:s fasta ordbok på 64 MiB, medan
-7-Zips maxform hade 512 MiB och täckte därmed hela blocket. nvz:s ordbok
+siffra: hz:s LZMA-kodek körde `preset 9e`:s fasta ordbok på 64 MiB, medan
+7-Zips maxform hade 512 MiB och täckte därmed hela blocket. hz:s ordbok
 skalas nu efter blocket (se 4.2 och kommentaren i `src/cpp/kodek.cpp`), och
-LZMA fick plats som kandidat i den opaka eskaleringen. Ommätt ligger nvz
+LZMA fick plats som kandidat i den opaka eskaleringen. Ommätt ligger hz
 0,05 % **under** LZMA2-maxformen på arkivkorpusen — 248 512 199 mot
 248 636 548 byte. Raden i tabellen ovan är därmed inaktuell för arkiv; den
 står kvar som den mättes 2026-11-17, och ommätningen står i 4.2.
@@ -441,7 +447,7 @@ Samtliga korpusar ovan är valda av oss, och invändningen att ett resultat kan
 vara anpassat till sin testdata kan inte besvaras med mer av samma data.
 `experiment/karntest.sh` kör därför hela rundgången på ett träd från tredje
 part: linuxkärnan 6.12, hämtad från `cdn.kernel.org`, med en checksumma vi
-inte satt själva. Ingen tröskel och ingen parameter i nvz har valts med den i
+inte satt själva. Ingen tröskel och ingen parameter i hz har valts med den i
 sikte.
 
 <!-- KARNTEST -->
@@ -452,21 +458,21 @@ sikte.
 | `tar.zst −19 --long` | 147 274 821 | −0,4 % | 117 s |
 | `7z` LZMA2 `−mx=9`, 512 MiB ordbok, solid | 141 350 334 | −4,4 % | 264 s |
 | `tar.xz −9e` (lokalt, 64 MiB ordbok) | 140 072 812 | −5,3 % | 304 s |
-| `nvz --läge normal` | 141 787 458 | −4,1 % | 201 s |
-| **`nvz --läge liten`** | **123 217 795** | **−16,7 %** | 443 s |
+| `hz --läge normal` | 141 787 458 | −4,1 % | 201 s |
+| **`hz --läge liten`** | **123 217 795** | **−16,7 %** | 443 s |
 
 *1 476 500 559 byte i 86 618 filer. Uppackning `liten`: 439 s.*
 
 <!-- SLUT KARNTEST -->
 
-Mot bästa klassiska verktyg på samma maskin är nvz 12,0 % mindre, och mot
+Mot bästa klassiska verktyg på samma maskin är hz 12,0 % mindre, och mot
 LZMA2 i maxform (3.6) 12,8 % mindre. `normal` ligger 1,2 % efter `xz −9e`
 men packar 1,5 gånger snabbare. Att utfallet (−12,0 %) ligger i samma
 storleksordning som den egna kodkorpusen (−11,6 %, 3.1) är provets egentliga
 resultat: försprånget följer med till data som inte valts av oss.
 
 Korrekthetsdelen kördes som manifest före och efter, kontrollerad av
-`md5sum -c` och inte av nvz egen kod: **86 618 av 86 618 filer OK, 0 FAILED**,
+`md5sum -c` och inte av hz egen kod: **86 618 av 86 618 filer OK, 0 FAILED**,
 och manifesten identiska rad för rad.
 
 ### 3.8 zlib-ng/corpora: åtta korpusar valda av någon annan
@@ -475,12 +481,12 @@ Förslaget kom utifrån, och värdet ligger i urvalet: `zlib-ng/corpora` samlar
 litteraturens gamla standardkorpusar — Calgary och Canterbury — jämte
 `artificial` (patologiska fall), `neuro` (mätdata), `snappy`, `large` och
 Silesia. Calgary och Canterbury består av **små** filer, vilket är det
-område där nvz är svagast (avsnitt 8, punkt 3), så urvalet är inte gynnsamt
+område där hz är svagast (avsnitt 8, punkt 3), så urvalet är inte gynnsamt
 valt. Samtliga rader är provade med full rundgång och bitexakt jämförelse.
 
 <!-- CORPORA -->
 
-| korpus | rå | gzip −9 | bzip2 −9 | zstd −19 | xz −9e | nvz `normal` | nvz `liten` | nvz mot bästa klassiska |
+| korpus | rå | gzip −9 | bzip2 −9 | zstd −19 | xz −9e | hz `normal` | hz `liten` | hz mot bästa klassiska |
 |:--|--:|--:|--:|--:|--:|--:|--:|--:|
 | artificial | 300 001 | 77 226 | 76 304 | 75 598 | 77 128 | 75 521 | **75 521** | **−0,1 %** |
 | calgary | 3 251 493 | 1 061 241 | 893 979 | 896 593 | 855 732 | 851 964 | **726 530** | **−15,1 %** |
@@ -496,29 +502,29 @@ samtliga 24 körningar (tre lägen × åtta korpusar).*
 
 <!-- SLUT CORPORA -->
 
-Sju av åtta korpusar går till nvz, med −15,8 % på Canterbury som bästa
-utfall. Den åttonde är `neuro`, där nvz ligger **1,0 % efter `xz −9e`**:
-materialet är binär mätdata utan de likheter mellan filer som nvz:s
+Sju av åtta korpusar går till hz, med −15,8 % på Canterbury som bästa
+utfall. Den åttonde är `neuro`, där hz ligger **1,0 % efter `xz −9e`**:
+materialet är binär mätdata utan de likheter mellan filer som hz:s
 omvandlingar och dedup lever av, och då återstår bara kodeken — och där är
 LZMA med 64 MiB ordbok starkare än nvcm på just den datan. Det är samma
-mönster som arkivkorpusen i 4.2 och ska läsas som gränsen för H1: nvz
+mönster som arkivkorpusen i 4.2 och ska läsas som gränsen för H1: hz
 förbättrar data med utnyttjbar struktur, och på data utan sådan är resultatet
 en knapp procent sämre, inte bättre.
 
 ### 3.9 Dominans: bättre OCH snabbare, korpus för korpus
 
 Tabellerna ovan jämför storlek och tid var för sig. Den hårdare frågan är om
-nvz kan slå **samma** motståndare på båda axlarna samtidigt — ett krav som
+hz kan slå **samma** motståndare på båda axlarna samtidigt — ett krav som
 restes 2026-11-18: *bättre än det etablerade, överallt, snabbare och minst
 lika bra.* `experiment/dominans.sh` prövar det: motståndaren per korpus är
 den av de etablerade packarna som gav minsta arkiv, med sin egen uppmätta
-packtid på samma maskin, och av nvz:s lägen räknas det minsta av dem som
+packtid på samma maskin, och av hz:s lägen räknas det minsta av dem som
 dominerar.
 
 <!-- DOMINANS -->
 
 ```
-korpus     bästa etablerade                  byte    sek | nvz               byte    sek | utfall
+korpus     bästa etablerade                  byte    sek | hz               byte    sek | utfall
 kod        tar.xz -9e                   8 629 516     47 | normal       8 580 323     40 | DOMINERAR (-0.57 % storlek, -15 % tid)
 png        tar.zst -22 --ultra        257 132 369    156 | normal     230 452 176    127 | DOMINERAR (-10.38 % storlek, -18 % tid)
 foto       tar.bz2 -9                 424 611 032     57 | normal     361 834 581     48 | DOMINERAR (-14.78 % storlek, -16 % tid)
@@ -534,12 +540,12 @@ dominerar på 6 av 9 korpusar
 
 <!-- SLUT DOMINANS -->
 
-Mönstret är inte slumpmässigt. nvz dominerar där det finns struktur att
+Mönstret är inte slumpmässigt. hz dominerar där det finns struktur att
 utnyttja — källkod, loggar, foton, bilder, blandade träd — och faller på TID,
 aldrig på storlek, där det inte finns något att utnyttja: film och gif är
 redan entropikodade, arkivkorpusen kräver en hel extra LZMA-packning för de
 sista procenten, och enwik8 är en enda textfil där varken dedup, sortering
-eller omvandlingar har något att bidra med och nvz:s fem svep över datan
+eller omvandlingar har något att bidra med och hz:s fem svep över datan
 (README, "Golvet är inte kodeken") blir ren kostnad.
 
 Gränsen går alltså inte mellan datatyper utan mellan *utnyttjbar struktur och
@@ -561,7 +567,7 @@ att nvcm deltar i kodekprovet.
 nvcm vann provet för samtliga textblock, vilket arkivregistret bekräftar
 (2 block, båda nvcm; 192,03 → 9,00 MiB respektive 46,29 → 1,03 MiB).
 Att det mindre arkivet också packas snabbare beror på parallellitet:
-nvz:s block komprimeras oberoende av varandra, medan `xz -9e -T0` på denna
+hz:s block komprimeras oberoende av varandra, medan `xz -9e -T0` på denna
 datamängd i praktiken exekverar enkeltrådat till följd av sin
 minnesbudget per tråd. Blockens olika kvoter (21,4× respektive 45,1×)
 illustrerar adaptionens förlopp: modellen som sett 192 MiB logg
@@ -569,7 +575,7 @@ predikterar nästa block väsentligt bättre.
 
 ### 4.2 Redan komprimerade arkiv: stickprovets gräns
 
-På arkivkorpusen är nvz 20,0 % större än `zstd −22 --ultra --long=31`
+På arkivkorpusen är hz 20,0 % större än `zstd −22 --ultra --long=31`
 (291,3 mot 242,8 MiB). Två förklaringshypoteser prövades experimentellt
 (`experiment/arkiv-fonster.sh`): (a) blockpartitioneringen hindrar
 matchning mellan block; (b) kodekprovet väljer fel kodek.
@@ -579,9 +585,9 @@ matchning mellan block; (b) kodekprovet väljer fel kodek.
 | zstd −19, standardfönster (8 MiB) | 365,3 MiB |
 | zstd −19 `--long=27`, hel ström | 261,4 MiB |
 | zstd −22 `--ultra --long=31`, hel ström | 242,8 MiB |
-| nvz, kodekprovet väljer | 291,3 MiB |
-| nvz, `--kodek zstd19` | 260,2 MiB |
-| nvz, `--kodek zstd22` | **244,6 MiB** |
+| hz, kodekprovet väljer | 291,3 MiB |
+| hz, `--kodek zstd19` | 260,2 MiB |
+| hz, `--kodek zstd22` | **244,6 MiB** |
 
 Hypotes (a) falsifieras: med manuellt vald kodek kostar partitioneringen
 1,2 MiB (0,7 %). Hypotes (b) bekräftas: provet komprimerar 4 MiB spridda
@@ -608,19 +614,19 @@ dyra vägen. Ommätt resultat:
 | konfiguration | storlek |
 |:--|--:|
 | zstd −22 `--ultra --long=31`, hel ström | 242,8 MiB |
-| nvz efter åtgärd (1 block, eskalerad till zstd22) | **242,5 MiB** |
+| hz efter åtgärd (1 block, eskalerad till zstd22) | **242,5 MiB** |
 
 Filmkorpusen prövar regelns andra gren: eskaleringen uteblir (zstd −19
 vinner 0,9 %), och packtiden stannar vid 60 s mot de 255 s en ovillkorlig
 zstd −22 hade kostat.
 
-nvz går därmed från +20,0 % till −0,1 % mot bästa klassiska verktyg på
+hz går därmed från +20,0 % till −0,1 % mot bästa klassiska verktyg på
 korpusen; differensen utgörs av deduplikationens 62,8 MiB, som
 långdistansmatchningen i det klassiska fallet måste återupptäcka som
 matchningar i stället för att aldrig lagra.
 
 **Andra ommätningen, 2026-11-18.** Tvåstegsregeln hade två svagheter som
-mättes fram när frågan ställdes om nvz kan vara bättre än det bästa
+mättes fram när frågan ställdes om hz kan vara bättre än det bästa
 etablerade verktyget *överallt*:
 
 *Det billiga steget var inte billigt.* Regeln använde `zstd −19` för att
@@ -644,15 +650,15 @@ bättre än `zstd −22` på sådan data (film: 557 863 118 byte på 56 s mot
 blocket har likheter mellan filer provas i läget `liten` numera även **LZMA
 med en ordbok som täcker hela blocket** — den enda kandidat vars fönster kan
 nå över ett opakt block på flera hundra megabyte, och exakt den form 7-Zip
-slog nvz med i 3.6. Med den:
+slog hz med i 3.6. Med den:
 
-| konfiguration | storlek | mot nvz |
+| konfiguration | storlek | mot hz |
 |:--|--:|--:|
 | `zstd −22 --ultra --long=31`, hel ström | 254 310 751 | +2,3 % |
 | 7-Zip LZMA2 `−mx=9`, 512 MiB ordbok, solid | 248 636 548 | +0,04 % |
-| **nvz `liten` efter åtgärd** | **248 512 199** | — |
+| **hz `liten` efter åtgärd** | **248 512 199** | — |
 
-nvz är därmed **0,04 % mindre än LZMA2 i maxform** på den korpus som var
+hz är därmed **0,04 % mindre än LZMA2 i maxform** på den korpus som var
 provningens enda motinstans mot H1. Priset är tid: 188 s mot 7-Zips 43 s,
 eftersom steget är en hel extra packning av blocket. Den avvägningen är
 inramad i lägena — `normal` gör den inte, `liten` gör den.
@@ -663,7 +669,7 @@ inramad i lägena — `normal` gör den inte, `liten` gör den.
 Samtliga tolv konfigurationer landar inom 1 % av råstorleken — väntat,
 eftersom transformkodad video saknar entropilager åtkomligt för generisk
 kompression. Den relevanta jämförelsen är därför kostnaden för att
-konstatera detta: nvz `normal` når samma storlek som `zstd −22` på 16 %
+konstatera detta: hz `normal` når samma storlek som `zstd −22` på 16 %
 av tiden (61 mot 266 s), eftersom kodekprovet klassificerar blocken som
 rålagringsfall efter stickprov i stället för att komprimera dem fullt ut.
 
@@ -671,8 +677,8 @@ rålagringsfall efter stickprov i stället för att komprimera dem fullt ut.
 
 GIF-korpusens kvot 1,93× förklaras i sin helhet av dubbletter (47,3 % av
 korpusen) och av att korpusen (27,4 MiB) ryms inom samtliga moderna
-packares fönster: nvz, zstd −19/−22 och xz når samma storlek, och
-`nvz utan knep` är identisk med `nvz normal`. nvz:s omvandlingar bidrar
+packares fönster: hz, zstd −19/−22 och xz når samma storlek, och
+`hz utan knep` är identisk med `hz normal`. hz:s omvandlingar bidrar
 med noll på LZW-kodat innehåll — formatet öppnas inte. En
 GIF-motsvarighet till nvjpg (LZW → aritmetisk kodning av bildrutorna) är
 därmed en identifierad men omätt möjlighet; korpusen för att mäta den
@@ -722,7 +728,7 @@ Bästa etablerade på korpusen är `zstd −22` med 257 132 369 byte på 156 s.
 fortfarande tar de sista 5,7 procenten för den som vill ha dem. Det är
 avvägningen lägena finns för, nu mätt i båda ändar.
 
-Priset för hela det här avsnittet står också skrivet: nvz:s ordbok och
+Priset för hela det här avsnittet står också skrivet: hz:s ordbok och
 därmed både kvot och tid beror numera på hur mycket minne maskinen har
 ledigt. Mätningar ska därför göras på en maskin utan annan last — annars
 mäter man grinden och inte kompressionen.
@@ -816,14 +822,14 @@ till 1,79 % — och hela arkivet från 8 675 609 till 8 578 823 byte. **Läsning
 bytes hash, zstd) och v3 läses alla av samma binär, och vilken kompressor
 registret packades med avgörs av strömmens egen magi och inte av
 versionsfältet, som ligger inuti det komprimerade registret. Det omvända
-gäller inte: en nvz byggd före 2026-11-18 kan inte läsa ett v3-arkiv.
+gäller inte: en hz byggd före 2026-11-18 kan inte läsa ett v3-arkiv.
 Provsviten täcker alla tre versionerna.
 
 ### 5.4 Mätningens egen felkälla: en levande korpus
 
 Under ommätningen 2026-11-18 rapporterade två rader "SKILJER" på korpusen
 `kod` — den rekursiva jämförelsen fann tre filer som inte kom tillbaka
-likadana. Felet låg inte i nvz.
+likadana. Felet låg inte i hz.
 
 `korpus/bygg-korpus.py` **hårdlänkar** i stället för att kopiera, för att
 spara disk. Filen i `korpus/kod` är därför samma inod som filen i det
@@ -867,7 +873,7 @@ det.
 
 ## 6. Implementation
 
-nvz skrevs under provningens gång om från Python till en fristående
+hz skrevs under provningens gång om från Python till en fristående
 C++17-binär (367 kB, 318 kB strippad): nvcm och nvjpg länkas in och exekveras som
 arbetarprocesser via `/proc/self/exe`, zstd/xz/zlib anropas som bibliotek i
 processen, och `liten` är standardläge. Kompressionsresultaten är
@@ -901,11 +907,11 @@ generella:
    hextecknen av objekthashen — 8 byte. En läsare som jämför 16 byte
    underkänner friska arkiv.
 4. **Ofullständiga huvudberoenden i bygget.** Regeln för objektfilerna löd
-   `%.o: %.cpp src/cpp/nvz.hpp` och tog alltså hänsyn till ett enda huvud.
+   `%.o: %.cpp src/cpp/hz.hpp` och tog alltså hänsyn till ett enda huvud.
    Ett fält tillagt i `struct Val` (arkiv.hpp) byggde om `huvud.o` och
    `arkiv.o` men inte `yta.o`, och binären länkades av objektfiler som var
-   oense om strukturens layout. Utfallet var en binär där `nvz packa`
-   fungerade felfritt medan `nvz -t` kraschade med SIGSEGV — ingen
+   oense om strukturens layout. Utfallet var en binär där `hz packa`
+   fungerade felfritt medan `hz -t` kraschade med SIGSEGV — ingen
    kompilatorvarning, ingen länkfel. Felet hittades av `prov/slumpprov.py`
    (avsnitt 5) på första rundan och är den tydligaste illustrationen av
    varför slumpprovet finns: det provar hela ytan, inte den väg man råkar
@@ -922,7 +928,7 @@ innehållsklass i stället för per block; den opaka tvåstegsregelns billiga
 steg är `zstd −3` i stället för `zstd −19`; och i läget `liten` prövas valet
 om på hela blocket när stickprovets försprång var tunt. Registret är version
 3 (5.3). Samtliga ändringar är bakåtkompatibla vid LÄSNING — v1, v2 och v3
-läses av samma binär — men ett v3-arkiv kan inte läsas av en nvz byggd före
+läses av samma binär — men ett v3-arkiv kan inte läsas av en hz byggd före
 den dagen.
 
 5. **Kontrollens gräns, och tre fel som bodde utanför den.** En
@@ -941,7 +947,7 @@ den dagen.
    IDAT-bit mot sin CRC, receptet bär ett beteendebaserat avtryck av
    deflate-motorn (fast provsträng, crc32 på utdatan), och vid miss söks
    nivå, minnesnivå och strategi om; fönstret varieras inte, det står i
-   filens eget zlib-huvud. Återskapas strömmen ändå inte vägrar nvz med
+   filens eget zlib-huvud. Återskapas strömmen ändå inte vägrar hz med
    båda avtrycken i felet. Kvar står att ett PNG-tungt arkiv kan behöva en
    maskin med samma motor — det är formatets pris och det ska stå där det
    syns.
@@ -951,10 +957,10 @@ den dagen.
    Full disk gav alltså stympat arkiv, slutstatus 0 och raderat original.
    Nu kontrolleras varje `fwrite`, `fflush` och `fclose`, det `fsync`:as
    före stängning, och ett arkiv som inte blev färdigt tas bort. SIGXFSZ
-   ignoreras med flit: gzip dör på 153 och hinner inte städa, nvz får EFBIG
+   ignoreras med flit: gzip dör på 153 och hinner inte städa, hz får EFBIG
    och ger 1.
 
-   *En oläsbar fil dödade processen.* `nvz a b c` med b oläsbar gick ur
+   *En oläsbar fil dödade processen.* `hz a b c` med b oläsbar gick ur
    genom `main` och dog i `std::terminate` — SIGABRT, slutstatus 134, med
    a:s original redan raderat och c aldrig behandlad. Nu fångas varje
    operand för sig: varning, resten packas, slutstatus 1. Det är gzips
@@ -972,19 +978,19 @@ i den här rapporten fungerar oförändrat.
 ## 7. Förarbete
 
 En invändning i den offentliga diskussionen om det här arbetet förtjänar att
-stå i rapporten och inte bara i en kommentarstråd: *varje enskild metod nvz
+stå i rapporten och inte bara i en kommentarstråd: *varje enskild metod hz
 använder är känd och publicerad sedan länge.* Det är riktigt. Tabellen nedan
-ger varje del sitt förarbete, och sista kolumnen säger var nvz ligger i
+ger varje del sitt förarbete, och sista kolumnen säger var hz ligger i
 förhållande till det.
 
-| nvz-del | känt förarbete | nvz mot förarbetet |
+| hz-del | känt förarbete | hz mot förarbetet |
 |:--|:--|:--|
-| likhetssortering före packning | *Sort Before Compression* (<https://gwern.net/sort>); solida arkiv i RAR och 7-Zip; lrzip | samma idé. nvz sorterar på innehållsklass och ändelse, och mäter effekten separat (7.1) |
-| deduplicering av identiska filer | borg, restic, ZFS; innehållsdefinierad chunkning sedan LBFS (2001) | svagare: nvz dedupar hela filer, inte chunkar |
-| deflate-ström tillbaka till rådata plus recept | precomp (Christian Schneider), preflate, reflate | smalare: nvz klarar bara strömmar som zlib självt har skrivit |
+| likhetssortering före packning | *Sort Before Compression* (<https://gwern.net/sort>); solida arkiv i RAR och 7-Zip; lrzip | samma idé. hz sorterar på innehållsklass och ändelse, och mäter effekten separat (7.1) |
+| deduplicering av identiska filer | borg, restic, ZFS; innehållsdefinierad chunkning sedan LBFS (2001) | svagare: hz dedupar hela filer, inte chunkar |
+| deflate-ström tillbaka till rådata plus recept | precomp (Christian Schneider), preflate, reflate | smalare: hz klarar bara strömmar som zlib självt har skrivit |
 | förlustfri JPEG-omkodning | packJPG (Matthias Stirner), Lepton (Dropbox, 2016), brunsli → JPEG XL | **sämre**: nvjpg ger −15,1 %, publicerade siffror för de andra ligger kring −20 till −22 % |
 | kontextblandning, logistisk mixer, APM/SSE | PAQ-familjen (Matt Mahoney), lpaq, zpaq, cmix | mindre modell: paq8px slår nvcm på enwik8, 15,8 mot 20,4 MB (3.4) |
-| innehållsmedvetet filterval per datatyp | FreeArc (Bulat Ziganshin), zpaq:s metodsträngar | samma tanke, annan mekanism: nvz väljer genom stickprov på data i stället för genom regel på filtyp |
+| innehållsmedvetet filterval per datatyp | FreeArc (Bulat Ziganshin), zpaq:s metodsträngar | samma tanke, annan mekanism: hz väljer genom stickprov på data i stället för genom regel på filtyp |
 | omvandling verifierad i båda riktningarna före den används | precomp och Lepton gör samma sak | samma |
 
 Siffrorna för packJPG, Lepton, brunsli och paq8px är **publicerade värden,
@@ -994,7 +1000,7 @@ Vad som återstår som eget är därmed inte en algoritm utan tre saker: att
 delarna sitter i ett verktyg med ett gemensamt arkivformat och en gemensam
 återskapningsgaranti; att valet mellan kodekar avgörs genom att prova på
 data i stället för att följa filändelsen; och mätningen i den här rapporten,
-inklusive motinstansen den hittade och rättade (4.2). nvz slår alltså inte
+inklusive motinstansen den hittade och rättade (4.2). hz slår alltså inte
 informationsteorin, och gör ingenting ingen har gjort: den paketerar känd
 teknik och redovisar vad paketeringen är värd.
 
@@ -1016,8 +1022,8 @@ annan fil i varje rad:
 
 | steg | byte | mot tar | steget självt |
 |:--|--:|--:|--:|
-| tar i katalogordning (ingen nvz) | 8 611 308 | ±0 | — |
-| nvz, alla knep av | 8 673 944 | +0,73 % | +0,73 % |
+| tar i katalogordning (ingen hz) | 8 611 308 | ±0 | — |
+| hz, alla knep av | 8 673 944 | +0,73 % | +0,73 % |
 | + ett block per innehållsklass | 8 673 942 | +0,73 % | −0,00 % |
 | + sortering inom klassen | 8 676 765 | +0,76 % | +0,03 % |
 | + deduplicering | 8 675 644 | +0,75 % | −0,01 % |
@@ -1027,8 +1033,8 @@ annan fil i varje rad:
 
 | steg | byte | mot tar | steget självt |
 |:--|--:|--:|--:|
-| tar i katalogordning (ingen nvz) | 264 771 708 | ±0 | — |
-| nvz, alla knep av | 268 949 955 | +1,58 % | +1,58 % |
+| tar i katalogordning (ingen hz) | 264 771 708 | ±0 | — |
+| hz, alla knep av | 268 949 955 | +1,58 % | +1,58 % |
 | + ett block per innehållsklass | 268 949 973 | +1,58 % | ±0 |
 | + sortering inom klassen | 268 949 972 | +1,58 % | −0,00 % |
 | + deduplicering | 258 596 586 | −2,33 % | **−3,85 %** |
@@ -1038,7 +1044,7 @@ Resultatet är tydligt och delvis obekvämt. **Sorteringen mäter ±0 på båda
 korpusarna**, och klassindelningen likaså. Vad som mäter är omvandlingarna
 (−12,0 % på png) och dedupen där det finns dubbletter (−3,9 % på png, där
 28,7 % av byten är dubbletter; ±0 på kod, där 0,7 % är det). Därtill kostar
-nvz:s eget arkivlager +0,7 till +1,6 % i de rader där ingenting är påslaget —
+hz:s eget arkivlager +0,7 till +1,6 % i de rader där ingenting är påslaget —
 register, blockhuvuden och att blocken packas var för sig.
 
 Noll är emellertid inte samma sak som värdelös, och orsaken till nollan är
@@ -1058,14 +1064,14 @@ lokalitet medan innehållet är oförändrat.
 | ordning | `zstd −3` (2 MiB fönster) | `xz −9e` (64 MiB ordbok) |
 |:--|--:|--:|
 | tar i katalogordning | 13 926 644 | 8 977 616 |
-| nvz utan sortering | 13 945 434 | 9 066 545 |
-| nvz **med** sortering | **12 833 126** | **8 869 852** |
+| hz utan sortering | 13 945 434 | 9 066 545 |
+| hz **med** sortering | **12 833 126** | **8 869 852** |
 | sorteringens värde | **−8,0 %** | **−2,2 %** |
 
 Där står svaret, och det ger invändningen rätt: sorteringens värde är en
 funktion av fönstret och av hur utspridda likheterna låg från början. Med ett
 litet fönster och utspridd likhet är den värd 8 %; med en ordbok som täcker
-hela korpusen 2,2 %; på korpusar som redan är ordnade, noll. nvz:s mätbara
+hela korpusen 2,2 %; på korpusar som redan är ordnade, noll. hz:s mätbara
 vinster på materialet i den här rapporten kommer alltså från omvandlingarna,
 från dedupen där dubbletter finns, och från nvcm i läget `liten` — **inte**
 från sorteringen.
@@ -1089,13 +1095,13 @@ arbetet; de bär ett mätvärde och inte bara en gissning.
    3,3 GiB i `liten` — 1,4 respektive 2,2 gånger rådata.
    Python-implementationen strömmade varje block till en temporärfil;
    C++-omskrivningen håller i stället varje blocks rådata i `Bygge::ra` till
-   dess blocket packas. Det största träd nvz kan packa är därmed ungefär
+   dess blocket packas. Det största träd hz kan packa är därmed ungefär
    tillgängligt RAM delat med 1,4, och för PNG-tunga träd mindre än så,
    eftersom en utvecklad PNG får vara upp till 150 gånger sin filstorlek
    (`PNG_UPPBLASNING_TAK`). Åtgärd: låt `Bygge::ra` ligga i en temporärfil
    som skrivs igenom och läses tillbaka strömmande i steg 5. Det tar bort
    verktygets hårdaste gräns och är den enda posten på listan som påverkar
-   vad nvz alls klarar.
+   vad hz alls klarar.
 
 2. **Standardläget är det mest extrema.** `liten` är standard. Mätt (3.2):
    där `liten` vinner storlek kostar den 50–100 gånger längre uppackning —
@@ -1109,20 +1115,20 @@ arbetet; de bär ett mätvärde och inte bara en gissning.
    `liten` som uttalat val.
 
 3. **Småfilsgolvet, och det är registret — inte kompressionen.** Ett tomt
-   arkiv är 175 byte (gzip: 25), och under ungefär 30 kB indata är nvz
+   arkiv är 175 byte (gzip: 25), och under ungefär 30 kB indata är hz
    större än `xz −9e`: +14,2 % vid 1 kB, +2,9 % vid 10 kB, −11,8 % vid
    100 kB, −14,6 % vid 1 MiB (samma textfil, växande prefix). Uppdelningen
    av ett 1 kB-fall visar var byten ligger:
 
    | | byte |
    |:--|--:|
-   | nvz, hela arkivet | 791 |
+   | hz, hela arkivet | 791 |
    | &nbsp;&nbsp;varav komprimerad nyttolast | 616 |
    | &nbsp;&nbsp;varav register och svans | 175 |
    | `xz −9e`, hela filen | 696 |
    | &nbsp;&nbsp;varav xz:s container (huvud, blockhuvud, index, svans) | ≈60 |
 
-   nvz:s **nyttolast är alltså 80 byte mindre än xz:s hela fil** — det är
+   hz:s **nyttolast är alltså 80 byte mindre än xz:s hela fil** — det är
    registret som förlorar loppet, tre gånger xz:s container. De tjocka
    posterna är objekthashen (16 råa byte, och för ett enda objekt finns
    ingenting att deduplicera mot), tidsstämpeln som ISO-sträng (~20 byte),
@@ -1159,7 +1165,7 @@ arbetet; de bär ett mätvärde och inte bara en gissning.
    JPEG rå.
 
 6. **PNG-täckningen slutar vid zlib.** Strömmar skrivna av zlib-ng,
-   libdeflate eller Chrome går inte att återskapa med nvz:s receptsökning.
+   libdeflate eller Chrome går inte att återskapa med hz:s receptsökning.
    preflate löser det allmänna fallet (7); att binda in det vidgar
    täckningen utan att röra formatet.
 
@@ -1212,7 +1218,7 @@ arbetet; de bär ett mätvärde och inte bara en gissning.
     före 2026-11-18 den osäkerheten.
 14. **Minnesbudgeten är inte deterministisk.** Ordbokens storlek — och
     därmed både kvot och packtid — beror på hur mycket minne maskinen har
-    ledigt när nvz startar (4.5). Det gör mätningar beroende av annan last.
+    ledigt när hz startar (4.5). Det gör mätningar beroende av annan last.
     Åtgärd: sätt budgeten till en andel av maskinens TOTALA minne i stället
     för det lediga, och redovisa andelen i rapporten.
 
@@ -1224,13 +1230,13 @@ accelereras 2,5 gånger men att seriell entropikodning begränsar helheten
 ## Appendix A: Reproduktion
 
 Källkod och samtliga mätdata är publicerade på
-<https://github.com/hugowikstrom/nvz>. Beroenden: g++ (C++17), libzstd-dev,
+<https://github.com/hugowikstrom/hz>. Beroenden: g++ (C++17), libzstd-dev,
 liblzma-dev, zlib1g-dev; för jämförelsemätningarna därtill gzip, pigz,
 bzip2, zstd och xz.
 
 ```bash
-git clone https://github.com/hugowikstrom/nvz && cd nvz
-make                                                  # bygger nvz, nvcm, nvjpg
+git clone https://github.com/hugowikstrom/hz && cd hz
+make                                                  # bygger hz, nvcm, nvjpg
 python3 korpus/bygg-korpus.py gif film arkiv logg     # lokala korpusar
 export NVPACK_SKRAP=$PWD/.skrap
 python3 matning/matning.py <korpus>                   # arkivnivå, per korpus

@@ -17,7 +17,7 @@
 #   som bild efteråt.
 set -euo pipefail
 rot="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-ut="$rot/rapport/nvz-rapport.pdf"
+ut="$rot/rapport/hz-rapport.pdf"
 
 python3 "$rot/rapport/bygg-tryck.py"
 vantat=$(grep -c 'class="sida"' "$rot/rapport/tryck.html")
