@@ -976,6 +976,13 @@ archive cannot be read by an nvz built before that day.
 
    All three are regression tests in `prov/brister.sh`.
 
+**The file names in `src/cpp/` changed language on 2026-11-19.** The text
+in this section was written against the Swedish names; the mapping is
+huvud→main, yta→cli, arkiv→archive, kodek→codec, omvandla→transform,
+trad→tree, sjalv→worker, verktyg→util. The code, the command line and the
+README are now English, with the Swedish command names kept as permanent
+aliases — so every command in this report still works unchanged.
+
 ## 7. Related work
 
 One objection raised in the public discussion of this work belongs in the

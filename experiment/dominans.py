@@ -1,59 +1,61 @@
 #!/usr/bin/env python3
-"""Dominans: är nvz bättre OCH snabbare än det bästa etablerade verktyget?
+"""Dominance: is nvz better AND faster than the best established tool?
 
-    python3 experiment/dominans.py [korpus...]
+    python3 experiment/dominans.py [corpus...]
 
-Rapportens tabeller jämför storlek och tid var för sig. Den hårdare frågan
-restes 2026-11-18: *bättre än det etablerade, överallt — snabbare och minst
-lika bra.* Den kräver att nvz slår SAMMA motståndare på båda axlarna
-samtidigt.
+The report's tables compare size and time separately. The harder question
+was raised on 2026-11-18: better than the established tools, everywhere —
+faster and at least as good. That demands beating the SAME opponent on
+both axes at once.
 
-Skriptet mäter ingenting självt; det läser resultat/<korpus>.json, som
-matning/matning.py fyller. Motståndaren per korpus är den av de etablerade
-packarna som gav minsta arkiv, med sin egen uppmätta packtid. Av nvz:s lägen
-räknas det minsta av dem som dominerar; dominerar inget läge redovisas ändå
-det minsta, så raden visar hur nära det kom och på vilken axel det föll.
+The script measures nothing itself; it reads resultat/<corpus>.json, which
+matning/matning.py fills. The opponent per corpus is whichever established
+packer produced the smallest archive, with its own measured pack time. Of
+nvz's modes, the smallest of those that dominate is counted; if none
+dominates, the smallest is still shown, so the row says how close it came
+and on which axis it fell.
 """
 import json, sys
 from pathlib import Path
 
-ROT = Path(__file__).resolve().parent.parent
-KORPUSAR = ['kod', 'png', 'foto', 'gif', 'film', 'arkiv', 'logg', 'silesia', 'enwik8']
+ROOT = Path(__file__).resolve().parent.parent
+CORPORA = ['kod', 'png', 'foto', 'gif', 'film', 'arkiv', 'logg', 'silesia', 'enwik8']
 
 
 def main():
-    valda = sys.argv[1:] or KORPUSAR
-    print(f"{'korpus':<10} {'bästa etablerade':<24} {'byte':>13} {'sek':>6} | "
-          f"{'nvz':<8} {'byte':>13} {'sek':>6} | utfall")
-    dom_antal = tot = 0
-    for k in valda:
-        f = ROT / 'resultat' / f'{k}.json'
+    chosen = sys.argv[1:] or CORPORA
+    print(f"{'corpus':<10} {'best established':<24} {'bytes':>13} {'sec':>6} | "
+          f"{'nvz':<8} {'bytes':>13} {'sec':>6} | outcome")
+    dominated = total = 0
+    for k in chosen:
+        f = ROOT / 'resultat' / f'{k}.json'
         if not f.exists():
             continue
         m = json.loads(f.read_text())['matningar']
-        etabl = {n: v for n, v in m.items() if not n.startswith('nvz')}
+        established = {n: v for n, v in m.items() if not n.startswith('nvz')}
         nvz = {n: v for n, v in m.items() if n.startswith('nvz') and n != 'nvz utan knep'}
-        if not etabl or not nvz:
+        if not established or not nvz:
             continue
-        mn, mv = min(etabl.items(), key=lambda kv: kv[1]['byte'])
-        mb, ms = mv['byte'], mv['packsek']
-        kand = [(v['byte'], v['packsek'], n) for n, v in nvz.items()]
-        dom = [x for x in kand if x[0] <= mb and x[1] <= ms]
-        b, t, l = min(dom) if dom else min(kand)
-        tot += 1
+        bn, bv = min(established.items(), key=lambda kv: kv[1]['byte'])
+        bb, bs = bv['byte'], bv['packsek']
+        dom = [(v['byte'], v['packsek'], n) for n, v in nvz.items()
+               if v['byte'] <= bb and v['packsek'] <= bs]
+        cand = [(v['byte'], v['packsek'], n) for n, v in nvz.items()]
+        b, t, label = min(dom) if dom else min(cand)
+        total += 1
         if dom:
-            utfall, dom_antal = 'DOMINERAR', dom_antal + 1
-        elif b <= mb:
-            utfall = 'mindre, men långsammare'
-        elif t <= ms:
-            utfall = 'snabbare, men större'
+            outcome, dominated = 'DOMINATES', dominated + 1
+        elif b <= bb:
+            outcome = 'smaller, but slower'
+        elif t <= bs:
+            outcome = 'faster, but larger'
         else:
-            utfall = 'sämre på båda'
-        mellanslag = lambda n: f'{n:,}'.replace(',', ' ')
-        print(f'{k:<10} {mn:<24} {mellanslag(mb):>13} {ms:>6.0f} | '
-              f'{l.replace("nvz ", ""):<8} {mellanslag(b):>13} {t:>6.0f} | '
-              f'{utfall} ({(b-mb)/mb*100:+.2f} % storlek, {(t-ms)/ms*100:+.0f} % tid)')
-    print(f'\ndominerar på {dom_antal} av {tot} korpusar')
+            outcome = 'worse on both'
+        spaced = lambda n: f'{n:,}'.replace(',', ' ')
+        print(f'{k:<10} {bn:<24} {spaced(bb):>13} {bs:>6.0f} | '
+              f'{label.replace("nvz ", ""):<8} {spaced(b):>13} {t:>6.0f} | '
+              f'{outcome} ({(b-bb)/bb*100:+.2f} % size, {(t-bs)/bs*100:+.0f} % time)')
+    print(f'\ndominates on {dominated} of {total} corpora')
 
 
 if __name__ == '__main__':

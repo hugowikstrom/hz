@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# [EN] The measurement harness: runs each packer over a corpus, times pack
+# and unpack, verifies the round trip, and updates resultat/<corpus>.json.
+# Fingerprints the corpus before and after each run — the corpora are
+# hard-linked to live working trees, and a run during which the corpus
+# moved is invalid (field korpus_stabil).
+# NOTE: this older script keeps its Swedish inline comments for now; it is
+# verified by its own runs and is translated as it is next touched.
 """Mätharness: kör en uppsättning packare över en korpus och bokför resultatet.
 
 Varje packare får samma korpus och mäts på tre tal: storlek, packtid, uppacktid.

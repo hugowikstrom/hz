@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# [EN] The reality check: nvz against the live 2.9 GB archive this project
+# was started for.
+# NOTE: this older script keeps its Swedish inline comments for now; it is
+# verified by its own runs and is translated as it is next touched.
 # Mäter nvz mot dagens arkivpipeline på en RIKTIG projektkatalog.
 #
 #   bash experiment/riktigt-arkiv.sh ~/lostconnection

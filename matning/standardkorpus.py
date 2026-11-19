@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# [EN] Codec-level measurements on the standard corpora (Silesia, enwik8),
+# single-threaded, against published literature numbers.
+# NOTE: this older script keeps its Swedish inline comments for now; it is
+# verified by its own runs and is translated as it is next touched.
 """Standardbenchmark: Silesia och enwik8, mätt som andra packare mäts.
 
     python3 matning/standardkorpus.py silesia enwik8

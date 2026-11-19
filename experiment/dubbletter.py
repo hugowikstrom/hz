@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# [EN] Counts duplicate bytes per corpus — the numbers behind the dedup rows.
+# NOTE: this older script keeps its Swedish inline comments for now; it is
+# verified by its own runs and is translated as it is next touched.
 """Hur stor del av varje korpus är exakta dubbletter?
 
     python3 experiment/dubbletter.py        # skriver resultat/dubbletter.json

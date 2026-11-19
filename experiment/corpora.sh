@@ -1,43 +1,42 @@
 #!/usr/bin/env bash
-# zlib-ng/corpora: ett prov på testdata som någon annan har valt.
+# zlib-ng/corpora: a test on data somebody else chose.
 #
-# Förslaget kom från Jonas Danielsson i tråden 2026-11-17. Värdet ligger i att
-# urvalet inte är vårt: Calgary och Canterbury är litteraturens gamla
-# standardkorpusar och består av SMÅ filer, vilket är precis det område där
-# nvz är svagast (fast överhuvud, rapportens avsnitt 8 punkt 3). Provet är
-# alltså inte gynnsamt valt, och det redovisas som det är.
+# The suggestion came from Jonas Danielsson in the public thread on
+# 2026-11-17. The value lies in the selection not being ours: Calgary and
+# Canterbury are the literature's old standard corpora and consist of
+# SMALL files, which is exactly where nvz is weakest (report section 8).
+# The test is not favourably chosen, and it is reported as it falls.
+# As of 2026-11-19 this script is part of every full test run.
 #
-#   bash experiment/corpora.sh [arbetskatalog]
+#   bash experiment/corpora.sh [workdir]
 set -euo pipefail
 export LC_ALL=C
-ROT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-NVZ="$ROT/src/nvz"
-ARB="${1:-${NVPACK_SKRAP:-$ROT/.skrap}/corpora}"
-mkdir -p "$ARB"; cd "$ARB"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+NVZ="$ROOT/src/nvz"
+WORK="${1:-${NVPACK_SKRAP:-$ROOT/.skrap}/corpora}"
+mkdir -p "$WORK"; cd "$WORK"
 [ -d corpora ] || git clone --depth 1 -q https://github.com/zlib-ng/corpora corpora
 rm -rf corpora/.git
 
-tid() { local s=$(date +%s%N); "$@" >/dev/null 2>&1; echo $(( ($(date +%s%N) - s) / 1000000 )); }
-
 printf '%-14s %9s %10s %10s %10s %10s %10s %10s %10s  %s\n' \
-       korpus rå gzip-9 bzip2-9 zstd-19 xz-9e "nvz snabb" "nvz normal" "nvz liten" rundgång
+       corpus raw gzip-9 bzip2-9 zstd-19 xz-9e "nvz fast" "nvz normal" "nvz small" roundtrip
 for d in corpora/*/; do
     n=$(basename "$d")
-    ra=$(du -sb "$d" | cut -f1)
+    raw=$(du -sb "$d" | cut -f1)
     g=$(tar -cf - "$d" | gzip -9 -c | wc -c)
     b=$(tar -cf - "$d" | bzip2 -9 -c | wc -c)
     z=$(tar -cf - "$d" | zstd -19 --long=27 -T0 -q -c | wc -c)
     x=$(tar -cf - "$d" | xz -9e -T0 -c | wc -c)
-    rundgang=ja
+    roundtrip=yes
     declare -A S
-    for lage in snabb normal liten; do
-        rm -f "$n-$lage.nvz"
-        "$NVZ" packa "$d" "$n-$lage.nvz" --läge "$lage" -q
-        S[$lage]=$(stat -c%s "$n-$lage.nvz")
-        rm -rf "ut-$n"; "$NVZ" packa-upp "$n-$lage.nvz" "ut-$n" -q
-        diff -r --no-dereference "$d" "ut-$n/$n" >/dev/null 2>&1 || rundgang="NEJ($lage)"
-        rm -rf "ut-$n"
+    for mode in fast normal small; do
+        rm -f "$n-$mode.nvz"
+        "$NVZ" pack "$d" "$n-$mode.nvz" --mode "$mode" -q
+        S[$mode]=$(stat -c%s "$n-$mode.nvz")
+        rm -rf "out-$n"; "$NVZ" unpack "$n-$mode.nvz" "out-$n" -q
+        diff -r --no-dereference "$d" "out-$n/$n" >/dev/null 2>&1 || roundtrip="NO($mode)"
+        rm -rf "out-$n"
     done
     printf '%-14s %9d %10d %10d %10d %10d %10d %10d %10d  %s\n' \
-           "$n" "$ra" "$g" "$b" "$z" "$x" "${S[snabb]}" "${S[normal]}" "${S[liten]}" "$rundgang"
+           "$n" "$raw" "$g" "$b" "$z" "$x" "${S[fast]}" "${S[normal]}" "${S[small]}" "$roundtrip"
 done

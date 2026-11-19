@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# [EN] The GPU measurement series: bandwidth ceiling, kernel-vs-CPU parity,
+# and the nvlz codec timings behind the README GPU section.
+# NOTE: this older script keeps its Swedish inline comments for now; it is
+# verified by its own runs and is translated as it is next touched.
 """Mäter vad gpu-läget är värt — och skriver svaret till resultat/gpu.json.
 
 Frågan som skulle besvaras: går packningen snabbare med ett gpu-läge? Den

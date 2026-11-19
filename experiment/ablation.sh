@@ -1,73 +1,72 @@
 #!/usr/bin/env bash
-# Ablationen: hur mycket kommer från VARJE knep för sig?
+# The ablation: how much comes from EACH trick on its own?
 #
-# Frågan kom från Stefan Alfredsson i tråden 2026-11-17: uppstår vinsten bara
-# av att filer sorteras så att likheter hamnar i kompressorns fönster — en
-# känd metod (gwern.net/sort), ingen nyhet — och beror den i så fall helt på
-# fönsterstorleken?
+# The question came from Stefan Alfredsson in the public thread on
+# 2026-11-17: does the win come merely from sorting files so that likeness
+# lands inside the compressor's window — a known method (gwern.net/sort),
+# no novelty — and does the effect then depend entirely on the window size?
 #
-# Provet håller KOMPRESSORN KONSTANT (samma xz -9e, samma 64 MiB ordbok) och
-# varierar bara vad nvz gör med datan innan. Korpusen `kod` är 55 MiB och
-# ryms därmed HELT inom ordboken i varje steg, så fönsterstorleken är inte en
-# fri variabel: det som skiljer raderna är ordningen och ingenting annat.
+# The test holds the COMPRESSOR CONSTANT and varies only what nvz does to
+# the data first. With corpus `kod` (55 MiB) and xz -9e, the whole corpus
+# fits inside the dictionary on every row, so the window size is not a free
+# variable: what separates the rows is the ordering and nothing else.
 #
-#   bash experiment/ablation.sh [korpus] [kodek]
+#   bash experiment/ablation.sh [corpus] [codec]
 set -euo pipefail
 export LC_ALL=C
-ROT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-NVZ="$ROT/src/nvz"
-KORPUS="${1:-kod}"
-KODEK="${2:-xz9e}"
-ARB="${NVPACK_SKRAP:-$ROT/.skrap}/ablation"
-mkdir -p "$ARB"
-K="$ROT/korpus/$KORPUS"
-[ -d "$K" ] || { echo "saknar korpus/$KORPUS"; exit 1; }
-RA=$(du -sb "$K" | cut -f1)
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+NVZ="$ROOT/src/nvz"
+CORPUS="${1:-kod}"
+CODEC="${2:-xz9e}"
+WORK="${NVPACK_SKRAP:-$ROOT/.skrap}/ablation"
+mkdir -p "$WORK"
+K="$ROOT/korpus/$CORPUS"
+[ -d "$K" ] || { echo "missing korpus/$CORPUS"; exit 1; }
+RAW=$(du -sb "$K" | cut -f1)
 
-kor() { # namn, flaggor...
-    local namn="$1"; shift
+run() { # name, flags...
+    local name="$1"; shift
     local s=$(date +%s)
-    "$NVZ" packa "$K" "$ARB/$namn.nvz" --läge normal --kodek "$KODEK" -q "$@"
+    "$NVZ" pack "$K" "$WORK/$name.nvz" --mode normal --codec "$CODEC" -q "$@"
     local t=$(( $(date +%s) - s ))
-    echo "$namn $(stat -c%s "$ARB/$namn.nvz") $t"
+    echo "$name $(stat -c%s "$WORK/$name.nvz") $t"
 }
 
-echo "ablation på korpus/$KORPUS ($RA byte), kodek $KODEK, läge normal"
-# referens utan nvz alls: tar i katalogordning genom samma kompressor
-# Referensraden måste gå genom SAMMA kompressor som nvz-raderna, annars mäter
-# tabellen kompressorbyte i stället för omordning.
-case "$KODEK" in
-  xz9e)   REFKMD=(xz -9e -T0 -c) ;;
-  zstd19) REFKMD=(zstd -19 --long=27 -T0 -q -c) ;;
-  zstd22) REFKMD=(zstd -22 --ultra --long=31 -T0 -q -c) ;;
-  zstd3)  REFKMD=(zstd -3 -T0 -q -c) ;;
-  *) echo "ablation: ingen tar-referens för kodek $KODEK"; exit 1 ;;
+echo "ablation on korpus/$CORPUS ($RAW bytes), codec $CODEC, mode normal"
+# The reference row must go through the SAME compressor as the nvz rows,
+# or the table measures a compressor swap instead of a reordering.
+case "$CODEC" in
+  xz9e)   REF=(xz -9e -T0 -c) ;;
+  zstd19) REF=(zstd -19 --long=27 -T0 -q -c) ;;
+  zstd22) REF=(zstd -22 --ultra --long=31 -T0 -q -c) ;;
+  zstd3)  REF=(zstd -3 -T0 -q -c) ;;
+  *) echo "ablation: no tar reference for codec $CODEC"; exit 1 ;;
 esac
-S=$(date +%s); tar -cf - -C "$ROT/korpus" "$KORPUS" | "${REFKMD[@]}" > "$ARB/tar.xz"; TT=$(( $(date +%s) - S ))
-echo "tar.xz $(stat -c%s "$ARB/tar.xz") $TT" > "$ARB/rader"
-kor inget   --utan-dedup --utan-omvandling --utan-sortering --utan-klassning >> "$ARB/rader"
-kor klass   --utan-dedup --utan-omvandling --utan-sortering                  >> "$ARB/rader"
-kor sort    --utan-dedup --utan-omvandling                                   >> "$ARB/rader"
-kor dedup   --utan-omvandling                                                >> "$ARB/rader"
-kor allt                                                                     >> "$ARB/rader"
+S=$(date +%s); tar -cf - -C "$ROOT/korpus" "$CORPUS" | "${REF[@]}" > "$WORK/tar.ref"; TT=$(( $(date +%s) - S ))
+echo "tar.ref $(stat -c%s "$WORK/tar.ref") $TT" > "$WORK/rows"
+run none    --no-dedup --no-transform --no-sort --no-classing >> "$WORK/rows"
+run class   --no-dedup --no-transform --no-sort               >> "$WORK/rows"
+run sort    --no-dedup --no-transform                          >> "$WORK/rows"
+run dedup   --no-transform                                     >> "$WORK/rows"
+run all                                                        >> "$WORK/rows"
 
-python3 - "$ARB/rader" "$RA" "$KORPUS" <<'PY'
+python3 - "$WORK/rows" "$RAW" "$CORPUS" <<'PY'
 import sys
-rader = [l.split() for l in open(sys.argv[1]) if l.strip()]
-ra, korpus = int(sys.argv[2]), sys.argv[3]
-namn = {'tar.xz': 'tar i katalogordning (ingen nvz)',
-        'inget': 'nvz, alla knep av',
-        'klass': '+ ett block per innehållsklass',
-        'sort':  '+ sortering inom klassen',
-        'dedup': '+ deduplicering',
-        'allt':  '+ omvandlingar (png/jpeg)'}
-bas = int(rader[0][1]); forra = None
-print(f'\n| steg | byte | mot tar | steget självt | packtid |')
+rows = [l.split() for l in open(sys.argv[1]) if l.strip()]
+raw, corpus = int(sys.argv[2]), sys.argv[3]
+names = {'tar.ref': 'tar in directory order (no nvz)',
+         'none':  'nvz, all tricks off',
+         'class': '+ one block per content class',
+         'sort':  '+ sorting within the class',
+         'dedup': '+ deduplication',
+         'all':   '+ transforms (png/jpeg)'}
+base = int(rows[0][1]); prev = None
+print(f'\n| step | bytes | vs tar | the step itself | pack time |')
 print('|:--|--:|--:|--:|--:|')
-for n, b, t in rader:
+for n, b, t in rows:
     b = int(b)
-    steg = '—' if forra is None else f'{(b-forra)/forra*100:+.2f} %'
-    print(f'| {namn.get(n,n)} | {b:,} | {(b-bas)/bas*100:+.2f} % | {steg} | {t} s |'.replace(',', ' '))
-    forra = b
-print(f'\nrådata {ra:,} byte'.replace(',', ' '))
+    step = '—' if prev is None else f'{(b-prev)/prev*100:+.2f} %'
+    print(f'| {names.get(n,n)} | {b:,} | {(b-base)/base*100:+.2f} % | {step} | {t} s |')
+    prev = b
+print(f'\nraw data {raw:,} bytes')
 PY

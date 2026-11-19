@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+# [EN] Builds the measurement corpora from live data on this machine.
+# Hard-links by default to save disk; --kopiera freezes the corpus with
+# real copies (a corpus that moves mid-measurement invalidates the run).
+# NOTE: this older script keeps its Swedish inline comments for now; it is
+# verified by its own runs and is translated as it is next touched.
 """Bygger testkorpusarna som HÅRDLÄNKAR — noll extra diskutrymme, samma bytes.
 
     python3 korpus/bygg-korpus.py            # alla korpusar

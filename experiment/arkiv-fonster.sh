@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# [EN] The hypothesis test behind report section 4.2: block partitioning vs
+# codec choice on the archives-of-archives corpus.
+# NOTE: this older script keeps its Swedish inline comments for now; it is
+# verified by its own runs and is translated as it is next touched.
 # Varför förlorar nvz på en korpus av zip- och tar.gz-filer?
 #
 #   bash experiment/arkiv-fonster.sh

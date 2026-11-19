@@ -521,8 +521,14 @@ src/nvz.py             RETIRED Python implementation, kept verbatim as the
                        v1 format reference (deliberately untranslated)
 ```
 
-**Language note.** The source, CLI, Makefile and man pages are English
-(translated 2026-11-19); Swedish CLI names remain as permanent aliases.
+**Language note.** The source, CLI, Makefile, man pages and the main test
+and experiment entry points are English (translated 2026-11-19); Swedish
+CLI names remain as permanent aliases. The older measurement scripts
+(prova-allt.sh, matning/, aterskapning, protokoll, bygg-korpus and a few
+one-off experiments) carry an English header and keep their Swedish inline
+comments for now — they are verified by their own runs and get translated
+as they are next touched, rather than wholesale with the risk of silent
+drift in verified measurement code.
 Three kinds of Swedish survive on purpose: **archive format strings**
 (block classes like `binar`/`opak`/`jpeg-kropp`, codec names — millions of
 archived bytes contain them), **top-level directory and corpus names**

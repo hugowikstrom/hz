@@ -1,71 +1,71 @@
 #!/usr/bin/env bash
-# Kärntestet: det prov Stefan Alfredsson begärde i tråden 2026-11-17.
+# The kernel test: the trial Stefan Alfredsson asked for in the public
+# thread on 2026-11-17.
 #
-#   hämta linuxkärnan, kontrollsumma den, packa med nvz, jämför storleken mot
-#   kernel.orgs egen tar.xz, packa upp och kontrollsumma igen.
+#   download the Linux kernel, checksum it, pack it with nvz, compare the
+#   size against kernel.org's own tar.xz, unpack and checksum again.
 #
-# Poängen är att korpusen inte är vår: den är världens mest granskade
-# källkodsträd, hämtat från tredje part, med en checksumma vi inte satt själva.
+# The point is that the corpus is not ours: the most reviewed source tree
+# in the world, fetched from a third party, with a checksum we did not set.
 #
-#   bash experiment/karntest.sh [arbetskatalog]
+#   bash experiment/karntest.sh [workdir]
 #
-# Resultatet skrivs som JSON till resultat/karntest.json och som tabell till
-# standard ut.
+# The result is written as JSON to resultat/karntest.json and as a table to
+# standard out.
 set -euo pipefail
 export LC_ALL=C
-ROT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-NVZ="$ROT/src/nvz"
-ARB="${1:-${NVPACK_SKRAP:-$ROT/.skrap}/karntest}"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+NVZ="$ROOT/src/nvz"
+WORK="${1:-${NVPACK_SKRAP:-$ROOT/.skrap}/karntest}"
 VER="${KARNA_VERSION:-6.12}"
 URL="https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-$VER.tar.xz"
-mkdir -p "$ARB"; cd "$ARB"
+mkdir -p "$WORK"; cd "$WORK"
 
-tid() { local s=$(date +%s); "$@" >/dev/null 2>&1; echo $(( $(date +%s) - s )); }
+t() { local s=$(date +%s); "$@" >/dev/null 2>&1; echo $(( $(date +%s) - s )); }
 
-[ -f linux.tar.xz ] || { echo "hämtar $URL"; curl -sSLo linux.tar.xz "$URL"; }
-NED=$(stat -c%s linux.tar.xz)
-md5sum linux.tar.xz > nedladdad.md5
+[ -f linux.tar.xz ] || { echo "fetching $URL"; curl -sSLo linux.tar.xz "$URL"; }
+DL=$(stat -c%s linux.tar.xz)
+md5sum linux.tar.xz > downloaded.md5
 
-if [ ! -d karna ]; then echo "packar upp tarbollen"; mkdir -p karna; tar -xf linux.tar.xz -C karna; fi
-FILER=$(find karna -type f | wc -l)
-RA=$(du -sb karna | cut -f1)
+if [ ! -d kernel ]; then echo "extracting the tarball"; mkdir -p kernel; tar -xf linux.tar.xz -C kernel; fi
+FILES=$(find kernel -type f | wc -l)
+RAW=$(du -sb kernel | cut -f1)
 
-echo "manifest före ($FILER filer)"
-( cd karna && find . -type f -print0 | sort -z | xargs -0 -P "$(nproc)" -n 200 md5sum ) | sort -k2 > fore.md5
+echo "manifest before ($FILES files)"
+( cd kernel && find . -type f -print0 | sort -z | xargs -0 -P "$(nproc)" -n 200 md5sum ) | sort -k2 > before.md5
 
-echo "nvz --läge normal"; TN=$(tid "$NVZ" packa karna nvz-normal.nvz --läge normal -q); SN=$(stat -c%s nvz-normal.nvz)
-echo "nvz --läge liten";  TL=$(tid "$NVZ" packa karna nvz-liten.nvz  --läge liten  -q); SL=$(stat -c%s nvz-liten.nvz)
-echo "tar.xz -9e";        TX=$(tid bash -c 'tar -cf - karna | xz -9e -T0 -c > ref.tar.xz'); SX=$(stat -c%s ref.tar.xz)
-echo "tar.zst -19";       TZ=$(tid bash -c 'tar -cf - karna | zstd -19 --long=27 -T0 -q -o ref.tar.zst -f'); SZ=$(stat -c%s ref.tar.zst)
+echo "nvz --mode normal"; TN=$(t "$NVZ" pack kernel nvz-normal.nvz --mode normal -q); SN=$(stat -c%s nvz-normal.nvz)
+echo "nvz --mode small";  TS=$(t "$NVZ" pack kernel nvz-small.nvz  --mode small  -q); SS=$(stat -c%s nvz-small.nvz)
+echo "tar.xz -9e";        TX=$(t bash -c 'tar -cf - kernel | xz -9e -T0 -c > ref.tar.xz'); SX=$(stat -c%s ref.tar.xz)
+echo "tar.zst -19";       TZ=$(t bash -c 'tar -cf - kernel | zstd -19 --long=27 -T0 -q -o ref.tar.zst -f'); SZ=$(stat -c%s ref.tar.zst)
+echo "7z LZMA2 -mx=9, 512 MiB dictionary, solid"
+rm -f ref.7z; T7=$(t 7z a -t7z -m0=LZMA2 -mx=9 -md=512m -ms=on -mmt="$(nproc)" ref.7z kernel); S7=$(stat -c%s ref.7z)
 
-echo "7z LZMA2 -mx=9, 512 MiB ordbok, solid"
-rm -f ref.7z; T7=$(tid 7z a -t7z -m0=LZMA2 -mx=9 -md=512m -ms=on -mmt="$(nproc)" ref.7z karna); S7=$(stat -c%s ref.7z)
+echo "unpacking nvz-small and checking with md5sum -c"
+rm -rf out; mkdir out; TU=$(t "$NVZ" unpack nvz-small.nvz out)
+CHECK=$( cd out/kernel && md5sum -c "$WORK/before.md5" 2>&1 | grep -c ': OK$' || true )
+BAD=$( cd out/kernel && md5sum -c "$WORK/before.md5" 2>&1 | grep -c ': FAILED' || true )
+( cd out/kernel && find . -type f -print0 | sort -z | xargs -0 -P "$(nproc)" -n 200 md5sum ) | sort -k2 > after.md5
+SAME=$(cmp -s before.md5 after.md5 && echo yes || echo NO)
 
-echo "packar upp nvz-liten och kontrollerar med md5sum -c"
-rm -rf ut; mkdir ut; TU=$(tid "$NVZ" packa-upp nvz-liten.nvz ut)
-KONTROLL=$( cd ut/karna && md5sum -c "$ARB/fore.md5" 2>&1 | grep -c ': OK$' || true )
-FEL=$( cd ut/karna && md5sum -c "$ARB/fore.md5" 2>&1 | grep -c ': FAILED' || true )
-( cd ut/karna && find . -type f -print0 | sort -z | xargs -0 -P "$(nproc)" -n 200 md5sum ) | sort -k2 > efter.md5
-LIKA=$(cmp -s fore.md5 efter.md5 && echo ja || echo NEJ)
-
-mkdir -p "$ROT/resultat"
-cat > "$ROT/resultat/karntest.json" <<JSON
-{"version":"$VER","nedladdad_tar_xz":$NED,"rabyte":$RA,"filer":$FILER,
- "nvz_normal":{"byte":$SN,"packtid":$TN},"nvz_liten":{"byte":$SL,"packtid":$TL},
+mkdir -p "$ROOT/resultat"
+cat > "$ROOT/resultat/karntest.json" <<JSON
+{"version":"$VER","nedladdad_tar_xz":$DL,"rabyte":$RAW,"filer":$FILES,
+ "nvz_normal":{"byte":$SN,"packtid":$TN},"nvz_liten":{"byte":$SS,"packtid":$TS},
  "tar_xz_9e":{"byte":$SX,"packtid":$TX},"tar_zst_19":{"byte":$SZ,"packtid":$TZ},
  "lzma2_extrem_7z":{"byte":$S7,"packtid":$T7},
- "uppacktid_liten":$TU,"md5_ok":$KONTROLL,"md5_fel":$FEL,"manifest_lika":"$LIKA"}
+ "uppacktid_liten":$TU,"md5_ok":$CHECK,"md5_fel":$BAD,"manifest_lika":"$SAME"}
 JSON
 
-p() { python3 -c "print(f'{($1-$2)/$2*100:+.1f} %')"; }
+pct() { python3 -c "print(f'{($1-$2)/$2*100:+.1f} %')"; }
 echo
-echo "linux-$VER: $RA byte i $FILER filer"
-printf '%-24s %14s %10s %12s\n' packare byte "mot ned" packtid
-printf '%-24s %14d %10s %12s\n' "kernel.org tar.xz" "$NED" "0,0 %" "-"
-printf '%-24s %14d %10s %11ds\n' "tar.xz -9e (lokalt)" "$SX" "$(p "$SX" "$NED")" "$TX"
-printf '%-24s %14d %10s %11ds\n' "tar.zst -19 --long" "$SZ" "$(p "$SZ" "$NED")" "$TZ"
-printf '%-24s %14d %10s %11ds\n' "7z LZMA2 -mx=9 512M" "$S7" "$(p "$S7" "$NED")" "$T7"
-printf '%-24s %14d %10s %11ds\n' "nvz --läge normal" "$SN" "$(p "$SN" "$NED")" "$TN"
-printf '%-24s %14d %10s %11ds\n' "nvz --läge liten" "$SL" "$(p "$SL" "$NED")" "$TL"
+echo "linux-$VER: $RAW bytes in $FILES files"
+printf '%-24s %14s %10s %12s\n' packer bytes "vs dl" "pack time"
+printf '%-24s %14d %10s %12s\n' "kernel.org tar.xz" "$DL" "0.0 %" "-"
+printf '%-24s %14d %10s %11ds\n' "tar.xz -9e (local)" "$SX" "$(pct "$SX" "$DL")" "$TX"
+printf '%-24s %14d %10s %11ds\n' "tar.zst -19 --long" "$SZ" "$(pct "$SZ" "$DL")" "$TZ"
+printf '%-24s %14d %10s %11ds\n' "7z LZMA2 -mx=9 512M" "$S7" "$(pct "$S7" "$DL")" "$T7"
+printf '%-24s %14d %10s %11ds\n' "nvz --mode normal" "$SN" "$(pct "$SN" "$DL")" "$TN"
+printf '%-24s %14d %10s %11ds\n' "nvz --mode small" "$SS" "$(pct "$SS" "$DL")" "$TS"
 echo
-echo "uppackning (liten): ${TU}s · md5sum -c: $KONTROLL OK, $FEL FAILED · manifest identiska: $LIKA"
+echo "unpack (small): ${TU}s · md5sum -c: $CHECK OK, $BAD FAILED · manifests identical: $SAME"

@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# [EN] LZMA2 at maximum strength (7z -mx=9, 512 MiB dictionary, solid)
+# against nvz — the opponent from report section 3.6.
+# NOTE: this older script keeps its Swedish inline comments for now; it is
+# verified by its own runs and is translated as it is next touched.
 # LZMA2 i sin starkaste form mot nvz.
 #
 #   bash experiment/lzma2-extrem.sh [korpus ...]

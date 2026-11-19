@@ -1,4 +1,12 @@
 #!/usr/bin/env bash
+# [EN] The 44-edge-case suite: builds a tree of empty files, duplicates,
+# symlinks (relative, broken, to directories), newline and non-ASCII file
+# names, odd permissions and 1985/2031 timestamps; packs it in every mode
+# and demands every byte, permission and timestamp back. Also tests the
+# gzip surface contract (exit statuses, -c/-k/-r, stdin) and, when built,
+# the GPU part.
+# NOTE: this older script keeps its Swedish inline comments for now; it is
+# verified by its own runs and is translated as it is next touched.
 # Provsvit för nvz. Bygger ett träd av kantfall, packar det, packar upp det
 # och kräver att varenda byte och varenda rättighet kommer tillbaka.
 #

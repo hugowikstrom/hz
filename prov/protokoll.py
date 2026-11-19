@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+# [EN] Reconstruction protocol: md5 manifests before and after, checked by
+# the system md5sum -c rather than by our own code, committed to the repo
+# so anyone can re-run the check.
+# NOTE: this older script keeps its Swedish inline comments for now; it is
+# verified by its own runs and is translated as it is next touched.
 """Återskapningsprotokoll: packa, packa upp, och bevisa med md5 att varje
 fil kom tillbaka exakt.
 

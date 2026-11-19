@@ -962,6 +962,13 @@ den dagen.
 
    Alla tre är regressionsprov i `prov/brister.sh`.
 
+**Filnamnen i `src/cpp/` bytte språk 2026-11-19.** Texten i det här
+avsnittet skrevs mot de svenska namnen; mappningen är huvud→main, yta→cli,
+arkiv→archive, kodek→codec, omvandla→transform, trad→tree, sjalv→worker,
+verktyg→util. Själva koden, kommandoraden och README är numera engelska,
+med de svenska kommandonamnen kvar som permanenta alias — så varje kommando
+i den här rapporten fungerar oförändrat.
+
 ## 7. Förarbete
 
 En invändning i den offentliga diskussionen om det här arbetet förtjänar att

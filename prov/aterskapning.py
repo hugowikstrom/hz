@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# [EN] Reconstruction proof: a full fingerprint — SHA-256, mode, mtime in
+# nanoseconds, link target, entry kind — before packing and after
+# unpacking, for every entry, plus a check that the register entry count
+# matches the tree.
+# NOTE: this older script keeps its Swedish inline comments for now; it is
+# verified by its own runs and is translated as it is next touched.
 """Återskapningsprov: packar en korpus, packar upp den och kräver tillbaka
 varje byte, varje rättighet och varje tidsstämpel.
 
