@@ -1007,9 +1007,20 @@ credits each part, and the last column states where hz sits relative to it.
 | context mixing, logistic mixer, APM/SSE | the PAQ family (Matt Mahoney), lpaq, zpaq, cmix | smaller model: paq8px beats hzcm on enwik8, 15.8 vs. 20.4 MB (3.4) |
 | content-aware filter selection per data type | FreeArc (Bulat Ziganshin), zpaq method strings | same thought, different mechanism: hz decides by probing the data rather than by a rule on file type |
 | transform verified in both directions before use | precomp and Lepton do the same | same |
+| rANS entropy coding | Jarek Duda's ANS; Fabian Giesen's rans_byte (ryg_rans, public domain); zstd's FSE is tANS | present as `--codec rans`, measured out of the probe (see below) |
 
 The figures for packJPG, Lepton, brunsli and paq8px are **published values,
 not measured here**; the exception is paq8px on enwik8, which is part of 3.4.
+
+One further candidate was added on request and settled by measurement:
+an order-0, 4-way interleaved **rANS** coder (Duda's ANS in Giesen's
+rans_byte construction) lives in the tree as `--codec rans` and
+round-trips bit-exact, but it is deliberately not a probe candidate. A
+pure entropy stage has no match finding, so it cannot beat candidates
+that do — and the probe already carries ANS inside zstd, whose FSE
+stage is tabled ANS behind an LZ front end. Measured on 50 MB of
+enwik8: rans 30.3 MiB where zstd -3 alone gives 16.9. The codec exists
+as the measured answer to "why not rANS?" rather than as a winner.
 
 What remains as this project's own is therefore not an algorithm but three
 things: that the parts sit in one tool with one archive format and one
