@@ -1,81 +1,83 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-only
 """RETIRED. This is the original Python implementation of the tool
-(named nvz then, hz since 2026-11-19), kept
-verbatim as the v1 archive-format reference: the C++ implementation reads
-its archives bit for bit, and the test suite holds the two to the same
-bytes. It is built by nothing and called by nothing, and it is the one
-file in this repository that was deliberately left in Swedish when the
-source went English on 2026-11-19 — translating retired reference code
-only risks drift.
+(named nvz then, hz since 2026-11-19), kept as the v1 archive-format
+reference: the C++ implementation reads its archives bit for bit, and the
+test suite holds the two to the same bytes. It is built by nothing and
+called by nothing. The file was born Swedish; it was translated to English
+on 2026-11-20 — comments, identifiers and messages only, with every format
+byte (register keys, block class names, codec names, magic, suffix) left
+untouched, because those bytes ARE the v1 format.
 
-nvz — en innehållsmedveten arkivpackare.
+nvz — a content-aware archiver.
 
-Kommandoraden är gzips — samma flaggor, samma standardbeteende:
+The command line is gzip's — same flags, same default behavior:
 
-    nvz fil                      # -> fil.nv, originalet borta
-    nvz -d fil.nv                # -> fil, arkivet borta
-    nvz -c fil > ut.nv           # till standard ut
-    nvz -l ark.nv                # packat, uppackat, kvot
-    nvz -t ark.nv                # packa upp och jämför mot registret
-    nvz -k -9 katalog            # hela trädet till katalog.nv
+    nvz file                     # -> file.nv, original gone
+    nvz -d file.nv               # -> file, archive gone
+    nvz -c file > out.nv         # to stdout
+    nvz -l ark.nv                # compressed, uncompressed, ratio
+    nvz -t ark.nv                # unpack and compare against the register
+    nvz -k -9 directory          # the whole tree to directory.nv
 
-En KATALOG som operand packas till ETT arkiv av trädet. Det är enda stället
-där ytan skiljer sig från gzip, och det är med flit: en katalog är vad nvz
-är byggd för. Källträdet lämnas alltid kvar. Med -r görs gzips bokstavliga
-sak i stället — en fil i taget — och då går vinsten MELLAN filerna förlorad.
+A DIRECTORY as operand is packed into ONE archive of the tree. That is the
+only place the surface differs from gzip, and it is deliberate: a directory
+is what nvz is built for. The source tree is always left in place. With -r
+gzip's literal thing is done instead — one file at a time — and then the
+gain BETWEEN files is lost.
 
-Underkommandona finns kvar; matning/ och prov/ anropar dem:
+The subcommands remain; benchmark/ and tests/ called them:
 
-    nvz packa <katalog> <arkiv.nv>
-    nvz packa-upp <arkiv.nv> <målkatalog>
-    nvz lista <arkiv.nv>
-    nvz prova <katalog>          # packa, packa upp, jämför bit för bit
+    nvz pack <directory> <archive.nv>
+    nvz unpack <archive.nv> <destdir>
+    nvz list <archive.nv>
+    nvz test <directory>         # pack, unpack, compare bit for bit
 
-VARFÖR DEN FINNS. `tar | zstd` är två program som inte vet något om varandra.
-tar lägger filerna i den ordning katalogträdet råkar ha dem och skickar vidare
-en enda byteström; zstd ser den strömmen genom ett fönster och får aldrig veta
-att fil 4000 är en exakt kopia av fil 12, eller att de 9 MB "slump" den just
-gav upp på i själva verket är en deflate-ström som går att veckla ut.
+WHY IT EXISTS. `tar | zstd` is two programs that know nothing about each
+other. tar lays the files down in whatever order the directory tree happens
+to have them and passes on a single byte stream; zstd sees that stream
+through a window and never learns that file 4000 is an exact copy of file
+12, or that the 9 MB of "noise" it just gave up on is in fact a deflate
+stream that can be unfolded.
 
-nvz vet fem saker som tar inte vet:
+nvz knows five things tar does not:
 
-  1. IDENTISKA FILER LAGRAS EN GÅNG. Innehållet hashas; dubbletter blir
-     pekare. tar lagrar varje kopia, och zstds fönster hittar bara de kopior
-     som råkar ligga nära varandra i strömmen.
+  1. IDENTICAL FILES ARE STORED ONCE. Content is hashed; duplicates become
+     pointers. tar stores every copy, and zstd's window only finds the
+     copies that happen to sit near each other in the stream.
 
-  2. LIKA FILER LÄGGS BREDVID VARANDRA. Posterna sorteras på klass och
-     ändelse före packning, så att all JavaScript ligger i en följd och alla
-     skärmdumpar i en annan. Komprimeringen får då syfta på likheter som i
-     katalogordning låg hundratals megabyte isär.
+  2. SIMILAR FILES ARE PLACED NEXT TO EACH OTHER. Entries are sorted by
+     class and suffix before packing, so all the JavaScript sits in one run
+     and all the screenshots in another. Compression then gets to aim at
+     similarities that in directory order lay hundreds of megabytes apart.
 
-  3. PNG VECKLAS UT OCH PACKAS OM. En PNG är redan deflate-packad, och deflate
-     från 1996 är ett dåligt skal att ha runt sin bilddata. nvz vecklar ut
-     IDAT-strömmen till råa filterrader och sparar det RECEPT som gör att
-     exakt samma bytes kan deflateras fram igen. Se png.py.
+  3. PNG IS UNFOLDED AND REPACKED. A PNG is already deflate-packed, and
+     deflate from 1996 is a bad shell to keep around your image data. nvz
+     unfolds the IDAT stream into raw filter rows and saves the RECIPE that
+     lets exactly the same bytes be deflated back. See png.py.
 
-  4. JPEG KODAS OM UTAN ATT RÖRA EN PIXEL. Huffman-lagret byts mot en adaptiv
-     aritmetisk kodare med modeller för hur koefficienter faktiskt ser ut
-     bredvid varandra. Bilden är densamma, byte för byte, när den packas upp.
-     Se nvjpg.c.
+  4. JPEG IS RECODED WITHOUT TOUCHING A PIXEL. The Huffman layer is swapped
+     for an adaptive arithmetic coder with models for how coefficients
+     actually look next to each other. The image is the same, byte for
+     byte, when unpacked. See nvjpg.c.
 
-  5. REDAN PACKAT FÅR VARA I FRED. Film, ljud och zip-arkiv skickas inte genom
-     en dyr komprimerare som ändå inte hittar något. Det är ingen besparing i
-     byte men en stor besparing i tid — och tid är skälet till att dagens
-     arkiv körs med zstd -3 i stället för -19.
+  5. ALREADY-PACKED DATA IS LEFT IN PEACE. Video, audio and zip archives
+     are not pushed through an expensive compressor that finds nothing
+     anyway. No saving in bytes, but a large saving in time — and time is
+     why today's archives run zstd -3 instead of -19.
 
-VARJE OMVANDLING BEVISAS VID PACKNING. Både PNG- och JPEG-vägen syr ihop sitt
-resultat igen och jämför med originalet innan det godtas. Går det inte ihop
-lagras filen rå. En arkivpackare får ha omvandlingar den inte klarar; den får
-aldrig TRO att den klarade.
+EVERY TRANSFORM IS PROVEN AT PACK TIME. Both the PNG and the JPEG path
+stitch their result back together and compare with the original before it
+is accepted. If it does not match, the file is stored raw. An archiver may
+have transforms it cannot handle; it may never BELIEVE it handled one.
 
-FORMATET. Arkivet är block + register.
+THE FORMAT. The archive is blocks + register.
 
-    "NVPACK\\x01" | block 0 | block 1 | ... | register (zstd) | <u64 offset, u64 längd>
+    "NVPACK\\x01" | block 0 | block 1 | ... | register (zstd) | <u64 offset, u64 length>
 
-Varje block är en oberoende packad följd av objektkroppar, med sin egen kodek.
-Att blocken är oberoende är med flit: de packas parallellt på alla kärnor, och
-en uppackning som bara vill ha en fil behöver bara röra ett block.
+Each block is an independently packed run of object bodies, with its own
+codec. The independence is deliberate: blocks are packed in parallel on all
+cores, and an unpack that only wants one file only has to touch one block.
 """
 from __future__ import annotations
 
@@ -83,1267 +85,1298 @@ import argparse, concurrent.futures as fut, hashlib, json, os, shutil, stat, str
 import subprocess, sys, tempfile, threading, time
 from pathlib import Path
 
+# png.py and jpeg.py expose unfold/rebuild (born as veckla_ut/återskapa in
+# the Swedish v1 sources); the archive bytes they produce are unchanged.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import png as png_omv
-import jpeg as jpeg_omv
+import png as png_tr
+import jpeg as jpeg_tr
 
-MAGI = b'NVPACK\x01'
+MAGIC = b'NVPACK\x01'
 VERSION = 1
-BLOCKTAK = 192 * 1024 * 1024      # rå storlek per block innan ett nytt påbörjas
-PROVBYTE = 4 * 1024 * 1024        # så mycket av ett block som kodekvalet provar på
+BLOCK_CAP = 192 * 1024 * 1024     # raw size per block before a new one is begun
+PROBE_BYTES = 4 * 1024 * 1024     # how much of a block the codec choice probes on
 
-# Hur många gånger större än sin IDAT-ström en PNG får bli innan utvecklingen
-# avstås. Gränsen är INTE en lönsamhetsgräns — experiment/png-troskel.py mätte
-# saken och motbevisade den gissningen: utvecklingen vann i varje klass, och
-# allra mest (−40 %) för bilder som blåstes upp över 32 gånger. Det är logiskt
-# i efterhand. En bild som deflate redan klämt 50:1 är ett skärmklipp med
-# stora enfärgade ytor, och när femtio SÅDANA ligger utvecklade i samma block
-# hittar en modern packare likheterna MELLAN bilderna — något deflate aldrig
-# kunde se genom sitt 32 kB-fönster, en fil i taget.
+# How many times larger than its IDAT stream a PNG may become before the
+# unfold is declined. The cap is NOT a profitability bound —
+# experiment/png-threshold.py measured the matter and disproved that guess:
+# the unfold won in every class, and most of all (−40 %) for images blown
+# up more than 32 times. It is logical in hindsight. An image deflate has
+# already squeezed 50:1 is a screenshot with large flat areas, and when
+# fifty of THOSE lie unfolded in the same block a modern packer finds the
+# similarities BETWEEN the images — something deflate could never see
+# through its 32 kB window, one file at a time.
 #
-# Taket finns därför bara som skyddsräcke mot orimlig resursåtgång: en enda
-# 50 MB-skärmdump får inte bli flera GB arbetsdata.
-PNG_UPPBLASNING_TAK = 150
+# The cap therefore exists only as a guard rail against unreasonable
+# resource use: a single 50 MB screenshot must not become several GB of
+# working data.
+PNG_INFLATION_CAP = 150
 
 
 # ---------------------------------------------------------------------------
-# Klassificering
+# Classification
 # ---------------------------------------------------------------------------
-# Ändelsen är en gissning, magiska bytes är ett besked. Klassen avgör tre
-# saker: vilken omvandling som provas, vilket block posten hamnar i, och
-# vilken kodek blocket får.
+# A suffix is a guess, magic bytes are an answer. The class decides three
+# things: which transform is tried, which block the entry lands in, and
+# which codec the block gets.
 
-TEXTANDELSER = {'.txt','.md','.json','.jsonl','.js','.mjs','.cjs','.ts','.tsx','.jsx','.py','.rs',
+TEXT_SUFFIXES = {'.txt','.md','.json','.jsonl','.js','.mjs','.cjs','.ts','.tsx','.jsx','.py','.rs',
  '.go','.c','.h','.cpp','.hpp','.java','.sh','.bash','.zsh','.sql','.css','.scss','.html','.htm',
  '.xml','.svg','.yml','.yaml','.toml','.ini','.cfg','.conf','.service','.log','.csv','.tsv',
  '.po','.pot','.map','.lock','.patch','.diff','.rst','.tex','.webmanifest'}
 
-OPAKA = {'.mp4','.m4a','.m4v','.mov','.mkv','.webm','.mp3','.ogg','.opus','.flac',
+OPAQUE_SUFFIXES = {'.mp4','.m4a','.m4v','.mov','.mkv','.webm','.mp3','.ogg','.opus','.flac',
  '.webp','.avif','.heic','.gif','.zip','.gz','.tgz','.bz2','.xz','.zst','.7z','.rar','.br',
  '.woff','.woff2','.pdf','.jxl','.wasm','.deb','.rpm','.whl','.jar','.apk','.odt','.ods',
  '.docx','.xlsx','.pptx'}
 
 
-def klassificera(sokvag: Path, huvud: bytes) -> str:
-    if huvud[:8] == b'\x89PNG\r\n\x1a\n': return 'png'
-    if huvud[:3] == b'\xff\xd8\xff':      return 'jpeg'
-    ändelse = sokvag.suffix.lower()
-    if ändelse in OPAKA: return 'opak'
-    if ändelse in TEXTANDELSER: return 'text'
-    # Okänd ändelse: färre än var tjugonde byte utanför det läsbara området
-    # räcker för att kalla något text. Text vinner på att hamna bland text.
-    prov = huvud[:4096]
-    if prov and sum(b < 9 or (13 < b < 32) for b in prov) * 20 < len(prov):
+def classify(path: Path, head: bytes) -> str:
+    if head[:8] == b'\x89PNG\r\n\x1a\n': return 'png'
+    if head[:3] == b'\xff\xd8\xff':      return 'jpeg'
+    suffix = path.suffix.lower()
+    if suffix in OPAQUE_SUFFIXES: return 'opak'
+    if suffix in TEXT_SUFFIXES: return 'text'
+    # Unknown suffix: fewer than one byte in twenty outside the readable
+    # range is enough to call something text. Text wins by sitting with text.
+    sample = head[:4096]
+    if sample and sum(b < 9 or (13 < b < 32) for b in sample) * 20 < len(sample):
         return 'text'
     return 'binar'
 
 
-# Kodek per klass och läge. 'prova' betyder att blocket självt får avgöra
-# genom att packa ett stickprov med varje kandidat.
+# Codec per class and mode. 'prova' (Swedish for probe, a v1 string) means
+# the block itself gets to decide by packing a sample with every candidate.
 #
-#   snabb   — som dagens arkivskript: zstd -3, inga omvandlingar. Finns med
-#             för att kunna mäta mot det, och för arkiv som ska gå fort.
-#   normal  — omvandlingar på, zstd -19 eller xz beroende på vad som vinner.
-#   liten   — text går genom nvcm. Den packar ett par MB/s, så den får bara
-#             de block där den tar hem det: text, källkod, PNG-skelett och
-#             JPEG-huvuden. Utvecklad bilddata är för voluminös för den.
+#   fast    — like today's archive scripts: zstd -3, no transforms. Included
+#             to be able to measure against it, and for archives that must
+#             be quick.
+#   normal  — transforms on, zstd -19 or xz depending on which wins.
+#   small   — text goes through nvcm. It packs a couple of MB/s, so it only
+#             gets the blocks where it earns it: text, source code, PNG
+#             skeletons and JPEG headers. Unfolded image data is too
+#             voluminous for it.
 #
-# Lägg märke till att inte ens film och zip-arkiv står som 'ra' utan som
-# 'prova'. Att anta att "redan packat" inte går att packa mer kostade 150 MiB
-# i första mätningen av PNG-korpusen: de skärmdumpar som INTE gick att veckla
-# ut lagrades rått, och då missade nvz att fyra tusen skärmdumpar av samma
-# webbsida liknar VARANDRA, även när deras deflate-strömmar är ogenomträngliga
-# var för sig. Provet kostar ett par sekunder per block och svarar 'ra' av sig
-# självt när antagandet stämmer. Enda undantaget är jpeg-kropp: den är vår
-# egen aritmetiska ström, och den ÄR brus.
-LÄGEN = {
- 'snabb':  {'text':'zstd3','binar':'zstd3','png-ra':'zstd3','png-rest':'zstd3',
+# Note that not even video and zip archives are listed as 'ra' but as
+# 'prova'. Assuming that "already packed" cannot be packed further cost
+# 150 MiB in the first measurement of the PNG corpus: the screenshots that
+# could NOT be unfolded were stored raw, and nvz then missed that four
+# thousand screenshots of the same web page resemble EACH OTHER, even when
+# their deflate streams are impenetrable one by one. The probe costs a
+# couple of seconds per block and answers 'ra' on its own when the
+# assumption holds. The only exception is jpeg-kropp, the jpeg body class:
+# that is our own arithmetic stream, and it IS noise.
+MODES = {
+ 'fast':   {'text':'zstd3','binar':'zstd3','png-ra':'zstd3','png-rest':'zstd3',
             'jpeg-rest':'zstd3','jpeg-kropp':'ra','jpeg':'ra','opak':'ra','png':'zstd3'},
  'normal': {'text':'prova','binar':'prova','png-ra':'prova','png-rest':'zstd19',
             'jpeg-rest':'zstd19','jpeg-kropp':'ra','jpeg':'prova','opak':'prova','png':'prova'},
- 'liten':  {'text':'prova-cm','binar':'prova-cm','png-ra':'prova','png-rest':'prova-cm',
+ 'small':  {'text':'prova-cm','binar':'prova-cm','png-ra':'prova','png-rest':'prova-cm',
             'jpeg-rest':'prova-cm','jpeg-kropp':'ra','jpeg':'prova','opak':'prova','png':'prova'},
- # gpu — som normal, men nvlz får också vara med och tävla om varje block.
- # nvlz är nvpacks egen kodek där matchningssökningen körs på grafikkortet.
- # LÄS MÄTNINGEN I README INNAN DU ANVÄNDER DEN: på den här maskinen vinner
- # den inget block, och läget finns kvar för att mätningen ska gå att göra om.
+ # gpu — like normal, but nvlz also gets to compete for every block. nvlz is
+ # nvpack's own codec where the match search runs on the graphics card.
+ # READ THE MEASUREMENT IN THE README BEFORE USING IT: on this machine it
+ # wins no block, and the mode remains so the measurement can be redone.
  'gpu':    {'text':'prova-gpu','binar':'prova-gpu','png-ra':'prova-gpu','png-rest':'prova-gpu',
             'jpeg-rest':'prova-gpu','jpeg-kropp':'ra','jpeg':'prova','opak':'prova','png':'prova-gpu'},
 }
-def hjälpbinär(namn: str) -> str:
-    """Hitta nvcm/nvjpg/nvgpu bredvid skriptet, annars i PATH.
+def helper_binary(name: str) -> str:
+    """Find nvcm/nvjpg/nvgpu next to the script, else in PATH.
 
-    Bredvid först, så att ett utcheckat träd använder sina egna byggen och
-    inte något installerat. PATH som reserv, för att nvz ska gå att köra som
-    EN fil (zipapp) där det inte finns någon katalog att ligga bredvid."""
-    granne = Path(__file__).resolve().parent / namn
-    if granne.is_file() and os.access(granne, os.X_OK):
-        return str(granne)
-    return shutil.which(namn) or str(granne)
-
-
-NVCM = hjälpbinär('nvcm')
-NVGPU = hjälpbinär('nvgpu')
-
-# nvcm tar en halv gigabyte modelltabeller per block den packar. Blocken körs
-# parallellt, och utan den här grinden kan tjugofyra av dem starta samtidigt
-# och ta maskinens minne med sig.
-NVCM_GRIND = threading.Semaphore(4)
-
-# Det finns EN grafikkrets. Två nvlz-packningar samtidigt delar inte på den,
-# de står i kö hos drivrutinen — och varje extra samtidig kärna ökar risken
-# att vakthunden dödar hela kontexten. Två räcker för att gömma
-# insamlingstiden bakom kärntiden.
-NVLZ_GRIND = threading.Semaphore(2)
+    Next to it first, so a checked-out tree uses its own builds and not
+    something installed. PATH as fallback, so nvz can run as ONE file
+    (zipapp) where there is no directory to sit next to."""
+    sibling = Path(__file__).resolve().parent / name
+    if sibling.is_file() and os.access(sibling, os.X_OK):
+        return str(sibling)
+    return shutil.which(name) or str(sibling)
 
 
-def gpu_finns() -> bool:
-    """Går det att packa med nvlz här? Svaret cachas: det kostar ett
-    processstart att svara, och frågan ställs en gång per block."""
-    if gpu_finns.svar is None:
+NVCM = helper_binary('nvcm')
+NVGPU = helper_binary('nvgpu')
+
+# nvcm takes half a gigabyte of model tables per block it packs. Blocks run
+# in parallel, and without this gate twenty-four of them can start at once
+# and take the machine's memory with them.
+NVCM_GATE = threading.Semaphore(4)
+
+# There is ONE graphics chip. Two simultaneous nvlz packs do not share it,
+# they queue at the driver — and every extra concurrent kernel raises the
+# risk that the watchdog kills the whole context. Two is enough to hide the
+# gather time behind the kernel time.
+NVLZ_GATE = threading.Semaphore(2)
+
+
+def gpu_available() -> bool:
+    """Can nvlz pack here? The answer is cached: it costs a process start
+    to answer, and the question is asked once per block."""
+    if gpu_available.answer is None:
         try:
-            r = subprocess.run([NVGPU, 'enhet', '--tyst'], capture_output=True, timeout=30)
-            gpu_finns.svar = r.returncode == 0
+            r = subprocess.run([NVGPU, 'device', '--quiet'], capture_output=True, timeout=30)
+            gpu_available.answer = r.returncode == 0
         except (OSError, subprocess.SubprocessError):
-            gpu_finns.svar = False
-    return gpu_finns.svar
+            gpu_available.answer = False
+    return gpu_available.answer
 
 
-gpu_finns.svar = None
+gpu_available.answer = None
 
 
 # ---------------------------------------------------------------------------
-# Kodekar
+# Codecs
 # ---------------------------------------------------------------------------
 
-def _kör(args, stdin=None):
+def _run(args, stdin=None):
     r = subprocess.run(args, input=stdin, capture_output=True)
     if r.returncode: raise RuntimeError(f'{args[0]}: {r.stderr.decode()[:400]}')
     return r.stdout
 
 
-def packa_block(ra: Path, ut: Path, kodek: str, trådar: int) -> str:
-    """Packar ett blocks rådata. Returnerar kodeken som faktiskt användes."""
-    if kodek in ('prova', 'prova-cm', 'prova-gpu'):
-        kodek = välj_kodek(ra, med_cm=(kodek == 'prova-cm'),
-                           med_gpu=(kodek == 'prova-gpu'))
-    if kodek == 'ra':
-        os.replace(ra, ut)
-    elif kodek == 'zstd3':
-        _kör(['zstd','-3',f'-T{trådar}','-q','-f','-o',str(ut),str(ra)])
-    elif kodek == 'nvcm':
-        with NVCM_GRIND, open(ra,'rb') as i, open(ut,'wb') as u:
-            r = subprocess.run([NVCM,'packa'], stdin=i, stdout=u, stderr=subprocess.PIPE)
+def pack_block(raw: Path, out: Path, codec: str, threads: int) -> str:
+    """Packs a block's raw data. Returns the codec actually used."""
+    if codec in ('prova', 'prova-cm', 'prova-gpu'):
+        codec = choose_codec(raw, with_cm=(codec == 'prova-cm'),
+                             with_gpu=(codec == 'prova-gpu'))
+    if codec == 'ra':
+        os.replace(raw, out)
+    elif codec == 'zstd3':
+        _run(['zstd','-3',f'-T{threads}','-q','-f','-o',str(out),str(raw)])
+    elif codec == 'nvcm':
+        with NVCM_GATE, open(raw,'rb') as i, open(out,'wb') as u:
+            r = subprocess.run([NVCM,'pack'], stdin=i, stdout=u, stderr=subprocess.PIPE)
             if r.returncode: raise RuntimeError('nvcm: '+r.stderr.decode()[:300])
-    elif kodek == 'nvlz':
-        with NVLZ_GRIND, open(ra,'rb') as i, open(ut,'wb') as u:
-            r = subprocess.run([NVGPU,'packa','--tyst'], stdin=i, stdout=u, stderr=subprocess.PIPE)
+    elif codec == 'nvlz':
+        with NVLZ_GATE, open(raw,'rb') as i, open(out,'wb') as u:
+            r = subprocess.run([NVGPU,'pack','--quiet'], stdin=i, stdout=u, stderr=subprocess.PIPE)
             if r.returncode: raise RuntimeError('nvgpu: '+r.stderr.decode()[:300])
-    elif kodek == 'zstd19':
-        _kör(['zstd','-19','--long=27',f'-T{trådar}','-q','-f','-o',str(ut),str(ra)])
-    elif kodek == 'zstd22':
-        _kör(['zstd','-22','--ultra','--long=31',f'-T{trådar}','-q','-f','-o',str(ut),str(ra)])
-    elif kodek == 'xz9e':
-        with open(ut,'wb') as f:
-            r = subprocess.run(['xz','-9e',f'-T{trådar}','-c',str(ra)], stdout=f, stderr=subprocess.PIPE)
+    elif codec == 'zstd19':
+        _run(['zstd','-19','--long=27',f'-T{threads}','-q','-f','-o',str(out),str(raw)])
+    elif codec == 'zstd22':
+        _run(['zstd','-22','--ultra','--long=31',f'-T{threads}','-q','-f','-o',str(out),str(raw)])
+    elif codec == 'xz9e':
+        with open(out,'wb') as f:
+            r = subprocess.run(['xz','-9e',f'-T{threads}','-c',str(raw)], stdout=f, stderr=subprocess.PIPE)
             if r.returncode: raise RuntimeError('xz: '+r.stderr.decode()[:400])
     else:
-        raise ValueError(kodek)
-    return kodek
+        raise ValueError(codec)
+    return codec
 
 
-def packa_upp_block(packad: Path, ut: Path, kodek: str):
-    if kodek == 'ra':
-        os.replace(packad, ut)
-    elif kodek in ('nvcm', 'nvz'):      # 'nvz' = arkiv från timmarna då kodeken hette så
-        with NVCM_GRIND, open(packad,'rb') as i, open(ut,'wb') as u:
-            r = subprocess.run([NVCM,'packaupp'], stdin=i, stdout=u, stderr=subprocess.PIPE)
+def unpack_block(packed: Path, out: Path, codec: str):
+    if codec == 'ra':
+        os.replace(packed, out)
+    elif codec in ('nvcm', 'nvz'):      # 'nvz' = archives from the hours when the codec bore that name
+        with NVCM_GATE, open(packed,'rb') as i, open(out,'wb') as u:
+            r = subprocess.run([NVCM,'unpack'], stdin=i, stdout=u, stderr=subprocess.PIPE)
             if r.returncode: raise RuntimeError('nvcm: '+r.stderr.decode()[:300])
-    elif kodek == 'nvlz':
-        # Uppackningen är ren cpu. Ett arkiv ska inte vara gisslan hos en
-        # grafikdrivrutin: den som packade hade en gpu, den som packar upp
-        # kanske inte har någon.
-        with open(packad,'rb') as i, open(ut,'wb') as u:
-            r = subprocess.run([NVGPU,'packaupp'], stdin=i, stdout=u, stderr=subprocess.PIPE)
+    elif codec == 'nvlz':
+        # The unpack is pure cpu. An archive must not be hostage to a
+        # graphics driver: whoever packed had a gpu, whoever unpacks may
+        # have none.
+        with open(packed,'rb') as i, open(out,'wb') as u:
+            r = subprocess.run([NVGPU,'unpack'], stdin=i, stdout=u, stderr=subprocess.PIPE)
             if r.returncode: raise RuntimeError('nvgpu: '+r.stderr.decode()[:300])
-    elif kodek.startswith('zstd'):
-        fönster = '--long=31' if kodek == 'zstd22' else '--long=27'
-        _kör(['zstd','-d',fönster,'-q','-f','-o',str(ut),str(packad)])
-    elif kodek == 'xz9e':
-        with open(ut,'wb') as f:
-            r = subprocess.run(['xz','-dc','-T0',str(packad)], stdout=f, stderr=subprocess.PIPE)
+    elif codec.startswith('zstd'):
+        window = '--long=31' if codec == 'zstd22' else '--long=27'
+        _run(['zstd','-d',window,'-q','-f','-o',str(out),str(packed)])
+    elif codec == 'xz9e':
+        with open(out,'wb') as f:
+            r = subprocess.run(['xz','-dc','-T0',str(packed)], stdout=f, stderr=subprocess.PIPE)
             if r.returncode: raise RuntimeError('xz: '+r.stderr.decode()[:400])
     else:
-        raise ValueError(kodek)
+        raise ValueError(codec)
 
 
-def storlek_av_prov(prov: Path) -> int:
-    return prov.stat().st_size
+def probe_size(probe: Path) -> int:
+    return probe.stat().st_size
 
 
-def välj_kodek(ra: Path, med_cm=False, med_gpu=False) -> str:
-    """Provar ett stickprov med varje kandidat och väljer den som vinner.
+def choose_codec(raw: Path, with_cm=False, with_gpu=False) -> str:
+    """Tries a sample with every candidate and picks the winner.
 
-    Stickprovet tas på ÅTTA ställen spridda genom blocket, inte som de första
-    megabyten. Ett block är sorterat efter ändelse, så de första megabyten är
-    en enda filtyp och säger ingenting om resten — första mätningen av det här
-    valet lät zstd vinna över xz på ett block där xz var 4 % bättre.
+    The sample is taken at EIGHT places spread through the block, not as the
+    first megabytes. A block is sorted by suffix, so the first megabytes are
+    a single file type and say nothing about the rest — the first
+    measurement of this choice let zstd beat xz on a block where xz was 4 %
+    better.
     """
-    storlek = ra.stat().st_size
-    if storlek == 0: return 'ra'
+    size = raw.stat().st_size
+    if size == 0: return 'ra'
     with tempfile.TemporaryDirectory() as d:
-        prov = Path(d)/'prov'
-        delar, delstorlek = 8, PROVBYTE // 8
-        with open(ra,'rb') as f, open(prov,'wb') as u:
-            if storlek <= PROVBYTE:
+        probe = Path(d)/'probe'
+        parts, part_size = 8, PROBE_BYTES // 8
+        with open(raw,'rb') as f, open(probe,'wb') as u:
+            if size <= PROBE_BYTES:
                 u.write(f.read())
             else:
-                for i in range(delar):
-                    f.seek(i * (storlek - delstorlek) // (delar - 1))
-                    u.write(f.read(delstorlek))
+                for i in range(parts):
+                    f.seek(i * (size - part_size) // (parts - 1))
+                    u.write(f.read(part_size))
         z, x = Path(d)/'z', Path(d)/'x'
-        _kör(['zstd','-19','--long=27','-T1','-q','-f','-o',str(z),str(prov)])
+        _run(['zstd','-19','--long=27','-T1','-q','-f','-o',str(z),str(probe)])
         zb = z.stat().st_size
         with open(x,'wb') as f:
-            subprocess.run(['xz','-9e','-T1','-c',str(prov)], stdout=f, stderr=subprocess.DEVNULL)
+            subprocess.run(['xz','-9e','-T1','-c',str(probe)], stdout=f, stderr=subprocess.DEVNULL)
         xb = x.stat().st_size or zb
         cb = None
-        if med_cm:
-            with open(prov,'rb') as f:
-                r = subprocess.run([NVCM,'packa'], stdin=f, capture_output=True)
+        if with_cm:
+            with open(probe,'rb') as f:
+                r = subprocess.run([NVCM,'pack'], stdin=f, capture_output=True)
             if r.returncode == 0: cb = len(r.stdout)
         gb = None
-        if med_gpu and gpu_finns():
-            with NVLZ_GRIND, open(prov,'rb') as f:
-                r = subprocess.run([NVGPU,'packa','--tyst'], stdin=f, capture_output=True)
+        if with_gpu and gpu_available():
+            with NVLZ_GATE, open(probe,'rb') as f:
+                r = subprocess.run([NVGPU,'pack','--quiet'], stdin=f, capture_output=True)
             if r.returncode == 0: gb = len(r.stdout)
-        bäst = min(x for x in (zb, xb, cb, gb) if x is not None)
+        best = min(x for x in (zb, xb, cb, gb) if x is not None)
 
-        # Tre utfall, inte två. Att bara skilja på "går att packa" och "går
-        # inte" kostade 0,06 % på ett riktigt arkiv: 2,9 GB film packar sig
-        # en halv procent, vilket är under tröskeln för att vara värt en dyr
-        # kodek — men en halv procent av 2,9 GB är fjorton megabyte, och en
-        # billig kodek tar dem på några sekunder. Dagens `tar | zstd -3` tog
-        # dem; nvz slängde dem.
-        if bäst > storlek_av_prov(prov) * 0.998:
-            return 'ra'          # under en femtedels procent: inte värt en enda sekund
-        if bäst > storlek_av_prov(prov) * 0.98:
-            return 'zstd3'       # magert men nästan gratis att ta
+        # Three outcomes, not two. Only distinguishing "compressible" from
+        # "not" cost 0.06 % on a real archive: 2.9 GB of video packs half a
+        # percent, which is under the threshold for being worth an expensive
+        # codec — but half a percent of 2.9 GB is fourteen megabytes, and a
+        # cheap codec takes them in a few seconds. Today's `tar | zstd -3`
+        # took them; nvz threw them away.
+        if best > probe_size(probe) * 0.998:
+            return 'ra'          # under a fifth of a percent: not worth a single second
+        if best > probe_size(probe) * 0.98:
+            return 'zstd3'       # meager but almost free to take
         if cb is not None and cb < min(zb, xb) * 0.98:
             return 'nvcm'
-        # nvlz behöver en marginal av samma skäl som nvcm: den är dyrare än
-        # zstd och ska bara väljas när den tar hem något verkligt.
+        # nvlz needs a margin for the same reason as nvcm: it is more
+        # expensive than zstd and should only be chosen when it brings home
+        # something real.
         if gb is not None and gb < min(zb, xb) * 0.98:
             return 'nvlz'
-        # xz och zstd -19 tar ungefär lika lång tid på den här maskinen, så
-        # marginalen behöver bara täcka stickprovets brus.
+        # xz and zstd -19 take about the same time on this machine, so the
+        # margin only has to cover the sample's noise.
         return 'xz9e' if xb < zb * 0.995 else 'zstd19'
 
 
 # ---------------------------------------------------------------------------
-# Omvandlingar (körs i arbetsprocesser)
+# Transforms (run in worker processes)
 # ---------------------------------------------------------------------------
 
-def _omvandla(uppgift):
-    """(klass, sökväg) -> (omvandling, {'rest','kropp',...}) eller (None, None)."""
-    klass, sokvag = uppgift
+def _transform(task):
+    """(class, path) -> (transform, {'rest','body',...}) or (None, None)."""
+    cls, path = task
     try:
-        if klass == 'png':
-            r = png_omv.veckla_ut(sokvag, PNG_UPPBLASNING_TAK)
+        if cls == 'png':
+            r = png_tr.unfold(path, PNG_INFLATION_CAP)
             return ('png', r) if r else (None, None)
-        if klass == 'jpeg':
-            r = jpeg_omv.veckla_ut(sokvag)
+        if cls == 'jpeg':
+            r = jpeg_tr.unfold(path)
             return ('jpeg', r) if r else (None, None)
     except Exception:
-        return (None, None)           # en trasig fil ska lagras, inte fälla arkivet
+        return (None, None)           # a broken file must be stored, not fell the archive
     return (None, None)
 
 
 # ---------------------------------------------------------------------------
-# Packning
+# Packing
 # ---------------------------------------------------------------------------
 
-def hasha(sokvag: Path, bit=1 << 20):
-    """Returnerar (hash, första kilobyten). Huvudet används till klassningen,
-    så filen behöver bara läsas en gång."""
+def hash_file(path: Path, chunk=1 << 20):
+    """Returns (hash, first kilobytes). The head is used for classification,
+    so the file only has to be read once."""
     h = hashlib.blake2b(digest_size=16)
-    huvud = b''
-    with open(sokvag,'rb') as f:
-        while d := f.read(bit):
-            if not huvud: huvud = d[:4096]
+    head = b''
+    with open(path,'rb') as f:
+        while d := f.read(chunk):
+            if not head: head = d[:4096]
             h.update(d)
-    return h.hexdigest(), huvud
+    return h.hexdigest(), head
 
 
-def läs_träd(rot: Path):
-    """Går igenom trädet en gång och plockar fram poster i stabil ordning.
+def read_tree(root: Path):
+    """Walks the tree once and extracts entries in stable order.
 
-    Två fällor sitter här, och provsviten gick på båda:
+    Two traps sit here, and the test suite hit both:
 
-    En SYMLÄNK TILL EN KATALOG dyker upp bland os.walks kataloger, inte bland
-    dess filer. Letar man bara efter länkar bland filerna försvinner den helt
-    ur arkivet — tyst, utan fel, och utan att något saknas förrän någon
-    försöker använda det som packades upp.
+    A SYMLINK TO A DIRECTORY shows up among os.walk's directories, not
+    among its files. Look for links only among the files and it vanishes
+    from the archive entirely — silently, without error, and with nothing
+    missing until someone tries to use what was unpacked.
 
-    KATALOGERNAS EGEN TID är också data. Utan den får varje katalog
-    uppackningsdagens datum, och ett arkiv som flyttar alla tidsstämplar till
-    idag är inte en trogen kopia.
+    THE DIRECTORIES' OWN TIME is data too. Without it every directory gets
+    the unpack day's date, and an archive that moves all timestamps to
+    today is not a faithful copy.
     """
-    poster = []
-    överhoppat = 0
-    for katalog, kataloger, filer in os.walk(rot, followlinks=False):
-        kataloger.sort(); filer.sort()
-        k = Path(katalog)
+    entries = []
+    skipped = 0
+    for dirpath, dirs, files in os.walk(root, followlinks=False):
+        dirs.sort(); files.sort()
+        k = Path(dirpath)
         st = k.lstat()
-        poster.append(dict(p=str(k.relative_to(rot)) if k != rot else '', t='d',
-                           m=st.st_mode & 0o7777, mt=st.st_mtime_ns))
-        länkade = [d for d in kataloger if (k/d).is_symlink()]
-        for d in länkade:
-            poster.append(dict(p=str((k/d).relative_to(rot)), t='l', mal=os.readlink(k/d),
-                               mt=(k/d).lstat().st_mtime_ns))
-        if länkade:
-            kataloger[:] = [d for d in kataloger if d not in set(länkade)]
-        for namn in filer:
-            s = k/namn
+        entries.append(dict(p=str(k.relative_to(root)) if k != root else '', t='d',
+                            m=st.st_mode & 0o7777, mt=st.st_mtime_ns))
+        linked = [d for d in dirs if (k/d).is_symlink()]
+        for d in linked:
+            entries.append(dict(p=str((k/d).relative_to(root)), t='l', mal=os.readlink(k/d),
+                                mt=(k/d).lstat().st_mtime_ns))
+        if linked:
+            dirs[:] = [d for d in dirs if d not in set(linked)]
+        for name in files:
+            s = k/name
             st = s.lstat()
-            rel = str(s.relative_to(rot))
+            rel = str(s.relative_to(root))
             if stat.S_ISLNK(st.st_mode):
-                poster.append(dict(p=rel, t='l', mal=os.readlink(s), mt=st.st_mtime_ns))
+                entries.append(dict(p=rel, t='l', mal=os.readlink(s), mt=st.st_mtime_ns))
             elif stat.S_ISREG(st.st_mode):
-                poster.append(dict(p=rel, t='f', m=st.st_mode & 0o7777,
-                                   mt=st.st_mtime_ns, s=st.st_size))
+                entries.append(dict(p=rel, t='f', m=st.st_mode & 0o7777,
+                                    mt=st.st_mtime_ns, s=st.st_size))
             else:
-                överhoppat += 1        # rör, uttag, enheter — inget en fil-kopia äger
-    if överhoppat:
-        print(f'  varning: {överhoppat} specialfiler (rör/uttag/enheter) hoppades över',
+                skipped += 1           # pipes, sockets, devices — nothing a file copy owns
+    if skipped:
+        print(f'  warning: {skipped} special files (pipes/sockets/devices) were skipped',
               file=sys.stderr)
-    return poster
+    return entries
 
 
-def packa(rot: Path, arkiv: Path, *, läge='liten', dedup=True, omvandla=None, jobb=None,
-          tyst=False, kodek=None, platt=False):
+def pack(root: Path, archive: Path, *, mode='small', dedup=True, transform=None, jobs=None,
+         quiet=False, codec=None, flat=False):
     t0 = time.monotonic()
-    jobb = jobb or min(24, os.cpu_count() or 4)
-    kodekar = LÄGEN[läge]
-    if omvandla is None: omvandla = (läge != 'snabb')
-    rot = rot.resolve()
-    säg = (lambda *a: None) if tyst else (lambda *a: print(*a, flush=True))
+    jobs = jobs or min(24, os.cpu_count() or 4)
+    codec_table = MODES[mode]
+    if transform is None: transform = (mode != 'fast')
+    root = root.resolve()
+    say = (lambda *a: None) if quiet else (lambda *a: print(*a, flush=True))
 
-    poster = läs_träd(rot)
-    filer = [p for p in poster if p['t'] == 'f']
-    råbyte = sum(p['s'] for p in filer)
-    säg(f'  {len(poster)} poster, {råbyte/1048576:.1f} MiB, läge {läge}')
+    entries = read_tree(root)
+    files = [p for p in entries if p['t'] == 'f']
+    raw_bytes = sum(p['s'] for p in files)
+    say(f'  {len(entries)} entries, {raw_bytes/1048576:.1f} MiB, mode {mode}')
 
-    # --- 1. Hasha och klassa ------------------------------------------------
-    # Hashningen är I/O-bunden och blake2b släpper GIL:en, så trådar räcker.
-    with fut.ThreadPoolExecutor(jobb) as pool:
-        svar = list(pool.map(lambda p: hasha(rot/p['p']), filer))
-    for p, (h, huvud) in zip(filer, svar):
+    # --- 1. Hash and classify ------------------------------------------------
+    # Hashing is I/O-bound and blake2b releases the GIL, so threads suffice.
+    with fut.ThreadPoolExecutor(jobs) as pool:
+        results = list(pool.map(lambda p: hash_file(root/p['p']), files))
+    for p, (h, head) in zip(files, results):
         p['h'] = h
-        p['klass'] = klassificera(rot/p['p'], huvud)
+        p['cls'] = classify(root/p['p'], head)
 
-    # --- 2. Dedup -----------------------------------------------------------
-    objekt = {}
-    for p in filer:
-        nyckel = p['h'] if dedup else f'{p["h"]}:{p["p"]}'
-        o = objekt.get(nyckel)
+    # --- 2. Dedup -------------------------------------------------------------
+    objects = {}
+    for p in files:
+        key = p['h'] if dedup else f'{p["h"]}:{p["p"]}'
+        o = objects.get(key)
         if o is None:
-            o = objekt[nyckel] = dict(h=p['h'], s=p['s'], klass=p['klass'], kalla=p['p'],
-                                      ändelse=Path(p['p']).suffix.lower(), id=len(objekt))
+            o = objects[key] = dict(h=p['h'], s=p['s'], cls=p['cls'], source=p['p'],
+                                    suffix=Path(p['p']).suffix.lower(), id=len(objects))
         p['o'] = o['id']
-    sparat = råbyte - sum(o['s'] for o in objekt.values())
-    if dedup and sparat:
-        säg(f'  dedup: {len(filer)-len(objekt)} dubbletter, {sparat/1048576:.1f} MiB')
+    saved = raw_bytes - sum(o['s'] for o in objects.values())
+    if dedup and saved:
+        say(f'  dedup: {len(files)-len(objects)} duplicates, {saved/1048576:.1f} MiB')
 
-    arbete = Path(tempfile.mkdtemp(prefix='nvz-', dir=arkiv.parent))
+    workdir = Path(tempfile.mkdtemp(prefix='nvz-', dir=archive.parent))
     try:
-        # --- 3. Sortera ----------------------------------------------------
-        # Sorteringen är hela poängen med punkt 2 i modulhuvudet: klass först,
-        # sedan ändelse, sedan sökväg. Filer som liknar varandra hamnar efter
-        # varandra i strömmen, och de omvandlade följer med sin klass.
-        lista = sorted(objekt.values(), key=lambda o: (o['klass'], o['ändelse'], o['kalla']))
-        # Numrera om objekten efter sorteringen. Registret lagrar dem som
-        # parallella listor, och då MÅSTE ett objekts nummer vara dess plats i
-        # listan — annars pekar varje post på fel objekt. (Första versionen
-        # gjorde inte det, och gav ett arkiv där varje fil fick någon annans
-        # innehåll. Felet syns inte i packningen, bara i uppackningen.)
-        nytt = {o['id']: i for i, o in enumerate(lista)}
-        for o in lista: o['id'] = nytt[o['id']]
-        for p in filer: p['o'] = nytt[p['o']]
+        # --- 3. Sort ----------------------------------------------------------
+        # The sort is the whole point of item 2 in the module head: class
+        # first, then suffix, then path. Files that resemble each other land
+        # after each other in the stream, and the transformed follow their
+        # class.
+        ordered = sorted(objects.values(), key=lambda o: (o['cls'], o['suffix'], o['source']))
+        # Renumber the objects after the sort. The register stores them as
+        # parallel lists, and then an object's number MUST be its place in
+        # the list — otherwise every entry points at the wrong object. (The
+        # first version did not, and gave an archive where every file got
+        # someone else's content. The bug is invisible at pack time, only at
+        # unpack.)
+        renumbered = {o['id']: i for i, o in enumerate(ordered)}
+        for o in ordered: o['id'] = renumbered[o['id']]
+        for p in files: p['o'] = renumbered[p['o']]
 
-        block = []
-        öppet = {}
+        blocks = []
+        open_blocks = {}
 
-        def nytt_block(klass):
-            b = dict(i=len(block), klass=klass, kodek=kodekar.get(klass,'prova'),
-                     ström=arbete/f'b{len(block)}', rålen=0)
-            b['f'] = open(b['ström'],'wb')
-            block.append(b)
+        def new_block(cls):
+            b = dict(i=len(blocks), cls=cls, codec=codec_table.get(cls,'prova'),
+                     stream=workdir/f'b{len(blocks)}', raw_len=0)
+            b['f'] = open(b['stream'],'wb')
+            blocks.append(b)
             return b
 
-        def lägg(klass, data: bytes):
-            b = öppet.get(klass)
-            if b is None or b['rålen'] >= BLOCKTAK:
+        def add(cls, data: bytes):
+            b = open_blocks.get(cls)
+            if b is None or b['raw_len'] >= BLOCK_CAP:
                 if b is not None: b['f'].close(); b.pop('f')
-                b = öppet[klass] = nytt_block(klass)
-            off = b['rålen']; b['f'].write(data); b['rålen'] += len(data)
+                b = open_blocks[cls] = new_block(cls)
+            off = b['raw_len']; b['f'].write(data); b['raw_len'] += len(data)
             return b['i'], off, len(data)
 
-        # --- 4. Omvandla och lägg i block -----------------------------------
-        # pool.map håller ordningen, så sorteringen ovan överlever även när
-        # svaren kommer tillbaka huller om buller. buffersize håller nere
-        # minnet: en utvecklad PNG kan vara hundra gånger sin filstorlek, och
-        # 24 sådana i luften samtidigt räcker för att fylla maskinen.
-        uppgifter = [(o['klass'] if omvandla else '', str(rot/o['kalla'])) for o in lista]
-        räknare = {'png': 0, 'jpeg': 0}
-        with fut.ProcessPoolExecutor(jobb) as pool:
-            for o, (tr, r) in zip(lista, pool.map(_omvandla, uppgifter, chunksize=1,
-                                                  buffersize=jobb)):
+        # --- 4. Transform and place in blocks ----------------------------------
+        # pool.map keeps the order, so the sort above survives even when the
+        # answers come back in a jumble. buffersize keeps memory down: an
+        # unfolded PNG can be a hundred times its file size, and 24 of those
+        # in flight at once is enough to fill the machine.
+        tasks = [(o['cls'] if transform else '', str(root/o['source'])) for o in ordered]
+        counter = {'png': 0, 'jpeg': 0}
+        with fut.ProcessPoolExecutor(jobs) as pool:
+            for o, (tr, r) in zip(ordered, pool.map(_transform, tasks, chunksize=1,
+                                                    buffersize=jobs)):
                 if r:
-                    räknare[tr] += 1
+                    counter[tr] += 1
                     o['tr'] = tr
-                    if tr == 'png': o['recept'] = r['recept']
-                    o['b_rest'] = lägg(f'{tr}-rest', r['rest'])
-                    o['b'] = lägg('png-ra' if tr == 'png' else 'jpeg-kropp', r['kropp'])
+                    if tr == 'png': o['recipe'] = r['recipe']
+                    o['b_rest'] = add(f'{tr}-rest', r['rest'])
+                    o['b'] = add('png-ra' if tr == 'png' else 'jpeg-kropp', r['body'])
                 else:
-                    with open(rot/o['kalla'],'rb') as f:
-                        o['b'] = lägg(o['klass'], f.read())
-        if omvandla:
-            antal = {k: sum(1 for o in lista if o['klass'] == k) for k in ('png','jpeg')}
+                    with open(root/o['source'],'rb') as f:
+                        o['b'] = add(o['cls'], f.read())
+        if transform:
+            totals = {k: sum(1 for o in ordered if o['cls'] == k) for k in ('png','jpeg')}
             for k in ('png','jpeg'):
-                if antal[k]:
-                    säg(f'  {k}: {räknare[k]}/{antal[k]} omvandlade')
-        for b in öppet.values():
+                if totals[k]:
+                    say(f'  {k}: {counter[k]}/{totals[k]} transformed')
+        for b in open_blocks.values():
             if 'f' in b: b['f'].close(); b.pop('f')
-        säg(f'  {len(block)} block')
+        say(f'  {len(blocks)} blocks')
 
-        # --- 5. Packa blocken parallellt ------------------------------------
-        if kodek:
-            for b in block:
-                if b['kodek'] != 'ra': b['kodek'] = kodek
-        trådar = max(1, jobb // max(1, min(len(block), jobb)))
+        # --- 5. Pack the blocks in parallel ------------------------------------
+        if codec:
+            for b in blocks:
+                if b['codec'] != 'ra': b['codec'] = codec
+        threads = max(1, jobs // max(1, min(len(blocks), jobs)))
 
-        def packa_ett(b):
-            ut = arbete/f'c{b["i"]}'
-            b['kodek'] = packa_block(b['ström'], ut, b['kodek'], trådar)
-            b['packad'] = ut
-            b['ström'].unlink(missing_ok=True)
-        with fut.ThreadPoolExecutor(min(jobb, max(1,len(block)))) as pool:
-            list(pool.map(packa_ett, block))
+        def pack_one(b):
+            out = workdir/f'c{b["i"]}'
+            b['codec'] = pack_block(b['stream'], out, b['codec'], threads)
+            b['packed'] = out
+            b['stream'].unlink(missing_ok=True)
+        with fut.ThreadPoolExecutor(min(jobs, max(1,len(blocks)))) as pool:
+            list(pool.map(pack_one, blocks))
 
-        # --- 6. Skriv arkivet ------------------------------------------------
-        with open(arkiv,'wb') as ut:
-            ut.write(MAGI)
-            for b in block:
-                b['off'] = ut.tell()
-                with open(b['packad'],'rb') as f: shutil.copyfileobj(f, ut, 1<<20)
-                b['clen'] = ut.tell() - b['off']
-                b['packad'].unlink()
-            # Registret ligger i parallella listor, inte i en lista av
-            # ordböcker. Samma uppgifter, men nyckelnamnen står en gång i
-            # stället för en gång per objekt, och tal av samma slag hamnar
-            # intill varandra där de packar bra. På ett träd med 6 000 små
-            # filer är skillnaden ett par procent av HELA arkivet.
+        # --- 6. Write the archive -----------------------------------------------
+        with open(archive,'wb') as out:
+            out.write(MAGIC)
+            for b in blocks:
+                b['off'] = out.tell()
+                with open(b['packed'],'rb') as f: shutil.copyfileobj(f, out, 1<<20)
+                b['clen'] = out.tell() - b['off']
+                b['packed'].unlink()
+            # The register sits in parallel lists, not in a list of dicts.
+            # Same facts, but the key names appear once instead of once per
+            # object, and numbers of the same kind land next to each other
+            # where they pack well. On a tree of 6,000 small files the
+            # difference is a couple of percent of the WHOLE archive.
             #
-            # Offseten i blocket lagras inte alls utan räknas fram: objekten
-            # lades i blocken i exakt den här ordningen, så en löpande summa
-            # av längderna ger samma tal. Att den gör det kontrolleras nedan —
-            # ett register som pekar en byte fel är ett oläsbart arkiv.
+            # The offsets within a block are not stored at all but derived:
+            # the objects were appended to the blocks in exactly this order,
+            # so a running sum of the lengths gives the same numbers. That it
+            # does is checked below — a register that points one byte wrong
+            # is an unreadable archive.
+            #
+            # The key names are v1 format bytes, Swedish-born and frozen:
+            # rot = root, platt = flat, skapad = created, kodek = codec,
+            # rålen = raw length, klass = class, objekt = objects,
+            # poster = entries, mal = link target.
             register = dict(
-                version=VERSION, rot=rot.name, platt=platt,
+                version=VERSION, rot=root.name, platt=flat,
                 skapad=time.strftime('%Y-%m-%dT%H:%M:%S'),
-                block=[dict(i=b['i'], kodek=b['kodek'], off=b['off'], clen=b['clen'],
-                            rålen=b['rålen'], klass=b['klass']) for b in block],
+                block=[dict(i=b['i'], kodek=b['codec'], off=b['off'], clen=b['clen'],
+                            rålen=b['raw_len'], klass=b['cls']) for b in blocks],
                 objekt=dict(
-                    blk=[o['b'][0] for o in lista],
-                    len=[o['b'][2] for o in lista],
-                    s=[o['s'] for o in lista],
-                    h=[o['h'][:16] for o in lista],   # 64 bitar räcker för kontroll
+                    blk=[o['b'][0] for o in ordered],
+                    len=[o['b'][2] for o in ordered],
+                    s=[o['s'] for o in ordered],
+                    h=[o['h'][:16] for o in ordered],   # 64 bits suffice for a check
                     tr={str(o['id']): [o['tr'], o['b_rest'][0], o['b_rest'][2],
-                                       o.get('recept')] for o in lista if 'tr' in o},
+                                       o.get('recipe')] for o in ordered if 'tr' in o},
                 ),
                 poster=[{k:v for k,v in p.items() if k in ('p','t','m','mt','mal','o')}
-                        for p in poster],
+                        for p in entries],
             )
-            kontrollera_offsetar(register, lista)
-            rad = json.dumps(register, ensure_ascii=False).encode()
-            regoff = ut.tell()
-            ut.write(_kör(['zstd','-19','-q','-c'], stdin=rad))
-            ut.write(struct.pack('<QQ', regoff, len(rad)))
+            check_offsets(register, ordered)
+            line = json.dumps(register, ensure_ascii=False).encode()
+            regoff = out.tell()
+            out.write(_run(['zstd','-19','-q','-c'], stdin=line))
+            out.write(struct.pack('<QQ', regoff, len(line)))
     finally:
-        shutil.rmtree(arbete, ignore_errors=True)
+        shutil.rmtree(workdir, ignore_errors=True)
 
-    byte = arkiv.stat().st_size
-    säg(f'  klart: {byte/1048576:.2f} MiB (x{råbyte/max(byte,1):.2f}) på {time.monotonic()-t0:.1f}s')
-    return byte
+    size = archive.stat().st_size
+    say(f'  done: {size/1048576:.2f} MiB (x{raw_bytes/max(size,1):.2f}) in {time.monotonic()-t0:.1f}s')
+    return size
 
 
 # ---------------------------------------------------------------------------
-# Uppackning
+# Unpacking
 # ---------------------------------------------------------------------------
 
-def härled_offsetar(reg):
-    """Räknar fram varje objekts plats i sitt block ur längderna.
+def derive_offsets(reg):
+    """Derives every object's place in its block from the lengths.
 
-    Ordningen är densamma som vid packning: för ett omvandlat objekt lades
-    först resten, sedan kroppen.
+    The order is the same as at pack time: for a transformed object the
+    rest was appended first, then the body.
     """
     o = reg['objekt']
-    löpande = {}
-    ut = []
+    running = {}
+    out = []
     for i, (blk, ln) in enumerate(zip(o['blk'], o['len'])):
-        post = o['tr'].get(str(i))
-        if post:
-            rblk, rlen = post[1], post[2]
-            roff = löpande.get(rblk, 0); löpande[rblk] = roff + rlen
-        off = löpande.get(blk, 0); löpande[blk] = off + ln
-        ut.append(((blk, off, ln), (post[1], roff, post[2]) if post else None))
-    return ut
+        row = o['tr'].get(str(i))
+        if row:
+            rblk, rlen = row[1], row[2]
+            roff = running.get(rblk, 0); running[rblk] = roff + rlen
+        off = running.get(blk, 0); running[blk] = off + ln
+        out.append(((blk, off, ln), (row[1], roff, row[2]) if row else None))
+    return out
 
 
-def kontrollera_offsetar(register, lista):
-    """Bevisar att de härledda platserna är exakt de som användes."""
-    for härledd, o in zip(härled_offsetar(register), lista):
-        if tuple(o['b']) != härledd[0] or ('tr' in o) != (härledd[1] is not None) \
-           or ('tr' in o and tuple(o['b_rest']) != härledd[1]):
-            raise RuntimeError(f'registret skulle peka fel för {o["kalla"]}')
+def check_offsets(register, ordered):
+    """Proves that the derived places are exactly the ones that were used."""
+    for derived, o in zip(derive_offsets(register), ordered):
+        if tuple(o['b']) != derived[0] or ('tr' in o) != (derived[1] is not None) \
+           or ('tr' in o and tuple(o['b_rest']) != derived[1]):
+            raise RuntimeError(f'the register would point wrong for {o["source"]}')
 
 
-def läs_register(arkiv: Path):
-    with open(arkiv,'rb') as f:
-        if f.read(len(MAGI)) != MAGI: raise SystemExit('Inte ett nvz-arkiv.')
+def read_register(archive: Path):
+    with open(archive,'rb') as f:
+        if f.read(len(MAGIC)) != MAGIC: raise SystemExit('Not an nvz archive.')
         f.seek(-16, os.SEEK_END)
-        regoff, _rålen = struct.unpack('<QQ', f.read(16))
+        regoff, _rawlen = struct.unpack('<QQ', f.read(16))
         f.seek(regoff)
-        packat = f.read(os.path.getsize(arkiv) - 16 - regoff)
-    return json.loads(_kör(['zstd','-d','-q','-c'], stdin=packat).decode())
+        packed = f.read(os.path.getsize(archive) - 16 - regoff)
+    return json.loads(_run(['zstd','-d','-q','-c'], stdin=packed).decode())
 
 
-def packa_upp(arkiv: Path, mål: Path, *, jobb=None, tyst=False):
+def unpack(archive: Path, dest: Path, *, jobs=None, quiet=False):
     t0 = time.monotonic()
-    jobb = jobb or min(24, os.cpu_count() or 4)
-    säg = (lambda *a: None) if tyst else (lambda *a: print(*a, flush=True))
-    reg = läs_register(arkiv)
-    # Ett PLATT arkiv är ett arkiv av en ensam fil (gzip-ytan packar så). Dess
-    # poster ska ligga direkt i målet, inte i en katalog med trädets namn —
-    # och rotpostens rättigheter och tid hör till den tillfälliga katalog som
-    # filen packades genom, så de får inte klistras på målkatalogen.
-    platt = bool(reg.get('platt'))
-    rot = mål if platt else mål/reg['rot']
-    rot.mkdir(parents=True, exist_ok=True)
+    jobs = jobs or min(24, os.cpu_count() or 4)
+    say = (lambda *a: None) if quiet else (lambda *a: print(*a, flush=True))
+    reg = read_register(archive)
+    # A FLAT archive is an archive of a lone file (the gzip surface packs
+    # that way). Its entries go directly into the destination, not into a
+    # directory named after the tree — and the root entry's permissions and
+    # time belong to the temporary directory the file was packed through,
+    # so they must not be pasted onto the destination directory.
+    flat = bool(reg.get('platt'))
+    root = dest if flat else dest/reg['rot']
+    root.mkdir(parents=True, exist_ok=True)
 
-    arbete = Path(tempfile.mkdtemp(prefix='nvz-upp-', dir=mål))
+    workdir = Path(tempfile.mkdtemp(prefix='nvz-un-', dir=dest))
     try:
-        # Blocken packas upp parallellt till arbetskatalogen. Att hålla dem på
-        # disk i stället för i minnet är med flit: ett arkiv kan vara större än
-        # maskinens RAM, och då ska uppackningen inte vara det som stoppar.
-        def upp(b):
-            packad = arbete/f'c{b["i"]}'
-            with open(arkiv,'rb') as f:
-                f.seek(b['off']); kvar = b['clen']
-                with open(packad,'wb') as u:
-                    while kvar:
-                        d = f.read(min(1<<20, kvar))
-                        u.write(d); kvar -= len(d)
-            ut = arbete/f'b{b["i"]}'
-            packa_upp_block(packad, ut, b['kodek'])
-            packad.unlink(missing_ok=True)
-            return b['i'], ut
-        with fut.ThreadPoolExecutor(min(jobb, max(1,len(reg['block'])))) as pool:
-            strömmar = dict(pool.map(upp, reg['block']))
+        # The blocks are unpacked in parallel into the working directory.
+        # Keeping them on disk instead of in memory is deliberate: an
+        # archive can be larger than the machine's RAM, and then the unpack
+        # must not be what stops.
+        def unpack_one(b):
+            packed = workdir/f'c{b["i"]}'
+            with open(archive,'rb') as f:
+                f.seek(b['off']); left = b['clen']
+                with open(packed,'wb') as u:
+                    while left:
+                        d = f.read(min(1<<20, left))
+                        u.write(d); left -= len(d)
+            out = workdir/f'b{b["i"]}'
+            unpack_block(packed, out, b['kodek'])
+            packed.unlink(missing_ok=True)
+            return b['i'], out
+        with fut.ThreadPoolExecutor(min(jobs, max(1,len(reg['block'])))) as pool:
+            streams = dict(pool.map(unpack_one, reg['block']))
 
-        # Kataloger först, i trädordning, så att filerna har någonstans att ta vägen.
+        # Directories first, in tree order, so the files have somewhere to go.
         for p in reg['poster']:
-            if p['t'] == 'd': (rot/p['p']).mkdir(parents=True, exist_ok=True)
+            if p['t'] == 'd': (root/p['p']).mkdir(parents=True, exist_ok=True)
         for p in reg['poster']:
             if p['t'] == 'l':
-                s = rot/p['p']; s.parent.mkdir(parents=True, exist_ok=True)
+                s = root/p['p']; s.parent.mkdir(parents=True, exist_ok=True)
                 s.unlink(missing_ok=True); os.symlink(p['mal'], s)
-                # Länkens EGEN tid, inte målets. utime utan detta följer länken
-                # och ändrar en helt annan fils tidsstämpel.
+                # The link's OWN time, not the target's. utime without this
+                # follows the link and changes a completely different file's
+                # timestamp.
                 if 'mt' in p: os.utime(s, ns=(p['mt'], p['mt']), follow_symlinks=False)
 
-        vägar = {}
+        paths = {}
         for p in reg['poster']:
-            if p['t'] == 'f': vägar.setdefault(p['o'], []).append(p)
-        platser = härled_offsetar(reg)
+            if p['t'] == 'f': paths.setdefault(p['o'], []).append(p)
+        places = derive_offsets(reg)
 
-        # os.pread i stället för seek+read: flera trådar läser ur samma block
-        # samtidigt, och en delad filposition hade gett dem varandras bytes.
-        fdar = {i: os.open(s, os.O_RDONLY) for i, s in strömmar.items()}
+        # os.pread instead of seek+read: several threads read from the same
+        # block at once, and a shared file position would have given them
+        # each other's bytes.
+        fds = {i: os.open(s, os.O_RDONLY) for i, s in streams.items()}
 
-        def bygg(nr):
-            (bi, off, ln), rest_plats = platser[nr]
-            kropp = os.pread(fdar[bi], ln, off)
-            if rest_plats:
-                tr, _, _, recept = reg['objekt']['tr'][str(nr)]
-                bi2, off2, ln2 = rest_plats
-                rest = os.pread(fdar[bi2], ln2, off2)
-                data = (png_omv.återskapa(rest, kropp, recept) if tr == 'png'
-                        else jpeg_omv.återskapa(rest, kropp))
+        def build(nr):
+            (bi, off, ln), rest_place = places[nr]
+            body = os.pread(fds[bi], ln, off)
+            if rest_place:
+                tr, _, _, recipe = reg['objekt']['tr'][str(nr)]
+                bi2, off2, ln2 = rest_place
+                rest = os.pread(fds[bi2], ln2, off2)
+                data = (png_tr.rebuild(rest, body, recipe) if tr == 'png'
+                        else jpeg_tr.rebuild(rest, body))
             else:
-                data = kropp
-            for p in vägar.get(nr, ()):
-                s = rot/p['p']
+                data = body
+            for p in paths.get(nr, ()):
+                s = root/p['p']
                 with open(s,'wb') as u: u.write(data)
                 os.chmod(s, p['m']); os.utime(s, ns=(p['mt'], p['mt']))
 
-        with fut.ThreadPoolExecutor(jobb) as pool:
-            list(pool.map(bygg, sorted(vägar)))
-        for fd in fdar.values(): os.close(fd)
+        with fut.ThreadPoolExecutor(jobs) as pool:
+            list(pool.map(build, sorted(paths)))
+        for fd in fds.values(): os.close(fd)
 
-        # Katalogerna sist, och djupast först: att skriva en fil i en katalog
-        # ändrar katalogens tid, så den måste sättas efter att allt i den är
-        # på plats.
+        # Directories last, and deepest first: writing a file in a directory
+        # changes the directory's time, so it must be set after everything
+        # in it is in place.
         for p in reversed(reg['poster']):
             if p['t'] == 'd':
-                if platt and p['p'] == '': continue
-                s = rot/p['p']
+                if flat and p['p'] == '': continue
+                s = root/p['p']
                 os.chmod(s, p['m'])
                 if 'mt' in p: os.utime(s, ns=(p['mt'], p['mt']))
     finally:
-        shutil.rmtree(arbete, ignore_errors=True)
-    säg(f'  uppackat på {time.monotonic()-t0:.1f}s')
+        shutil.rmtree(workdir, ignore_errors=True)
+    say(f'  unpacked in {time.monotonic()-t0:.1f}s')
 
 
 # ---------------------------------------------------------------------------
 
-def lista(arkiv: Path):
-    reg = läs_register(arkiv)
-    print(f"nvz v{reg['version']}  rot={reg['rot']}  skapad {reg['skapad']}")
-    omv = {}
-    for v in reg['objekt']['tr'].values(): omv[v[0]] = omv.get(v[0], 0) + 1
-    print(f"{len(reg['poster'])} poster, {len(reg['objekt']['blk'])} objekt, "
-          f"{len(reg['block'])} block" + (f", omvandlade: {omv}" if omv else ""))
+def list_archive(archive: Path):
+    reg = read_register(archive)
+    print(f"nvz v{reg['version']}  root={reg['rot']}  created {reg['skapad']}")
+    transformed = {}
+    for v in reg['objekt']['tr'].values(): transformed[v[0]] = transformed.get(v[0], 0) + 1
+    print(f"{len(reg['poster'])} entries, {len(reg['objekt']['blk'])} objects, "
+          f"{len(reg['block'])} blocks" + (f", transformed: {transformed}" if transformed else ""))
     for b in reg['block']:
         print(f"  block {b['i']:>3}  {b['klass']:<11} {b['kodek']:<7} "
               f"{b['rålen']/1048576:>9.2f} -> {b['clen']/1048576:>8.2f} MiB  "
               f"x{b['rålen']/max(b['clen'],1):.2f}")
 
 
-def prova(rot: Path) -> bool:
-    """Packar, packar upp och jämför. En arkivpackare som inte kan bevisa att
-    den ger tillbaka exakt samma bytes är en förlustkomprimerare."""
-    rot = rot.resolve()
-    with tempfile.TemporaryDirectory(prefix='nvz-prov-') as d:
-        d = Path(d); ark = d/'prov.nv'
-        packa(rot, ark)
-        packa_upp(ark, d/'upp')
-        fel = 0
-        for p in rot.rglob('*'):
+def selftest(root: Path) -> bool:
+    """Packs, unpacks and compares. An archiver that cannot prove it gives
+    back exactly the same bytes is a lossy compressor."""
+    root = root.resolve()
+    with tempfile.TemporaryDirectory(prefix='nvz-test-') as d:
+        d = Path(d); ark = d/'probe.nv'
+        pack(root, ark)
+        unpack(ark, d/'out')
+        errors = 0
+        for p in root.rglob('*'):
             if p.is_symlink():
-                b = d/'upp'/rot.name/p.relative_to(rot)
+                b = d/'out'/root.name/p.relative_to(root)
                 if not b.is_symlink() or os.readlink(b) != os.readlink(p):
-                    print('LÄNK SKILJER:', p); fel += 1
+                    print('LINK DIFFERS:', p); errors += 1
                 continue
             if not p.is_file(): continue
-            b = d/'upp'/rot.name/p.relative_to(rot)
+            b = d/'out'/root.name/p.relative_to(root)
             if not b.exists() or b.read_bytes() != p.read_bytes():
-                print('SKILJER:', p); fel += 1
+                print('DIFFERS:', p); errors += 1
             elif b.stat().st_mode != p.stat().st_mode or b.stat().st_mtime_ns != p.stat().st_mtime_ns:
-                print('METADATA SKILJER:', p); fel += 1
-        print('PROV MISSLYCKADES' if fel else 'Prov ok: varje fil bit för bit identisk.')
-        return fel == 0
+                print('METADATA DIFFERS:', p); errors += 1
+        print('TEST FAILED' if errors else 'Test ok: every file identical bit for bit.')
+        return errors == 0
 
 
 # ---------------------------------------------------------------------------
-# Enfilsarkiv
+# Single-file archives
 #
-# gzip-ytan packar en fil i taget, och packa() går igenom ett katalogträd. En
-# ensam fil är inget träd, så den packas genom ett träd om en fil: en
-# tillfällig katalog med en HÅRDLÄNK till filen. En hårdlänk är samma inod —
-# innehåll, rättigheter och tid är filens egna, ingenting kopieras, och på ett
-# stort arkiv kostar det noll byte och noll sekunder. Registret märks 'platt'
-# så att uppackningen vet att posten ska läggas direkt i målet.
+# The gzip surface packs one file at a time, and pack() walks a directory
+# tree. A lone file is no tree, so it is packed through a tree of one file:
+# a temporary directory with a HARD LINK to the file. A hard link is the
+# same inode — content, permissions and time are the file's own, nothing is
+# copied, and on a large archive it costs zero bytes and zero seconds. The
+# register is marked 'platt' (flat) so the unpack knows the entry goes
+# directly into the destination.
 # ---------------------------------------------------------------------------
 
-def packa_fil(fil: Path, arkiv: Path, *, namn=None, **kw) -> int:
-    with tempfile.TemporaryDirectory(prefix='nvz-en-', dir=arkiv.parent) as d:
-        mellan = Path(d)/(namn or fil.name)
+def pack_file(file: Path, archive: Path, *, name=None, **kw) -> int:
+    with tempfile.TemporaryDirectory(prefix='nvz-one-', dir=archive.parent) as d:
+        staged = Path(d)/(name or file.name)
         try:
-            os.link(fil, mellan)
+            os.link(file, staged)
         except OSError:
-            shutil.copy2(fil, mellan)   # annan filsystemsgräns: då får det kosta
-        return packa(Path(d), arkiv, platt=True, **kw)
+            shutil.copy2(file, staged)   # filesystem boundary: then it may cost
+        return pack(Path(d), archive, flat=True, **kw)
 
 
-def namn_i_arkiv(reg) -> str | None:
-    """Namnet filen hade när den packades, eller None om arkivet är ett träd."""
+def name_in_archive(reg) -> str | None:
+    """The name the file had when packed, or None if the archive is a tree."""
     if not reg.get('platt'): return None
     for p in reg['poster']:
         if p['t'] == 'f': return p['p']
     return None
 
 
-def packa_upp_fil(arkiv: Path, mål: Path, *, jobb=None) -> None:
-    """Packar upp ett platt enfilsarkiv till exakt sökvägen mål.
+def unpack_file(archive: Path, dest: Path, *, jobs=None) -> None:
+    """Unpacks a flat single-file archive to exactly the path dest.
 
-    Filen packas upp i en tillfällig katalog på samma filsystem och FLYTTAS
-    sedan på plats. En flytt inom ett filsystem byter bara namn på inoden, så
-    rättigheter och tid som packa_upp redan satt följer med oförändrade — och
-    målet finns antingen inte alls eller färdigt, aldrig halvskrivet.
+    The file is unpacked in a temporary directory on the same filesystem
+    and then MOVED into place. A move within a filesystem only renames the
+    inode, so permissions and time that unpack already set come along
+    unchanged — and the destination either does not exist at all or is
+    complete, never half-written.
     """
-    mål.parent.mkdir(parents=True, exist_ok=True)
-    arbete = Path(tempfile.mkdtemp(prefix='nvz-en-', dir=mål.parent))
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    workdir = Path(tempfile.mkdtemp(prefix='nvz-one-', dir=dest.parent))
     try:
-        packa_upp(arkiv, arbete, jobb=jobb, tyst=True)
-        inne = [x for x in arbete.rglob('*') if x.is_file() or x.is_symlink()]
-        if len(inne) != 1:
-            raise RuntimeError(f'{arkiv}: platt arkiv med {len(inne)} filer')
-        os.replace(inne[0], mål)
+        unpack(archive, workdir, jobs=jobs, quiet=True)
+        found = [x for x in workdir.rglob('*') if x.is_file() or x.is_symlink()]
+        if len(found) != 1:
+            raise RuntimeError(f'{archive}: flat archive with {len(found)} files')
+        os.replace(found[0], dest)
     finally:
-        shutil.rmtree(arbete, ignore_errors=True)
+        shutil.rmtree(workdir, ignore_errors=True)
 
 
-def testa(arkiv: Path, *, jobb=None) -> list:
-    """Packar upp arkivet och jämför varje fil mot hashen i registret.
+def test_archive(archive: Path, *, jobs=None) -> list:
+    """Unpacks the archive and compares every file against the hash in the
+    register.
 
-    Registret bär blake2b-prefixet för varje objekt, taget på originalet före
-    packningen. Att packa upp och hasha om är därför ett riktigt prov på hela
-    kedjan — block, kodek, PNG-recept och JPEG-ompackning — och inte bara en
-    kontrollsumma på arkivfilen.
+    The register carries the blake2b prefix of every object, taken on the
+    original before packing. Unpacking and rehashing is therefore a real
+    test of the whole chain — blocks, codec, PNG recipe and JPEG repack —
+    and not just a checksum of the archive file.
     """
-    reg = läs_register(arkiv)
-    with tempfile.TemporaryDirectory(prefix='nvz-prov-') as d:
+    reg = read_register(archive)
+    with tempfile.TemporaryDirectory(prefix='nvz-test-') as d:
         d = Path(d)
-        packa_upp(arkiv, d, jobb=jobb, tyst=True)
-        rot = d if reg.get('platt') else d/reg['rot']
-        fel = []
+        unpack(archive, d, jobs=jobs, quiet=True)
+        root = d if reg.get('platt') else d/reg['rot']
+        errors = []
         for p in reg['poster']:
-            s = rot/p['p']
+            s = root/p['p']
             if p['t'] == 'f':
-                if not s.is_file() or s.is_symlink(): fel.append((p['p'], 'saknas'))
-                elif hasha(s)[0][:16] != reg['objekt']['h'][p['o']]:
-                    fel.append((p['p'], 'innehållet skiljer'))
+                if not s.is_file() or s.is_symlink(): errors.append((p['p'], 'missing'))
+                elif hash_file(s)[0][:16] != reg['objekt']['h'][p['o']]:
+                    errors.append((p['p'], 'content differs'))
             elif p['t'] == 'l':
                 if not s.is_symlink() or os.readlink(s) != p['mal']:
-                    fel.append((p['p'], 'länken skiljer'))
+                    errors.append((p['p'], 'link differs'))
             elif p['t'] == 'd' and not s.is_dir():
-                fel.append((p['p'] or '.', 'katalog saknas'))
-    return fel
+                errors.append((p['p'] or '.', 'directory missing'))
+    return errors
 
 
-def uppackad_storlek(reg) -> int:
-    """Byte som uppackningen skriver — före dedup, alltså det man får tillbaka."""
+def unpacked_size(reg) -> int:
+    """Bytes the unpack writes — before dedup, i.e. what you get back."""
     s = reg['objekt']['s']
     return sum(s[p['o']] for p in reg['poster'] if p['t'] == 'f')
 
 
 # ---------------------------------------------------------------------------
-# Kommandoraden
+# The command line
 #
-# Ytan är gzips, för att gzips yta är den man redan har i fingrarna:
+# The surface is gzip's, because gzip's surface is the one already in your
+# fingers:
 #
-#     nvz fil            -> fil.nv, originalet borta
-#     nvz -d fil.nv      -> fil, arkivet borta
-#     nvz -c fil > ut.nv   nvz -l ark.nv   nvz -t ark.nv
-#     nvz -9 -k katalog    cat fil | nvz > fil.nv
+#     nvz file           -> file.nv, original gone
+#     nvz -d file.nv     -> file, archive gone
+#     nvz -c file > out.nv   nvz -l ark.nv   nvz -t ark.nv
+#     nvz -9 -k dir          cat file | nvz > file.nv
 #
-# EN avvikelse, och den är med flit: gzip säger "is a directory -- ignored"
-# om en katalog, men en katalog är precis vad nvz är byggd för. En katalog
-# som operand packas därför till ETT arkiv av hela trädet, med dedup och
-# sortering mellan filerna — och källträdet lämnas alltid kvar, för nvz
-# ska inte kunna radera ett träd. Vill man ha gzips bokstavliga beteende
-# finns -r: då packas varje fil för sig, i katalogen, precis som gzip gör,
-# och då går vinsten MELLAN filerna förlorad.
+# ONE deviation, and it is deliberate: gzip says "is a directory -- ignored"
+# about a directory, but a directory is precisely what nvz is built for. A
+# directory as operand is therefore packed into ONE archive of the whole
+# tree, with dedup and sorting between the files — and the source tree is
+# always left in place, for nvz must not be able to erase a tree. For
+# gzip's literal behavior there is -r: then every file is packed on its
+# own, inside the directory, exactly as gzip does, and the gain BETWEEN
+# files is lost.
 #
-# Underkommandona (packa, packa-upp, lista, prova) finns kvar oförändrade.
-# Mätningarna i matning/ och proven i prov/ anropar dem, och ett byte av yta
-# får inte göra gamla siffror omätbara.
+# The subcommands (pack, unpack, list, test) remain unchanged. The
+# measurements in benchmark/ and the tests in tests/ called them, and a
+# change of surface must not make old numbers unmeasurable.
 # ---------------------------------------------------------------------------
 
 SUFFIX = '.nv'
 
-# gzips nio siffror mot nvpacks tre lägen. -6 är gzips standard och normal är
-# nvpacks, så mitten ska vara mitten.
-NIVÅ_LÄGE = {1:'snabb', 2:'snabb', 3:'snabb', 4:'normal', 5:'normal',
-             6:'normal', 7:'liten', 8:'liten', 9:'liten'}
+# gzip's nine digits against nvpack's three modes. -6 is gzip's default and
+# normal is nvpack's, so the middle must be the middle.
+LEVEL_MODE = {1:'fast', 2:'fast', 3:'fast', 4:'normal', 5:'normal',
+              6:'normal', 7:'small', 8:'small', 9:'small'}
 
-UNDERKOMMANDON = ('packa', 'packa-upp', 'lista', 'prova')
+SUBCOMMANDS = ('pack', 'unpack', 'list', 'test')
 
-# Långa flaggor -> den korta de betyder, eller ett eget namn för dem som bara
-# nvz har. Tomma strängen = tas emot och gör ingenting (gzip har dem, och
-# ett skript som skickar dem ska inte stupa).
-LÅNGA = {
+# Long flags -> the short one they mean, or a name of their own for those
+# only nvz has. Empty string = accepted and does nothing (gzip has them,
+# and a script that passes them must not fall over).
+LONG_FLAGS = {
     'stdout':'c', 'to-stdout':'c', 'decompress':'d', 'uncompress':'d',
     'force':'f', 'help':'h', 'keep':'k', 'list':'l', 'license':'L',
     'no-name':'n', 'name':'N', 'quiet':'q', 'silent':'q', 'recursive':'r',
     'suffix':'S', 'test':'t', 'verbose':'v', 'version':'V',
     'fast':'1', 'best':'9',
     'synchronous':'', 'rsyncable':'', 'ascii':'', 'no-time':'',
-    'läge':'LÄGE', 'lage':'LÄGE', 'kodek':'KODEK', 'jobb':'J',
-    'utan-dedup':'DEDUP', 'utan-omvandling':'OMV', 'tyst':'q',
+    'mode':'MODE', 'codec':'CODEC', 'jobs':'J',
+    'no-dedup':'DEDUP', 'no-transform':'TRANS',
 }
-KORTA = 'acdfhklLnNqrtvV'          # utan argument
-KORTA_MED_ARG = {'S':'S', 'j':'J'}
+SHORT = 'acdfhklLnNqrtvV'          # without argument
+SHORT_WITH_ARG = {'S':'S', 'j':'J'}
 
-HJÄLP = f"""Användning: nvz [FLAGGA]... [FIL]...
-Packar och packar upp filer och katalogträd. Utan flaggor packas varje FIL
-och originalet ersätts, precis som gzip.
+HELP = f"""Usage: nvz [OPTION]... [FILE]...
+Packs and unpacks files and directory trees. Without options every FILE is
+packed and the original replaced, exactly like gzip.
 
-  -c, --stdout       skriv till standard ut, lämna filerna i fred
-  -d, --decompress   packa upp
-  -f, --force        skriv över mål, följ länkar, packa om redan packat
-  -h, --help         den här hjälpen
-  -k, --keep         behåll filen som packades
-  -l, --list         visa vad arkivet innehåller
-  -L, --license      villkoren
-  -n, --no-name      vid uppackning: härled namnet ur arkivets filnamn (standard)
-  -N, --name         vid uppackning: använd namnet som står i arkivet
-  -q, --quiet         säg ingenting
-  -r, --recursive    gå ner i kataloger och packa varje fil för sig
-  -S, --suffix=.SUF  ändelse på arkiven (standard {SUFFIX})
-  -t, --test          prova arkivet: packa upp och jämför mot registret
-  -v, --verbose      berätta vad som händer (-vv visar packningen i detalj)
+  -c, --stdout       write to standard output, leave the files alone
+  -d, --decompress   unpack
+  -f, --force        overwrite targets, follow links, repack already packed
+  -h, --help         this help
+  -k, --keep         keep the file that was packed
+  -l, --list         show what the archive holds
+  -L, --license      the terms
+  -n, --no-name      on unpack: derive the name from the archive's filename (default)
+  -N, --name         on unpack: use the name stored in the archive
+  -q, --quiet         say nothing
+  -r, --recursive    descend into directories and pack every file on its own
+  -S, --suffix=.SUF  suffix for the archives (default {SUFFIX})
+  -t, --test          test the archive: unpack and compare against the register
+  -v, --verbose      tell what happens (-vv shows the packing in detail)
   -V, --version      version
-  -1 .. -9           snabbt .. litet: -1..-3 läge snabb, -4..-6 normal, -7..-9 liten
-                     (utan siffra: liten, alltså det minsta nvz kan)
-      --fast, --best samma som -1 och -9
+  -1 .. -9           fast .. small: -1..-3 mode fast, -4..-6 normal, -7..-9 small
+                     (no digit: small, i.e. the smallest nvz can do)
+      --fast, --best same as -1 and -9
 
-Bara nvz har de här:
-  -j, --jobb=N       så många parallella jobb
-      --läge=L       snabb | normal | liten (slår -1..-9; standard liten)
-      --kodek=K      tvinga zstd3 | zstd19 | zstd22 | xz9e | nvcm | nvlz
-      --utan-dedup, --utan-omvandling
+Only nvz has these:
+  -j, --jobs=N       this many parallel jobs
+      --mode=M       fast | normal | small (beats -1..-9; default small)
+      --codec=K      force zstd3 | zstd19 | zstd22 | xz9e | nvcm | nvlz
+      --no-dedup, --no-transform
 
-En KATALOG som operand packas till ETT arkiv av hela trädet — det är vad
-nvz är till för, och det är enda stället där ytan skiljer sig från gzip.
-Källträdet lämnas alltid kvar; nvz raderar aldrig en katalog. Med -r görs
-i stället precis vad gzip gör, en fil i taget, och då förloras dedupen och
-sorteringen MELLAN filerna, som är större delen av vinsten.
+A DIRECTORY as operand is packed into ONE archive of the whole tree — that
+is what nvz is for, and it is the only place the surface differs from
+gzip. The source tree is always left in place; nvz never erases a
+directory. With -r exactly what gzip does is done instead, one file at a
+time, and then the dedup and the sorting BETWEEN files — most of the gain —
+are lost.
 
-Utan FIL (eller med "-") läses standard in och skrivs standard ut.
-Underkommandona packa, packa-upp, lista och prova finns kvar och fungerar.
-Har du en FIL som heter som ett underkommando: skriv nvz -- packa.
+Without FILE (or with "-") standard input is read and standard output written.
+The subcommands pack, unpack, list and test remain and work.
+If you have a FILE named like a subcommand: write nvz -- pack.
 
-Slutstatus: 0 allt väl, 1 fel, 2 varning."""
+Exit status: 0 all well, 1 error, 2 warning."""
 
-VILLKOR = """nvz — innehållsmedveten arkivpackare.
-Skrivet av Hugo Wikström. Fritt att använda, ändra och sprida.
-Ingen garanti: varje omvandling provas i båda riktningarna vid packning, men
-provet är kodens eget ord, inte ett löfte."""
+LICENSE = """nvz — content-aware archiver.
+Written by Hugo Wikström. Free to use, change and share.
+No warranty: every transform is tried in both directions at pack time, but
+the test is the code's own word, not a promise."""
 
 
-def _fel(text) -> int:
+def _error(text) -> int:
     print(f'nvz: {text}', file=sys.stderr)
     return 1
 
 
-def _varna(o, text) -> int:
+def _warn(o, text) -> int:
     if not o['q']: print(f'nvz: {text}', file=sys.stderr)
     return 2
 
 
-def _lång(namn: str):
-    """Löser ut en lång flagga, och godtar förkortningar som gzip gör."""
-    if namn in LÅNGA: return LÅNGA[namn]
-    träff = [k for k in LÅNGA if k.startswith(namn)]
-    if not träff: raise SystemExit(_fel(f"okänd flagga -- '{namn}'"))
-    if len({LÅNGA[k] for k in träff}) > 1:
-        raise SystemExit(_fel(f"tvetydig flagga -- '{namn}' ({', '.join(sorted(träff))})"))
-    return LÅNGA[träff[0]]
+def _long_flag(name: str):
+    """Resolves a long flag, accepting abbreviations as gzip does."""
+    if name in LONG_FLAGS: return LONG_FLAGS[name]
+    hits = [k for k in LONG_FLAGS if k.startswith(name)]
+    if not hits: raise SystemExit(_error(f"unknown option -- '{name}'"))
+    if len({LONG_FLAGS[k] for k in hits}) > 1:
+        raise SystemExit(_error(f"ambiguous option -- '{name}' ({', '.join(sorted(hits))})"))
+    return LONG_FLAGS[hits[0]]
 
 
-def tolka(argv):
+def parse_args(argv):
     o = dict(c=False, d=False, f=False, k=False, l=False, n=False, N=False,
-             q=False, r=False, t=False, v=0, suffix=SUFFIX, läge=None,
-             kodek=None, jobb=None, dedup=True, omvandla=None)
-    filer, bara_filer, i = [], False, 0
+             q=False, r=False, t=False, v=0, suffix=SUFFIX, mode=None,
+             codec=None, jobs=None, dedup=True, transform=None)
+    files, files_only, i = [], False, 0
 
-    def tillämpa(h, värde):
-        """Sätter en flagga. Returnerar True om nästa argv-post åts upp."""
+    def apply(h, value):
+        """Sets a flag. Returns True if the next argv entry was consumed."""
         if h == '':  return False
-        if h in '123456789': o['läge'] = NIVÅ_LÄGE[int(h)]; return False
+        if h in '123456789': o['mode'] = LEVEL_MODE[int(h)]; return False
         if h == 'v': o['v'] += 1; return False
         if h == 'q': o['q'] = True; o['v'] = 0; return False
         if h == 'a': return False
-        if h == 'h': print(HJÄLP); raise SystemExit(0)
+        if h == 'h': print(HELP); raise SystemExit(0)
         if h == 'V': print(f'nvz {VERSION}.0'); raise SystemExit(0)
-        if h == 'L': print(VILLKOR); raise SystemExit(0)
+        if h == 'L': print(LICENSE); raise SystemExit(0)
         if h == 'DEDUP': o['dedup'] = False; return False
-        if h == 'OMV': o['omvandla'] = False; return False
-        if h in ('S', 'J', 'LÄGE', 'KODEK'):
-            åt = False
-            if värde is None:
-                if i >= len(argv): raise SystemExit(_fel(f'flaggan saknar värde'))
-                värde = argv[i]; åt = True
+        if h == 'TRANS': o['transform'] = False; return False
+        if h in ('S', 'J', 'MODE', 'CODEC'):
+            consumed = False
+            if value is None:
+                if i >= len(argv): raise SystemExit(_error(f'option requires a value'))
+                value = argv[i]; consumed = True
             if h == 'S':
-                if not värde.strip('.'): raise SystemExit(_fel(f"ogiltig ändelse '{värde}'"))
-                o['suffix'] = värde if värde.startswith('.') else '.' + värde
+                if not value.strip('.'): raise SystemExit(_error(f"invalid suffix '{value}'"))
+                o['suffix'] = value if value.startswith('.') else '.' + value
             elif h == 'J':
-                if not värde.isdigit(): raise SystemExit(_fel(f"-j tar ett tal, inte '{värde}'"))
-                o['jobb'] = max(1, int(värde))
-            elif h == 'LÄGE':
-                if värde not in LÄGEN:
-                    raise SystemExit(_fel(f"okänt läge '{värde}' (välj {'|'.join(LÄGEN)})"))
-                o['läge'] = värde
+                if not value.isdigit(): raise SystemExit(_error(f"-j takes a number, not '{value}'"))
+                o['jobs'] = max(1, int(value))
+            elif h == 'MODE':
+                if value not in MODES:
+                    raise SystemExit(_error(f"unknown mode '{value}' (choose {'|'.join(MODES)})"))
+                o['mode'] = value
             else:
-                if värde not in ('zstd3','zstd19','zstd22','xz9e','nvcm','nvlz'):
-                    raise SystemExit(_fel(f"okänd kodek '{värde}'"))
-                o['kodek'] = värde
-            return åt
+                if value not in ('zstd3','zstd19','zstd22','xz9e','nvcm','nvlz'):
+                    raise SystemExit(_error(f"unknown codec '{value}'"))
+                o['codec'] = value
+            return consumed
         o[h] = True
         return False
 
     while i < len(argv):
         a = argv[i]; i += 1
-        if bara_filer or a == '-' or not a.startswith('-'):
-            filer.append(a); continue
+        if files_only or a == '-' or not a.startswith('-'):
+            files.append(a); continue
         if a == '--':
-            bara_filer = True; continue
+            files_only = True; continue
         if a.startswith('--'):
-            namn, värde = a[2:], None
-            if '=' in namn: namn, värde = namn.split('=', 1)
-            if tillämpa(_lång(namn), värde): i += 1
+            name, value = a[2:], None
+            if '=' in name: name, value = name.split('=', 1)
+            if apply(_long_flag(name), value): i += 1
             continue
         j = 1
         while j < len(a):
             ch = a[j]; j += 1
-            if ch in KORTA_MED_ARG:
-                värde = a[j:] or None; j = len(a)
-                if tillämpa(KORTA_MED_ARG[ch], värde): i += 1
-            elif ch in '123456789' or ch in KORTA:
-                tillämpa(ch, None)
+            if ch in SHORT_WITH_ARG:
+                value = a[j:] or None; j = len(a)
+                if apply(SHORT_WITH_ARG[ch], value): i += 1
+            elif ch in '123456789' or ch in SHORT:
+                apply(ch, None)
             else:
-                raise SystemExit(_fel(f"okänd flagga -- '{ch}'\nFörsök med nvz --help."))
-    return o, filer
+                raise SystemExit(_error(f"unknown option -- '{ch}'\nTry nvz --help."))
+    return o, files
 
 
 def _packkw(o):
-    return dict(läge=o['läge'] or 'normal', dedup=o['dedup'], omvandla=o['omvandla'],
-                jobb=o['jobb'], kodek=o['kodek'], tyst=o['v'] < 2)
+    return dict(mode=o['mode'] or 'normal', dedup=o['dedup'], transform=o['transform'],
+                jobs=o['jobs'], codec=o['codec'], quiet=o['v'] < 2)
 
 
 def _register(o, p: Path):
     try:
-        return läs_register(p)
+        return read_register(p)
     except SystemExit as e:
-        _varna(o, f'{p}: {e}' if str(e) else f'{p}: inte ett nvz-arkiv'); return None
+        _warn(o, f'{p}: {e}' if str(e) else f'{p}: not an nvz archive'); return None
     except Exception as e:
-        _varna(o, f'{p}: oläsbart arkiv ({e})'); return None
+        _warn(o, f'{p}: unreadable archive ({e})'); return None
 
 
-def _får_skriva(o, mål: Path) -> bool:
-    """gzips regel: finns målet redan frågar vi vid en terminal, annars låter
-    vi filen vara. Ett svep som packar tusen filer ska inte kunna skriva över
-    något bara för att ingen satt och tittade."""
-    if o['f'] or not os.path.lexists(mål): return True
+def _may_write(o, dest: Path) -> bool:
+    """gzip's rule: if the target exists we ask at a terminal, otherwise we
+    leave the file alone. A sweep packing a thousand files must not be able
+    to overwrite anything just because nobody was watching."""
+    if o['f'] or not os.path.lexists(dest): return True
     if sys.stdin.isatty() and sys.stderr.isatty():
-        sys.stderr.write(f'nvz: {mål} finns redan; skriva över (j/n)? ')
+        sys.stderr.write(f'nvz: {dest} already exists; overwrite (y/n)? ')
         sys.stderr.flush()
-        if sys.stdin.readline().strip().lower()[:1] in ('j', 'y'): return True
-        sys.stderr.write('\tej överskrivet\n')
+        if sys.stdin.readline().strip().lower()[:1] == 'y': return True
+        sys.stderr.write('\tnot overwritten\n')
         return False
-    _varna(o, f'{mål} finns redan -- oförändrat')
+    _warn(o, f'{dest} already exists -- unchanged')
     return False
 
 
-def _till_stdout(p: Path):
+def _to_stdout(p: Path):
     with open(p, 'rb') as f:
         shutil.copyfileobj(f, sys.stdout.buffer, 1 << 20)
     sys.stdout.buffer.flush()
 
 
-def _kvot(o, från: str, rå: int, packat: int, till, ersatt: bool):
+def _ratio(o, src: str, raw: int, packed: int, dest, replaced: bool):
     if o['v'] < 1 or o['q']: return
-    del_ = (1 - packat/rå) * 100 if rå else 0.0
-    vad = 'ersatt med' if ersatt else 'skrivet till'
-    print(f'{från}:\t{del_:5.1f}% -- {vad} {till}', file=sys.stderr)
+    pct = (1 - packed/raw) * 100 if raw else 0.0
+    verb = 'replaced with' if replaced else 'written to'
+    print(f'{src}:\t{pct:5.1f}% -- {verb} {dest}', file=sys.stderr)
 
 
-def _trädstorlek(rot: Path) -> int:
-    tot = 0
-    for k, _, filer in os.walk(rot, followlinks=False):
-        for n in filer:
-            try: tot += os.lstat(os.path.join(k, n)).st_size
+def _tree_size(root: Path) -> int:
+    total = 0
+    for k, _, files in os.walk(root, followlinks=False):
+        for n in files:
+            try: total += os.lstat(os.path.join(k, n)).st_size
             except OSError: pass
-    return tot
+    return total
 
 
-# --- packa -----------------------------------------------------------------
+# --- pack --------------------------------------------------------------------
 
-def _packa_fil(o, p: Path) -> int:
+def _pack_one_file(o, p: Path) -> int:
     if p.name.endswith(o['suffix']) and not o['f']:
-        return _varna(o, f'{p} har redan ändelsen {o["suffix"]} -- oförändrad')
-    rå = p.stat().st_size
+        return _warn(o, f'{p} already has the suffix {o["suffix"]} -- unchanged')
+    raw = p.stat().st_size
     if o['c']:
-        with tempfile.TemporaryDirectory(prefix='nvz-ut-') as d:
-            ark = Path(d)/'ut.nv'
-            packa_fil(p, ark, **_packkw(o))
-            _kvot(o, str(p), rå, ark.stat().st_size, 'standard ut', False)
-            _till_stdout(ark)
+        with tempfile.TemporaryDirectory(prefix='nvz-out-') as d:
+            ark = Path(d)/'out.nv'
+            pack_file(p, ark, **_packkw(o))
+            _ratio(o, str(p), raw, ark.stat().st_size, 'stdout', False)
+            _to_stdout(ark)
         return 0
-    ut = Path(str(p) + o['suffix'])
-    if not _får_skriva(o, ut): return 2
-    packa_fil(p, ut, **_packkw(o))
+    out = Path(str(p) + o['suffix'])
+    if not _may_write(o, out): return 2
+    pack_file(p, out, **_packkw(o))
     st = p.stat()
-    # Arkivet ärver filens tid och rättigheter. gzip gör det, och det är vad
-    # som gör en packad katalog läsbar som en katalog: tiderna är kvar.
-    os.chmod(ut, st.st_mode & 0o7777)
-    os.utime(ut, ns=(st.st_atime_ns, st.st_mtime_ns))
+    # The archive inherits the file's time and permissions. gzip does, and
+    # it is what makes a packed directory readable as a directory: the
+    # times are still there.
+    os.chmod(out, st.st_mode & 0o7777)
+    os.utime(out, ns=(st.st_atime_ns, st.st_mtime_ns))
     if not o['k']: p.unlink()
-    _kvot(o, str(p), rå, ut.stat().st_size, ut, not o['k'])
+    _ratio(o, str(p), raw, out.stat().st_size, out, not o['k'])
     return 0
 
 
-def _packa_träd(o, p: Path) -> int:
-    rå = _trädstorlek(p) if o['v'] else 0
+def _pack_tree(o, p: Path) -> int:
+    raw = _tree_size(p) if o['v'] else 0
     if o['c']:
-        with tempfile.TemporaryDirectory(prefix='nvz-ut-') as d:
-            ark = Path(d)/'ut.nv'
-            packa(p, ark, **_packkw(o))
-            _kvot(o, str(p), rå, ark.stat().st_size, 'standard ut', False)
-            _till_stdout(ark)
+        with tempfile.TemporaryDirectory(prefix='nvz-out-') as d:
+            ark = Path(d)/'out.nv'
+            pack(p, ark, **_packkw(o))
+            _ratio(o, str(p), raw, ark.stat().st_size, 'stdout', False)
+            _to_stdout(ark)
         return 0
-    ut = Path(str(p) + o['suffix'])
-    if not _får_skriva(o, ut): return 2
-    packa(p, ut, **_packkw(o))
-    _kvot(o, str(p), rå, ut.stat().st_size, ut, False)
+    out = Path(str(p) + o['suffix'])
+    if not _may_write(o, out): return 2
+    pack(p, out, **_packkw(o))
+    _ratio(o, str(p), raw, out.stat().st_size, out, False)
     return 0
 
 
-def _utvidga(o, filer, vill_ha_arkiv: bool):
-    """Räknar fram vad som faktiskt ska behandlas.
+def _expand(o, files, wants_archives: bool):
+    """Works out what is actually to be processed.
 
-    Med -r byts en katalog mot filerna i den — gzips beteende, en fil i taget.
-    Utan -r står katalogen kvar som sin egen operand, och packningen gör då
-    ETT arkiv av trädet.
+    With -r a directory is swapped for the files in it — gzip's behavior,
+    one file at a time. Without -r the directory stands as its own operand,
+    and the pack then makes ONE archive of the tree.
 
-    I svepet hoppas filer med fel ändelse över UTAN ett ord: gzip klagar på
-    var och en, men ett svep är något man kör om, och ett `nvz -r` som
-    skäller en rad per redan packad fil är obrukbart. Namnger man en fil
-    själv får man däremot varningen — då var det ju filen man menade.
+    In the sweep, files with the wrong suffix are skipped WITHOUT a word:
+    gzip complains about each one, but a sweep is something you rerun, and
+    an `nvz -r` that barks one line per already-packed file is unusable.
+    Name a file yourself and you do get the warning — then the file was
+    the point.
     """
-    ut = []
-    for f in filer:
+    out = []
+    for f in files:
         p = Path(f)
         if o['r'] and p.is_dir() and not p.is_symlink():
-            for katalog, kataloger, namn in os.walk(p, followlinks=False):
-                kataloger.sort(); namn.sort()
-                for n in namn:
-                    s = Path(katalog)/n
+            for dirpath, dirs, names in os.walk(p, followlinks=False):
+                dirs.sort(); names.sort()
+                for n in names:
+                    s = Path(dirpath)/n
                     if s.is_symlink(): continue
-                    if n.endswith(o['suffix']) != vill_ha_arkiv: continue
-                    ut.append(s)
+                    if n.endswith(o['suffix']) != wants_archives: continue
+                    out.append(s)
         else:
-            ut.append(p)
-    return ut
+            out.append(p)
+    return out
 
 
-def _packa_operand(o, p: Path) -> int:
+def _pack_operand(o, p: Path) -> int:
     if not os.path.lexists(p):
-        return _fel(f'{p}: finns inte')
+        return _error(f'{p}: does not exist')
     if p.is_symlink():
-        if not o['f']: return _varna(o, f'{p} är en symlänk -- hoppas över')
+        if not o['f']: return _warn(o, f'{p} is a symlink -- skipped')
         p = Path(os.path.realpath(p))
     if p.is_dir():
-        return _packa_träd(o, p)
+        return _pack_tree(o, p)
     if not p.is_file():
-        return _varna(o, f'{p} är inte en vanlig fil -- hoppas över')
-    länkar = p.stat().st_nlink
-    if länkar > 1 and not (o['f'] or o['k'] or o['c']):
-        return _varna(o, f'{p} har {länkar-1} annan länk -- oförändrad')
-    return _packa_fil(o, p)
+        return _warn(o, f'{p} is not a regular file -- skipped')
+    links = p.stat().st_nlink
+    if links > 1 and not (o['f'] or o['k'] or o['c']):
+        return _warn(o, f'{p} has {links-1} other link -- unchanged')
+    return _pack_one_file(o, p)
 
 
-# --- packa upp -------------------------------------------------------------
+# --- unpack --------------------------------------------------------------------
 
-def _mål_för(o, p: Path, reg) -> Path | None:
-    """Vilket namn uppackningen ska få. Som gzip: härlett ur arkivets filnamn,
-    eller det som står i arkivet om -N är satt."""
-    lagrat = namn_i_arkiv(reg)
-    if o['N'] and lagrat: return p.parent/lagrat
+def _dest_for(o, p: Path, reg) -> Path | None:
+    """What name the unpack should get. Like gzip: derived from the
+    archive's filename, or the one stored in the archive if -N is set."""
+    stored = name_in_archive(reg)
+    if o['N'] and stored: return p.parent/stored
     if p.name.endswith(o['suffix']):
         return p.parent/p.name[:-len(o['suffix'])]
-    if lagrat: return p.parent/lagrat
+    if stored: return p.parent/stored
     return None
 
 
-def _packa_upp_operand(o, p: Path) -> int:
+def _unpack_operand(o, p: Path) -> int:
     if not p.is_file():
-        # `nvz -d fil` hittar fil.nv, precis som gunzip hittar fil.gz.
-        med = Path(str(p) + o['suffix'])
-        if os.path.lexists(p) or not med.is_file():
-            return _fel(f'{p}: finns inte')
-        p = med
-    # Ändelsen avgör FÖRE registret läses: en fil som inte heter .nv är inte
-    # vår att packa upp, och det är en varning (status 2) som i gzip — inte
-    # ett fel om formatet.
+        # `nvz -d file` finds file.nv, exactly as gunzip finds file.gz.
+        withsuf = Path(str(p) + o['suffix'])
+        if os.path.lexists(p) or not withsuf.is_file():
+            return _error(f'{p}: does not exist')
+        p = withsuf
+    # The suffix decides BEFORE the register is read: a file not named .nv
+    # is not ours to unpack, and that is a warning (status 2) as in gzip —
+    # not an error about the format.
     if not p.name.endswith(o['suffix']) and not (o['c'] or o['f']):
-        return _varna(o, f'{p}: okänd ändelse -- hoppas över')
+        return _warn(o, f'{p}: unknown suffix -- skipped')
     reg = _register(o, p)
     if reg is None: return 1
     if reg.get('platt'):
-        mål = _mål_för(o, p, reg)
-        if mål is None:
-            return _varna(o, f'{p}: okänd ändelse -- hoppas över')
+        dest = _dest_for(o, p, reg)
+        if dest is None:
+            return _warn(o, f'{p}: unknown suffix -- skipped')
         if o['c']:
-            with tempfile.TemporaryDirectory(prefix='nvz-ut-') as d:
+            with tempfile.TemporaryDirectory(prefix='nvz-out-') as d:
                 tmp = Path(d)/'f'
-                packa_upp_fil(p, tmp, jobb=o['jobb'])
-                _till_stdout(tmp)
+                unpack_file(p, tmp, jobs=o['jobs'])
+                _to_stdout(tmp)
             return 0
-        if mål.resolve() == p.resolve():
-            return _fel(f'{p}: namnet i arkivet är arkivets eget namn, '
-                        'uppackningen skulle skriva över det')
-        if not _får_skriva(o, mål): return 2
-        packa_upp_fil(p, mål, jobb=o['jobb'])
-        _kvot(o, str(p), uppackad_storlek(reg), p.stat().st_size, mål, not o['k'])
+        if dest.resolve() == p.resolve():
+            return _error(f'{p}: the name in the archive is the archive\'s own name, '
+                          'unpacking would overwrite it')
+        if not _may_write(o, dest): return 2
+        unpack_file(p, dest, jobs=o['jobs'])
+        _ratio(o, str(p), unpacked_size(reg), p.stat().st_size, dest, not o['k'])
         if not o['k']: p.unlink()
         return 0
-    # Ett träd. Det går inte att hälla ut i en byteström, och det ska inte
-    # heller gissas fram — ett arkiv av tusen filer är inte en fil.
+    # A tree. It cannot be poured into a byte stream, and it must not be
+    # guessed into one — an archive of a thousand files is not a file.
     if o['c']:
-        return _fel(f'{p}: arkivet innehåller ett träd ({reg["rot"]}), '
-                    'det kan inte skrivas till standard ut')
-    rot = p.parent/reg['rot']
-    if not _får_skriva(o, rot): return 2
-    packa_upp(p, p.parent, jobb=o['jobb'], tyst=o['v'] < 2)
-    _kvot(o, str(p), uppackad_storlek(reg), p.stat().st_size, rot, not o['k'])
+        return _error(f'{p}: the archive holds a tree ({reg["rot"]}), '
+                      'it cannot be written to stdout')
+    root = p.parent/reg['rot']
+    if not _may_write(o, root): return 2
+    unpack(p, p.parent, jobs=o['jobs'], quiet=o['v'] < 2)
+    _ratio(o, str(p), unpacked_size(reg), p.stat().st_size, root, not o['k'])
     if not o['k']: p.unlink()
     return 0
 
 
-# --- lista och prova -------------------------------------------------------
+# --- list and test -------------------------------------------------------------
 
-def _lista_operand(o, p: Path, summa: dict) -> int:
+def _list_operand(o, p: Path, total: dict) -> int:
     reg = _register(o, p)
     if reg is None: return 1
     c = p.stat().st_size
-    u = uppackad_storlek(reg)
-    namn = namn_i_arkiv(reg) or reg['rot'] + '/'
-    print(f'{c:>13} {u:>13} {(1-c/max(u,1))*100:6.1f}%  {namn}')
-    summa['c'] += c; summa['u'] += u; summa['n'] += 1
+    u = unpacked_size(reg)
+    name = name_in_archive(reg) or reg['rot'] + '/'
+    print(f'{c:>13} {u:>13} {(1-c/max(u,1))*100:6.1f}%  {name}')
+    total['c'] += c; total['u'] += u; total['n'] += 1
     if o['v']:
-        lista(p)
+        list_archive(p)
     return 0
 
 
-def _testa_operand(o, p: Path) -> int:
+def _test_operand(o, p: Path) -> int:
     reg = _register(o, p)
     if reg is None: return 1
     try:
-        fel = testa(p, jobb=o['jobb'])
+        errors = test_archive(p, jobs=o['jobs'])
     except Exception as e:
-        return _fel(f'{p}: provet gick inte att köra ({e})')
-    if fel:
-        for väg, vad in fel[:20]:
-            print(f'nvz: {p}: {väg}: {vad}', file=sys.stderr)
-        if len(fel) > 20:
-            print(f'nvz: {p}: ... och {len(fel)-20} till', file=sys.stderr)
-        return _fel(f'{p}: PROVET MISSLYCKADES ({len(fel)} poster)')
+        return _error(f'{p}: the test could not be run ({e})')
+    if errors:
+        for path, what in errors[:20]:
+            print(f'nvz: {p}: {path}: {what}', file=sys.stderr)
+        if len(errors) > 20:
+            print(f'nvz: {p}: ... and {len(errors)-20} more', file=sys.stderr)
+        return _error(f'{p}: TEST FAILED ({len(errors)} entries)')
     if o['v']: print(f'{p}:\tOK')
     return 0
 
 
-# --- standard in och ut ----------------------------------------------------
+# --- standard input and output ---------------------------------------------------
 
-def _ström(o) -> int:
-    """Utan filoperand: standard in -> standard ut, som gzip.
+def _stream(o) -> int:
+    """Without a file operand: stdin -> stdout, like gzip.
 
-    Arkivet måste kunna sökas i (registret ligger sist och läses först), så
-    strömmen landar i en tillfällig fil på vägen. Det är skillnaden mot gzip,
-    som verkligen strömmar — och skälet är formatet, inte lathet: ett arkiv
-    med register och block är inte en följd byte man kan läsa framifrån.
+    The archive must be seekable (the register sits last and is read
+    first), so the stream lands in a temporary file on the way. That is
+    the difference from gzip, which really streams — and the reason is the
+    format, not laziness: an archive with register and blocks is not a run
+    of bytes readable from the front.
     """
     if not o['d'] and sys.stdout.isatty() and not o['f']:
-        return _fel('packade data skrivs inte till en terminal. '
-                    'Använd -f om du menar det, eller ange en fil.')
-    with tempfile.TemporaryDirectory(prefix='nvz-ström-') as d:
+        return _error('compressed data is not written to a terminal. '
+                      'Use -f if you mean it, or name a file.')
+    with tempfile.TemporaryDirectory(prefix='nvz-stream-') as d:
         d = Path(d)
-        inne = d/'in'
-        with open(inne, 'wb') as u:
+        inside = d/'in'
+        with open(inside, 'wb') as u:
             shutil.copyfileobj(sys.stdin.buffer, u, 1 << 20)
         if o['d'] or o['t'] or o['l']:
-            reg = _register(o, inne)
+            reg = _register(o, inside)
             if reg is None: return 1
             if o['l']:
-                summa = dict(c=0, u=0, n=0)
-                print(f'{"packat":>13} {"uppackat":>13}   kvot  namn')
-                return _lista_operand(o, inne, summa)
+                total = dict(c=0, u=0, n=0)
+                print(f'{"compressed":>13} {"uncompressed":>13}  ratio  name')
+                return _list_operand(o, inside, total)
             if o['t']:
-                return _testa_operand(o, inne)
+                return _test_operand(o, inside)
             if not reg.get('platt'):
-                return _fel('arkivet innehåller ett träd och kan inte '
-                            'packas upp till standard ut — ge arkivet som fil')
-            ut = d/'ut'
-            packa_upp_fil(inne, ut, jobb=o['jobb'])
-            _till_stdout(ut)
+                return _error('the archive holds a tree and cannot be '
+                              'unpacked to stdout — give the archive as a file')
+            out = d/'out'
+            unpack_file(inside, out, jobs=o['jobs'])
+            _to_stdout(out)
             return 0
-        ark = d/'ut.nv'
-        packa_fil(inne, ark, namn='standard-in', **_packkw(o))
-        _till_stdout(ark)
+        ark = d/'out.nv'
+        # 'standard-in' is the stored entry name — v1 archive bytes, frozen.
+        pack_file(inside, ark, name='standard-in', **_packkw(o))
+        _to_stdout(ark)
         return 0
 
 
 # ---------------------------------------------------------------------------
 
 def main_gzip(argv) -> int:
-    # -l och -t vinner över -d, precis som i gzip: `nvz -dt ark.nv` provar.
-    o, filer = tolka(argv)
-    if not filer:
-        return _ström(o)
+    # -l and -t beat -d, exactly as in gzip: `nvz -dt ark.nv` tests.
+    o, files = parse_args(argv)
+    if not files:
+        return _stream(o)
 
     status = 0
     if o['l']:
-        summa = dict(c=0, u=0, n=0)
+        total = dict(c=0, u=0, n=0)
         if not o['q']:
-            print(f'{"packat":>13} {"uppackat":>13}   kvot  namn')
-        for p in _utvidga(o, filer, True):
-            status = max(status, _lista_operand(o, p, summa))
-        if summa['n'] > 1:
-            print(f'{summa["c"]:>13} {summa["u"]:>13} '
-                  f'{(1-summa["c"]/max(summa["u"],1))*100:6.1f}%  (summa)')
+            print(f'{"compressed":>13} {"uncompressed":>13}  ratio  name')
+        for p in _expand(o, files, True):
+            status = max(status, _list_operand(o, p, total))
+        if total['n'] > 1:
+            print(f'{total["c"]:>13} {total["u"]:>13} '
+                  f'{(1-total["c"]/max(total["u"],1))*100:6.1f}%  (total)')
         return status
     if o['t']:
-        for p in _utvidga(o, filer, True):
-            status = max(status, _testa_operand(o, p))
+        for p in _expand(o, files, True):
+            status = max(status, _test_operand(o, p))
         return status
     if not o['d'] and o['c'] and sys.stdout.isatty() and not o['f']:
-        return _fel('packade data skrivs inte till en terminal. '
-                    'Använd -f om du menar det.')
-    for p in _utvidga(o, filer, bool(o['d'])):
+        return _error('compressed data is not written to a terminal. '
+                      'Use -f if you mean it.')
+    for p in _expand(o, files, bool(o['d'])):
         if str(p) == '-':
-            status = max(status, _ström(o)); continue
-        status = max(status, _packa_upp_operand(o, p) if o['d']
-                     else _packa_operand(o, p))
+            status = max(status, _stream(o)); continue
+        status = max(status, _unpack_operand(o, p) if o['d']
+                     else _pack_operand(o, p))
     return status
 
 
-def main_underkommandon(argv) -> int:
-    a = argparse.ArgumentParser(prog='nvz', description='Innehållsmedveten arkivpackare')
-    u = a.add_subparsers(dest='kmd', required=True)
-    p = u.add_parser('packa'); p.add_argument('katalog'); p.add_argument('arkiv')
-    p.add_argument('-q','--tyst', action='store_true'); p.add_argument('-j','--jobb', type=int)
-    p.add_argument('--utan-dedup', action='store_true')
-    p.add_argument('--utan-omvandling', action='store_true')
-    p.add_argument('--läge','--lage', dest='läge', choices=list(LÄGEN), default='liten')
-    p.add_argument('--kodek', choices=['zstd3','zstd19','zstd22','xz9e','nvcm','nvlz'])
-    q = u.add_parser('packa-upp'); q.add_argument('arkiv'); q.add_argument('mal')
-    q.add_argument('-q','--tyst', action='store_true'); q.add_argument('-j','--jobb', type=int)
-    l = u.add_parser('lista'); l.add_argument('arkiv')
-    v = u.add_parser('prova'); v.add_argument('katalog')
+def main_subcommands(argv) -> int:
+    a = argparse.ArgumentParser(prog='nvz', description='Content-aware archiver')
+    u = a.add_subparsers(dest='cmd', required=True)
+    p = u.add_parser('pack'); p.add_argument('directory'); p.add_argument('archive')
+    p.add_argument('-q','--quiet', action='store_true'); p.add_argument('-j','--jobs', type=int)
+    p.add_argument('--no-dedup', action='store_true')
+    p.add_argument('--no-transform', action='store_true')
+    p.add_argument('--mode', choices=list(MODES), default='small')
+    p.add_argument('--codec', choices=['zstd3','zstd19','zstd22','xz9e','nvcm','nvlz'])
+    q = u.add_parser('unpack'); q.add_argument('archive'); q.add_argument('dest')
+    q.add_argument('-q','--quiet', action='store_true'); q.add_argument('-j','--jobs', type=int)
+    l = u.add_parser('list'); l.add_argument('archive')
+    v = u.add_parser('test'); v.add_argument('directory')
     n = a.parse_args(argv)
-    if n.kmd == 'packa':
-        packa(Path(n.katalog), Path(n.arkiv), läge=n.läge, dedup=not n.utan_dedup,
-              omvandla=False if n.utan_omvandling else None,
-              jobb=n.jobb, tyst=n.tyst, kodek=n.kodek)
-    elif n.kmd == 'packa-upp':
-        packa_upp(Path(n.arkiv), Path(n.mal), jobb=n.jobb, tyst=n.tyst)
-    elif n.kmd == 'lista':
-        lista(Path(n.arkiv))
-    elif n.kmd == 'prova':
-        return 0 if prova(Path(n.katalog)) else 1
+    if n.cmd == 'pack':
+        pack(Path(n.directory), Path(n.archive), mode=n.mode, dedup=not n.no_dedup,
+             transform=False if n.no_transform else None,
+             jobs=n.jobs, quiet=n.quiet, codec=n.codec)
+    elif n.cmd == 'unpack':
+        unpack(Path(n.archive), Path(n.dest), jobs=n.jobs, quiet=n.quiet)
+    elif n.cmd == 'list':
+        list_archive(Path(n.archive))
+    elif n.cmd == 'test':
+        return 0 if selftest(Path(n.directory)) else 1
     return 0
 
 
 def main(argv=None) -> int:
-    # Första ordet avgör vilken yta det är. En fil som HETER som ett
-    # underkommando når man med `nvz -- packa`, precis som man når en fil
-    # som heter -f: det är därför `--` finns.
+    # The first word decides which surface it is. A file NAMED like a
+    # subcommand is reached with `nvz -- pack`, exactly as a file named -f
+    # is: that is what `--` is for.
     argv = list(sys.argv[1:] if argv is None else argv)
-    if argv and argv[0] in UNDERKOMMANDON:
-        return main_underkommandon(argv)
+    if argv and argv[0] in SUBCOMMANDS:
+        return main_subcommands(argv)
     return main_gzip(argv)
 
 
@@ -1351,6 +1384,6 @@ if __name__ == '__main__':
     try:
         sys.exit(main())
     except BrokenPipeError:
-        os._exit(0)                     # `nvz -dc stor.nv | head` är inte ett fel
+        os._exit(0)                     # `nvz -dc big.nv | head` is not an error
     except KeyboardInterrupt:
         sys.exit(130)

@@ -19,10 +19,10 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 HZ="$ROOT/src/hz"
 CORPUS="${1:-kod}"
 CODEC="${2:-xz9e}"
-WORK="${NVPACK_SKRAP:-$ROOT/.skrap}/ablation"
+WORK="${NVPACK_SCRATCH:-$ROOT/.scratch}/ablation"
 mkdir -p "$WORK"
-K="$ROOT/korpus/$CORPUS"
-[ -d "$K" ] || { echo "missing korpus/$CORPUS"; exit 1; }
+K="$ROOT/corpus/$CORPUS"
+[ -d "$K" ] || { echo "missing corpus/$CORPUS"; exit 1; }
 RAW=$(du -sb "$K" | cut -f1)
 
 run() { # name, flags...
@@ -33,7 +33,7 @@ run() { # name, flags...
     echo "$name $(stat -c%s "$WORK/$name.nvz") $t"
 }
 
-echo "ablation on korpus/$CORPUS ($RAW bytes), codec $CODEC, mode normal"
+echo "ablation on corpus/$CORPUS ($RAW bytes), codec $CODEC, mode normal"
 # The reference row must go through the SAME compressor as the nvz rows,
 # or the table measures a compressor swap instead of a reordering.
 case "$CODEC" in
@@ -43,7 +43,7 @@ case "$CODEC" in
   zstd3)  REF=(zstd -3 -T0 -q -c) ;;
   *) echo "ablation: no tar reference for codec $CODEC"; exit 1 ;;
 esac
-S=$(date +%s); tar -cf - -C "$ROOT/korpus" "$CORPUS" | "${REF[@]}" > "$WORK/tar.ref"; TT=$(( $(date +%s) - S ))
+S=$(date +%s); tar -cf - -C "$ROOT/corpus" "$CORPUS" | "${REF[@]}" > "$WORK/tar.ref"; TT=$(( $(date +%s) - S ))
 echo "tar.ref $(stat -c%s "$WORK/tar.ref") $TT" > "$WORK/rows"
 run none    --no-dedup --no-transform --no-sort --no-classing >> "$WORK/rows"
 run class   --no-dedup --no-transform --no-sort               >> "$WORK/rows"

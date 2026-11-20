@@ -1,57 +1,57 @@
 #!/usr/bin/env python3
-"""JPEG-omvandlingen: skalet runt nvjpg-binären.
+"""The JPEG transform: the shell around the nvjpg binary.
 
-nvjpg gör arbetet (se nvjpg.c). Här delas dess utdata i två delar som vill
-behandlas olika i arkivet:
+nvjpg does the work (see hzjpg.c). Here its output is split into two parts
+that want different treatment in the archive:
 
-    REST   — JPEG-huvudet ordagrant: markörer, kvantiseringstabeller,
-             Huffman-tabeller och EXIF. Hundra bilder ur samma kamera har
-             nästan identiska huvuden, så de packas tillsammans med zstd och
-             krymper till nästan ingenting.
+    REST   — the JPEG header verbatim: markers, quantization tables,
+             Huffman tables and EXIF. A hundred images out of the same
+             camera have near-identical headers, so they are packed
+             together with zstd and shrink to almost nothing.
 
-    KROPP  — den aritmetiskt kodade koefficientströmmen. Den är redan så nära
-             slumpmässig en byteström kan bli; att skicka den genom en
-             komprimerare till är bortkastad tid. Den lagras rå.
+    BODY   — the arithmetically coded coefficient stream. It is already as
+             close to random as a byte stream gets; pushing it through yet
+             another compressor is wasted time. It is stored raw.
 
-Varje omvandling provas i båda riktningarna innan den godtas. Kostnaden är att
-packningen gör ungefär dubbelt jobb på foton; priset är värt det, för
-alternativet är ett arkiv som ser färdigt ut och inte är det.
+Every transform is proved in both directions before it is accepted. The
+cost is that packing does roughly double work on photos; the price is
+worth it, because the alternative is an archive that looks done and isn't.
 """
 from __future__ import annotations
 
 import os, shutil, struct, subprocess
 from pathlib import Path
 
-def _hitta(namn: str) -> str:
-    granne = Path(__file__).resolve().parent / namn
-    if granne.is_file() and os.access(granne, os.X_OK):
-        return str(granne)
-    return shutil.which(namn) or str(granne)
+def _find(name: str) -> str:
+    neighbor = Path(__file__).resolve().parent / name
+    if neighbor.is_file() and os.access(neighbor, os.X_OK):
+        return str(neighbor)
+    return shutil.which(name) or str(neighbor)
 
 
-NVJPG = _hitta('nvjpg')
+NVJPG = _find('nvjpg')
 
 
-def veckla_ut(sokvag: str):
-    """Returnerar {'rest', 'kropp'} eller None om filen ska lagras rå."""
-    with open(sokvag, 'rb') as f:
+def unfold(path: str):
+    """Returns {'rest', 'body'} or None if the file should be stored raw."""
+    with open(path, 'rb') as f:
         orig = f.read()
-    r = subprocess.run([NVJPG, 'packa'], input=orig, capture_output=True)
+    r = subprocess.run([NVJPG, 'pack'], input=orig, capture_output=True)
     if r.returncode != 0 or r.stdout[:4] != b'NVJ1':
-        return None                       # progressiv, trasig, eller inte omkodbar
+        return None                       # progressive, broken, or not recodable
     d = r.stdout
-    huvudlen, svanslen, _scanlen = struct.unpack('<III', d[4:16])
-    gräns = 18 + huvudlen + svanslen
+    head_len, tail_len, _scan_len = struct.unpack('<III', d[4:16])
+    cut = 18 + head_len + tail_len
     if len(d) >= len(orig):
-        return None                       # ingen vinst — lagra rått
-    rest, kropp = d[:gräns], d[gräns:]
-    if återskapa(rest, kropp) != orig:
-        return None                       # ska inte hända; då lagras den rå
-    return dict(rest=rest, kropp=kropp)
+        return None                       # no gain — store raw
+    rest, body = d[:cut], d[cut:]
+    if rebuild(rest, body) != orig:
+        return None                       # should not happen; store it raw then
+    return dict(rest=rest, body=body)
 
 
-def återskapa(rest: bytes, kropp: bytes) -> bytes:
-    r = subprocess.run([NVJPG, 'packaupp'], input=rest + kropp, capture_output=True)
+def rebuild(rest: bytes, body: bytes) -> bytes:
+    r = subprocess.run([NVJPG, 'unpack'], input=rest + body, capture_output=True)
     if r.returncode != 0:
-        raise RuntimeError('nvjpg packaupp: ' + r.stderr.decode()[:300])
+        raise RuntimeError('nvjpg unpack: ' + r.stderr.decode()[:300])
     return r.stdout

@@ -1,158 +1,161 @@
 #!/usr/bin/env python3
-"""PNG-omvandlingen: veckla ut deflate-skalet, och kunna sy ihop det igen.
+"""The PNG transform: unfold the deflate shell, and be able to stitch it back.
 
-En PNG är en följd av bitar (chunks) där IDAT-bitarnas innehåll tillsammans
-bildar EN zlib-ström. Strömmen i sin tur innehåller filterrader — rå bilddata
-med en filterbyte först på varje rad. Det är de raderna som är intressanta:
-de är starkt mönstrade, och en modern packare som får se flera bilders rader i
-samma block hittar likheter som deflate aldrig kunde se.
+A PNG is a sequence of chunks whose IDAT contents together form ONE zlib
+stream. The stream in turn holds filter rows — raw image data with one
+filter byte at the head of each row. Those rows are the interesting part:
+they are strongly patterned, and a modern packer that gets to see several
+images' rows in the same block finds similarities deflate never could.
 
-Problemet är vägen tillbaka. Ett arkiv får inte ge tillbaka "en PNG med samma
-bild" — det ska ge tillbaka exakt samma bytes, annars går kontrollsummor,
-signaturer och git sönder. Deflate är inte en kanonisk kodning: samma indata
-ger olika utdata beroende på nivå, minnesnivå och strategi. Därför letar vi
-upp RECEPTET — den uppsättning zlib-parametrar som råkar ge precis den ström
-filen redan har — och sparar det. Hittas inget recept lagras filen rå.
+The problem is the way back. An archive must not hand back "a PNG with the
+same picture" — it must hand back exactly the same bytes, or checksums,
+signatures and git break. Deflate is not a canonical encoding: the same
+input yields different output depending on level, memory level and
+strategy. So we hunt for the RECIPE — the set of zlib parameters that
+happens to produce precisely the stream the file already has — and store
+it. If no recipe is found the file is stored raw.
 
-Sökningen är billigare än den ser ut:
+The search is cheaper than it looks:
 
-  * zlib-huvudets två första bytes röjer fönsterstorleken (CMF) och ungefär
-    vilken nivågrupp kodaren använde (FLEVEL i FLG). Det skär bort det mesta.
-  * Varje kandidat jämförs STEGVIS. Fel parametrar avviker nästan alltid inom
-    de första hundra kilobytena, och då avbryts försöket direkt i stället för
-    att packa hela bilden i onödan.
-  * Receptet som senast fungerade provas först. Bilder ur samma verktyg delar
-    i praktiken alltid recept, så från och med bild två är första gissningen
-    rätt.
+  * the first two bytes of the zlib header give away the window size (CMF)
+    and roughly which level group the encoder used (FLEVEL in FLG). That
+    cuts away most of it.
+  * every candidate is compared INCREMENTALLY. Wrong parameters almost
+    always diverge within the first few hundred kilobytes, and then the
+    attempt is aborted at once instead of packing the whole image for
+    nothing.
+  * the recipe that worked most recently is tried first. Images out of the
+    same tool share a recipe in practice, so from image two on the first
+    guess is right.
 """
 from __future__ import annotations
 
 import struct, zlib
 
-SIGNATUR = b'\x89PNG\r\n\x1a\n'
-STEG = 1 << 18
-_senaste = []          # recept som fungerat i den här processen, nyast först
+SIGNATURE = b'\x89PNG\r\n\x1a\n'
+STEP = 1 << 18
+_recent = []           # recipes that worked in this process, newest first
 
 
-def _bitar(b: bytes):
-    """Går igenom PNG-bitarna. Returnerar None om filen inte är välformad."""
-    if b[:8] != SIGNATUR: return None
-    i, ut = 8, []
+def _chunks(b: bytes):
+    """Walks the PNG chunks. Returns None if the file is not well formed."""
+    if b[:8] != SIGNATURE: return None
+    i, out = 8, []
     n = len(b)
     while i + 8 <= n:
         (ln,) = struct.unpack('>I', b[i:i+4])
-        typ = b[i+4:i+8]
+        kind = b[i+4:i+8]
         if i + 12 + ln > n: return None
-        ut.append((i, ln, typ))
+        out.append((i, ln, kind))
         i += 12 + ln
-        if typ == b'IEND': break
-    if i != n: return None            # efterhängsna bytes — lagra rått i stället
-    return ut
+        if kind == b'IEND': break
+    if i != n: return None            # trailing bytes — store raw instead
+    return out
 
 
-def _kandidater(strom: bytes):
-    """Receptkandidater i den ordning de är värda att prova."""
-    cmf, flg = strom[0], strom[1]
-    if (cmf & 0x0f) != 8 or (flg & 0x20): return []      # inte deflate, eller FDICT
+def _candidates(stream: bytes):
+    """Recipe candidates in the order they are worth trying."""
+    cmf, flg = stream[0], stream[1]
+    if (cmf & 0x0f) != 8 or (flg & 0x20): return []      # not deflate, or FDICT
     wbits = (cmf >> 4) + 8
     if not 9 <= wbits <= 15: return []
     flevel = flg >> 6
-    grupp = {0: (1,), 1: (2,3,4,5), 2: (6,), 3: (7,8,9)}[flevel]
-    # zlib sätter FLEVEL ur nivån, så gruppen är ett besked och inte en gissning.
-    # Inom gruppen: 9 och 6 är det som verktyg faktiskt använder.
-    nivaer = sorted(grupp, key=lambda n: (n not in (9, 6), -n))
-    kand = [(n, wbits, m, s) for n in nivaer for m in (8, 9) for s in (0, 1, 2, 3, 4)]
-    forst = [r for r in _senaste if r in kand]
-    return forst + [r for r in kand if r not in forst]
+    group = {0: (1,), 1: (2,3,4,5), 2: (6,), 3: (7,8,9)}[flevel]
+    # zlib derives FLEVEL from the level, so the group is a statement, not a
+    # guess. Within the group: 9 and 6 are what tools actually use.
+    levels = sorted(group, key=lambda n: (n not in (9, 6), -n))
+    cand = [(n, wbits, m, s) for n in levels for m in (8, 9) for s in (0, 1, 2, 3, 4)]
+    first = [r for r in _recent if r in cand]
+    return first + [r for r in cand if r not in first]
 
 
-def _provar(ra: bytes, mal: bytes, recept) -> bool:
-    """Packar om rådatan och jämför stegvis — avbryter vid första avvikelsen."""
-    niva, wbits, mem, strategi = recept
-    c = zlib.compressobj(niva, zlib.DEFLATED, wbits, mem, strategi)
-    sikt = memoryview(mal)
-    ut = bytearray()
-    for i in range(0, len(ra), STEG):
-        ut += c.compress(ra[i:i+STEG])
-        if len(ut) > len(mal) or sikt[:len(ut)] != memoryview(ut):
+def _matches(raw: bytes, target: bytes, recipe) -> bool:
+    """Repacks the raw data and compares incrementally — aborts at the first divergence."""
+    level, wbits, mem, strategy = recipe
+    c = zlib.compressobj(level, zlib.DEFLATED, wbits, mem, strategy)
+    view = memoryview(target)
+    out = bytearray()
+    for i in range(0, len(raw), STEP):
+        out += c.compress(raw[i:i+STEP])
+        if len(out) > len(target) or view[:len(out)] != memoryview(out):
             return False
-    ut += c.flush()
-    return len(ut) == len(mal) and sikt == memoryview(ut)
+    out += c.flush()
+    return len(out) == len(target) and view == memoryview(out)
 
 
-def _packa_om(ra: bytes, recept) -> bytes:
-    niva, wbits, mem, strategi = recept
-    c = zlib.compressobj(niva, zlib.DEFLATED, wbits, mem, strategi)
-    return c.compress(ra) + c.flush()
+def _redeflate(raw: bytes, recipe) -> bytes:
+    level, wbits, mem, strategy = recipe
+    c = zlib.compressobj(level, zlib.DEFLATED, wbits, mem, strategy)
+    return c.compress(raw) + c.flush()
 
 
-def veckla_ut(sokvag: str, uppblåsningstak: float = 1e9):
-    """Returnerar {'recept', 'rest', 'kropp'} eller None om filen ska lagras rå.
+def unfold(path: str, inflation_cap: float = 1e9):
+    """Returns {'recipe', 'rest', 'body'} or None if the file should be stored raw.
 
-    `uppblåsningstak` är hur många gånger större den utvecklade rådatan får
-    vara än IDAT-strömmen för att utvecklingen ska vara värd besväret. En PNG
-    som deflate redan klämt ihop 50:1 är ett skärmklipp med stora enfärgade
-    ytor; där finns inget kvar att hämta, bara packtid att förlora.
+    `inflation_cap` is how many times larger the unfolded raw data may be
+    than the IDAT stream for the unfold to be worth the trouble. A PNG that
+    deflate already squeezed 50:1 is a screenshot with large flat areas;
+    there is nothing left to take there, only pack time to lose.
 
-    Resultatet provas alltid genom att sys ihop igen och jämföras med
-    originalet. Det som returneras är därmed bevisat återskapbart.
+    The result is always proved by stitching it back together and comparing
+    with the original. What is returned is thereby proven reproducible.
     """
-    with open(sokvag, 'rb') as f:
+    with open(path, 'rb') as f:
         b = f.read()
-    bitar = _bitar(b)
-    if not bitar: return None
-    idat = [(i, ln) for i, ln, typ in bitar if typ == b'IDAT']
-    if not idat or sum(ln for _, ln in idat) < 512: return None   # för litet för att vara värt något
+    chunks = _chunks(b)
+    if not chunks: return None
+    idat = [(i, ln) for i, ln, kind in chunks if kind == b'IDAT']
+    if not idat or sum(ln for _, ln in idat) < 512: return None   # too small to be worth anything
 
-    strom = b''.join(b[i+8:i+8+ln] for i, ln in idat)
+    stream = b''.join(b[i+8:i+8+ln] for i, ln in idat)
     try:
-        ra = zlib.decompress(strom)
+        raw = zlib.decompress(stream)
     except zlib.error:
         return None
-    if len(ra) > len(strom) * uppblåsningstak:
+    if len(raw) > len(stream) * inflation_cap:
         return None
 
-    recept = None
-    for k in _kandidater(strom):
-        if _provar(ra, strom, k):
-            recept = k; break
-    if recept is None: return None
-    if recept in _senaste: _senaste.remove(recept)
-    _senaste.insert(0, recept); del _senaste[4:]
+    recipe = None
+    for k in _candidates(stream):
+        if _matches(raw, stream, k):
+            recipe = k; break
+    if recipe is None: return None
+    if recipe in _recent: _recent.remove(recipe)
+    _recent.insert(0, recipe); del _recent[4:]
 
-    # Skelettet är filen utan IDAT-innehåll. Allt annat — signatur, alla
-    # övriga bitar, längder och kontrollsummor — följer med ordagrant, så
-    # ihopsyningen inte behöver veta något om PNG-semantik.
-    skelett = bytearray()
-    sist = 0
+    # The skeleton is the file without IDAT contents. Everything else —
+    # signature, all other chunks, lengths and checksums — comes along
+    # verbatim, so the stitching needs to know nothing about PNG semantics.
+    skeleton = bytearray()
+    last = 0
     for i, ln in idat:
-        skelett += b[sist:i+8]
-        sist = i + 8 + ln
-    skelett += b[sist:]
+        skeleton += b[last:i+8]
+        last = i + 8 + ln
+    skeleton += b[last:]
 
-    if återskapa(bytes(skelett), ra, recept) != b:
-        return None                                   # ska inte hända; då lagras den rå
-    return dict(recept=list(recept), rest=bytes(skelett), kropp=ra)
+    if rebuild(bytes(skeleton), raw, recipe) != b:
+        return None                                   # should not happen; store it raw then
+    return dict(recipe=list(recipe), rest=bytes(skeleton), body=raw)
 
 
-def återskapa(skelett: bytes, ra: bytes, recept) -> bytes:
-    """Syr ihop PNG:en igen: deflatera rådatan med receptet och fyll i IDAT."""
-    strom = _packa_om(ra, tuple(recept))
-    ut = bytearray(skelett[:8])
-    i, j = 8, 0                         # i = läsläge i skelettet, j = i strömmen
-    n = len(skelett)
+def rebuild(skeleton: bytes, raw: bytes, recipe) -> bytes:
+    """Stitches the PNG back together: deflate the raw data with the recipe and fill in IDAT."""
+    stream = _redeflate(raw, tuple(recipe))
+    out = bytearray(skeleton[:8])
+    i, j = 8, 0                         # i = read position in the skeleton, j = in the stream
+    n = len(skeleton)
     while i + 8 <= n:
-        huvud = skelett[i:i+8]
-        (ln,) = struct.unpack('>I', huvud[:4])
-        typ = huvud[4:8]
-        ut += huvud
-        if typ == b'IDAT':
-            ut += strom[j:j+ln]; j += ln
-            ut += skelett[i+8:i+12]     # kontrollsumman låg kvar i skelettet
+        head = skeleton[i:i+8]
+        (ln,) = struct.unpack('>I', head[:4])
+        kind = head[4:8]
+        out += head
+        if kind == b'IDAT':
+            out += stream[j:j+ln]; j += ln
+            out += skeleton[i+8:i+12]   # the checksum stayed behind in the skeleton
             i += 12
         else:
-            ut += skelett[i+8:i+12+ln]
+            out += skeleton[i+8:i+12+ln]
             i += 12 + ln
-        if typ == b'IEND': break
-    ut += skelett[i:]
-    return bytes(ut)
+        if kind == b'IEND': break
+    out += skeleton[i:]
+    return bytes(out)

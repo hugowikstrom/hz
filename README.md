@@ -24,16 +24,14 @@ time on the same machine), hZ is **both smaller and faster on six of nine
 corpora** — source code −0.57 % and 15 % faster than `xz -9e`, PNG −10.4 %
 and 18 % faster than `zstd -22`, logs −15.4 % and 79 % faster than
 `xz -9e` — and never meaningfully larger on the other three. The full
-evaluation, with every number regenerable from `resultat/*.json`:
+evaluation, with every number regenerable from `results/*.json`:
 
-* **[rapport/broad-evaluation.md](rapport/broad-evaluation.md)** — the
+* **[report/broad-evaluation.md](report/broad-evaluation.md)** — the
   report in English
-* **[rapport/bred-provning.md](rapport/bred-provning.md)** — the same
   report in Swedish
 * **<https://nattviken.com/projekt/hz/>** — project page with FAQ
   (Swedish; English at [/en/projects/hz/](https://nattviken.com/en/projects/hz/))
 
-*README på svenska: [README.sv.md](README.sv.md).*
 
 ```bash
 make                       # builds hz, hzcm, hzjpg (needs libzstd-dev,
@@ -123,7 +121,7 @@ reproduces directory order; the code corpus fits entirely inside
 gathered per directory. The sort pays only when likeness is **scattered**
 and the window **small**: the same 5 974 code files thrown into 200 random
 directories give −8.0 % through a 2 MiB window and −2.2 % through a 64 MiB
-dictionary (`experiment/sortering.sh`). This is also exactly what the
+dictionary (`experiment/sorting.sh`). This is also exactly what the
 prior art says (gwern.net/sort): the method is old, and its value is a
 function of the window. hZ's measured wins come from items 3, 4 and hzcm
 — not from this one.
@@ -232,7 +230,7 @@ the established tools, and `small` the one that wins on SIZE.
 ## Results
 
 The row `tar.zst -3 (the baseline)` is the pipeline hZ replaces. Tables
-regenerate with `python3 matning/rapport.py --in-i-readme`; never edit them
+regenerate with `python3 benchmark/report.py --in-i-readme`; never edit them
 by hand.
 
 <!-- TABELLER -->
@@ -249,10 +247,10 @@ by hand.
 | tar.zst -19 --long | 8.53 | 6.49× | −25.6 % | 35 s | 0 s | yes |
 | tar.zst -22 --ultra | 8.45 | 6.55× | −26.2 % | 56 s | 0 s | yes |
 | tar.xz -9e | 8.23 | 6.73× | −28.2 % | 47 s | 1 s | yes |
-| **hZ fast** | 11.34 | 4.88× | −1.0 % | 1 s | 0 s | yes |
-| **hZ, tricks off** | 8.18 | 6.77× | −28.6 % | 40 s | 1 s | yes |
-| **hZ normal** | 8.18 | 6.77× | −28.6 % | 40 s | 1 s | yes |
-| **hZ small** | **7.20** | 7.69× | −37.1 % | 64 s | 62 s | yes |
+| **hz fast** | 11.34 | 4.88× | −1.0 % | 1 s | 0 s | yes |
+| **hz, tricks off** | 8.18 | 6.77× | −28.6 % | 40 s | 1 s | yes |
+| **hz normal** | 8.18 | 6.77× | −28.6 % | 40 s | 1 s | yes |
+| **hz small** | **7.20** | 7.69× | −37.1 % | 64 s | 62 s | yes |
 
 ### Images (PNG) — 431.1 MiB in 4 618 files
 
@@ -266,10 +264,10 @@ by hand.
 | tar.zst -19 --long | 252.73 | 1.71× | −30.3 % | 40 s | 1 s | yes |
 | tar.zst -22 --ultra | 245.22 | 1.76× | −32.4 % | 156 s | 1 s | yes |
 | tar.xz -9e | 266.41 | 1.62× | −26.6 % | 128 s | 5 s | yes |
-| **hZ fast** | 279.29 | 1.54× | −23.0 % | 2 s | 1 s | yes |
-| **hZ, tricks off** | 256.46 | 1.68× | −29.3 % | 42 s | 1 s | yes |
-| **hZ normal** | 219.78 | 1.96× | −39.4 % | 127 s | 8 s | yes |
-| **hZ small** | **207.24** | 2.08× | −42.9 % | 280 s | 11 s | yes |
+| **hz fast** | 279.29 | 1.54× | −23.0 % | 2 s | 1 s | yes |
+| **hz, tricks off** | 256.46 | 1.68× | −29.3 % | 42 s | 1 s | yes |
+| **hz normal** | 219.78 | 1.96× | −39.4 % | 127 s | 8 s | yes |
+| **hz small** | **207.24** | 2.08× | −42.9 % | 280 s | 11 s | yes |
 
 ### Photos (JPEG) — 408.5 MiB in 1 143 files
 
@@ -283,10 +281,10 @@ by hand.
 | tar.zst -19 --long | 405.09 | 1.01× | −0.3 % | 53 s | 0 s | yes |
 | tar.zst -22 --ultra | 405.09 | 1.01× | −0.3 % | 225 s | 0 s | yes |
 | tar.xz -9e | 405.43 | 1.01× | −0.2 % | 157 s | 4 s | yes |
-| **hZ fast** | 408.50 | 1.00× | +0.5 % | 2 s | 1 s | yes |
-| **hZ, tricks off** | 406.43 | 1.01× | +0.0 % | 4 s | 1 s | yes |
-| **hZ normal** | **345.07** | 1.18× | −15.1 % | 48 s | 18 s | yes |
-| **hZ small** | **345.07** | 1.18× | −15.1 % | 55 s | 17 s | yes |
+| **hz fast** | 408.50 | 1.00× | +0.5 % | 2 s | 1 s | yes |
+| **hz, tricks off** | 406.43 | 1.01× | +0.0 % | 4 s | 1 s | yes |
+| **hz normal** | **345.07** | 1.18× | −15.1 % | 48 s | 18 s | yes |
+| **hz small** | **345.07** | 1.18× | −15.1 % | 55 s | 17 s | yes |
 
 ### Images (GIF) — 27.4 MiB in 105 files
 
@@ -300,10 +298,10 @@ by hand.
 | tar.zst -19 --long | 14.18 | 1.93× | −47.6 % | 4 s | 0 s | yes |
 | tar.zst -22 --ultra | 14.18 | 1.93× | −47.6 % | 5 s | 0 s | yes |
 | tar.xz -9e | 14.19 | 1.93× | −47.5 % | 8 s | 0 s | yes |
-| **hZ fast** | 14.44 | 1.90× | −46.6 % | 0 s | 0 s | yes |
-| **hZ, tricks off** | 14.18 | 1.93× | −47.6 % | 4 s | 0 s | yes |
-| **hZ normal** | **14.18** | 1.93× | −47.6 % | 6 s | 0 s | yes |
-| **hZ small** | **14.18** | 1.93× | −47.6 % | 6 s | 0 s | yes |
+| **hz fast** | 14.44 | 1.90× | −46.6 % | 0 s | 0 s | yes |
+| **hz, tricks off** | 14.18 | 1.93× | −47.6 % | 4 s | 0 s | yes |
+| **hz normal** | **14.18** | 1.93× | −47.6 % | 6 s | 0 s | yes |
+| **hz small** | **14.18** | 1.93× | −47.6 % | 6 s | 0 s | yes |
 
 ### Film (h264/VP9) — 536.7 MiB in 67 files
 
@@ -317,10 +315,10 @@ by hand.
 | tar.zst -19 --long | **532.02** | 1.01× | −0.3 % | 57 s | 0 s | yes |
 | tar.zst -22 --ultra | 532.03 | 1.01× | −0.3 % | 266 s | 1 s | yes |
 | tar.xz -9e | 532.86 | 1.01× | −0.2 % | 154 s | 5 s | yes |
-| **hZ fast** | 536.75 | 1.00× | +0.5 % | 3 s | 1 s | yes |
-| **hZ, tricks off** | 532.04 | 1.01× | −0.3 % | 57 s | 1 s | yes |
-| **hZ normal** | 532.04 | 1.01× | −0.3 % | 56 s | 1 s | yes |
-| **hZ small** | 532.04 | 1.01× | −0.3 % | 57 s | 1 s | yes |
+| **hz fast** | 536.75 | 1.00× | +0.5 % | 3 s | 1 s | yes |
+| **hz, tricks off** | 532.04 | 1.01× | −0.3 % | 57 s | 1 s | yes |
+| **hz normal** | 532.04 | 1.01× | −0.3 % | 56 s | 1 s | yes |
+| **hz small** | 532.04 | 1.01× | −0.3 % | 57 s | 1 s | yes |
 
 ### Archives (zip/tar.gz) — 391.8 MiB in 133 files
 
@@ -334,10 +332,10 @@ by hand.
 | tar.zst -19 --long | 261.37 | 1.50× | −31.5 % | 47 s | 0 s | yes |
 | tar.zst -22 --ultra | 242.77 | 1.61× | −36.4 % | 154 s | 1 s | yes |
 | tar.xz -9e | 251.75 | 1.56× | −34.1 % | 144 s | 7 s | yes |
-| **hZ fast** | 329.03 | 1.19× | −13.8 % | 2 s | 1 s | yes |
-| **hZ, tricks off** | 242.51 | 1.62× | −36.5 % | 146 s | 1 s | yes |
-| **hZ normal** | 242.51 | 1.62× | −36.5 % | 153 s | 1 s | yes |
-| **hZ small** | **237.00** | 1.65× | −37.9 % | 323 s | 8 s | yes |
+| **hz fast** | 329.03 | 1.19× | −13.8 % | 2 s | 1 s | yes |
+| **hz, tricks off** | 242.51 | 1.62× | −36.5 % | 146 s | 1 s | yes |
+| **hz normal** | 242.51 | 1.62× | −36.5 % | 153 s | 1 s | yes |
+| **hz small** | **237.00** | 1.65× | −37.9 % | 323 s | 8 s | yes |
 
 ### Log files — 238.3 MiB in 76 files
 
@@ -351,10 +349,10 @@ by hand.
 | tar.zst -19 --long | 13.09 | 18.21× | −41.5 % | 113 s | 0 s | yes |
 | tar.zst -22 --ultra | 12.92 | 18.45× | −42.3 % | 986 s | 0 s | yes |
 | tar.xz -9e | 11.84 | 20.12× | −47.1 % | 897 s | 1 s | yes |
-| **hZ fast** | 22.41 | 10.63× | +0.1 % | 2 s | 1 s | yes |
-| **hZ, tricks off** | 11.87 | 20.08× | −47.0 % | 854 s | 2 s | yes |
-| **hZ normal** | 11.87 | 20.08× | −47.0 % | 851 s | 2 s | yes |
-| **hZ small** | **10.23** | 23.30× | −54.3 % | 73 s | 42 s | yes |
+| **hz fast** | 22.41 | 10.63× | +0.1 % | 2 s | 1 s | yes |
+| **hz, tricks off** | 11.87 | 20.08× | −47.0 % | 854 s | 2 s | yes |
+| **hz normal** | 11.87 | 20.08× | −47.0 % | 851 s | 2 s | yes |
+| **hz small** | **10.23** | 23.30× | −54.3 % | 73 s | 42 s | yes |
 
 ### Mixed project tree (symbios-3d) — 1 814.4 MiB in 15 139 files
 
@@ -368,9 +366,9 @@ by hand.
 | tar.zst -19 --long | 319.30 | 5.68× | −29.5 % | 149 s | 4 s | yes |
 | tar.zst -22 --ultra | 301.21 | 6.02× | −33.5 % | 623 s | 4 s | yes |
 | tar.xz -9e | 297.54 | 6.10× | −34.3 % | 289 s | 5 s | yes |
-| **hZ fast** | 407.37 | 4.45× | −10.0 % | 14 s | 4 s | yes |
-| **hZ normal** | 282.25 | 6.43× | −37.7 % | 315 s | 8 s | yes |
-| **hZ small** | **279.10** | 6.50× | −38.4 % | 325 s | 207 s | yes |
+| **hz fast** | 407.37 | 4.45× | −10.0 % | 14 s | 4 s | yes |
+| **hz normal** | 282.25 | 6.43× | −37.7 % | 315 s | 8 s | yes |
+| **hz small** | **279.10** | 6.50× | −38.4 % | 325 s | 207 s | yes |
 
 ### Silesia (standard corpus) — 202.1 MiB in 12 files
 
@@ -384,10 +382,10 @@ by hand.
 | tar.zst -19 --long | 50.17 | 4.03× | −20.6 % | 63 s | 0 s | yes |
 | tar.zst -22 --ultra | 49.82 | 4.06× | −21.1 % | 179 s | 0 s | yes |
 | tar.xz -9e | 46.17 | 4.38× | −26.9 % | 158 s | 3 s | yes |
-| **hZ fast** | 63.17 | 3.20× | +0.0 % | 1 s | 1 s | yes |
-| **hZ, tricks off** | 46.14 | 4.38× | −26.9 % | 92 s | 2 s | yes |
-| **hZ normal** | 46.14 | 4.38× | −26.9 % | 92 s | 2 s | yes |
-| **hZ small** | **43.62** | 4.63× | −30.9 % | 94 s | 38 s | yes |
+| **hz fast** | 63.17 | 3.20× | +0.0 % | 1 s | 1 s | yes |
+| **hz, tricks off** | 46.14 | 4.38× | −26.9 % | 92 s | 2 s | yes |
+| **hz normal** | 46.14 | 4.38× | −26.9 % | 92 s | 2 s | yes |
+| **hz small** | **43.62** | 4.63× | −30.9 % | 94 s | 38 s | yes |
 
 ### enwik8 (standard corpus) — 95.4 MiB in 1 files
 
@@ -401,17 +399,17 @@ by hand.
 | tar.zst -19 --long | 25.18 | 3.79× | −25.5 % | 61 s | 0 s | yes |
 | tar.zst -22 --ultra | 24.11 | 3.96× | −28.7 % | 118 s | 0 s | yes |
 | tar.xz -9e | 23.68 | 4.03× | −29.9 % | 121 s | 1 s | yes |
-| **hZ fast** | 33.80 | 2.82× | +0.0 % | 1 s | 1 s | yes |
-| **hZ, tricks off** | 23.59 | 4.04× | −30.2 % | 122 s | 2 s | yes |
-| **hZ normal** | 23.59 | 4.04× | −30.2 % | 122 s | 2 s | yes |
-| **hZ small** | **20.81** | 4.58× | −38.4 % | 50 s | 43 s | yes |
+| **hz fast** | 33.80 | 2.82× | +0.0 % | 1 s | 1 s | yes |
+| **hz, tricks off** | 23.59 | 4.04× | −30.2 % | 122 s | 2 s | yes |
+| **hz normal** | 23.59 | 4.04× | −30.2 % | 122 s | 2 s | yes |
+| **hz small** | **20.81** | 4.58× | −38.4 % | 50 s | 43 s | yes |
 
 <!-- SLUT TABELLER -->
 
 ### Smaller AND faster: six corpora of nine
 
 The harder question than either column alone: does hZ beat the **same**
-opponent on both axes at once? (`python3 experiment/dominans.py`)
+opponent on both axes at once? (`python3 experiment/dominance.py`)
 
 ```
 corpus     best established              bytes   sec | hz            bytes   sec | outcome
@@ -451,7 +449,7 @@ is five sweeps over the data (read, hash, read again, copy into the block,
 write), and thread scaling flattens at 1.9× on 24 threads because the work
 is memory-bound. A genuinely faster mode means fewer sweeps — hash during
 the pack read, stream blocks through the codec — not a weaker codec.
-Details and measurements: report §8 and `resultat/hastighetsgolv.json`.
+Details and measurements: report §8 and `results/speed-floor.json`.
 
 ---
 
@@ -532,7 +530,7 @@ src/hz.py             RETIRED Python implementation, kept verbatim as the
 **Language note.** The source, CLI, Makefile, man pages and the main test
 and experiment entry points are English (translated 2026-11-19); Swedish
 CLI names remain as permanent aliases. The older measurement scripts
-(prova-allt.sh, matning/, aterskapning, protokoll, bygg-korpus and a few
+(prova-allt.sh, benchmark/, aterskapning, protokoll, bygg-korpus and a few
 one-off experiments) carry an English header and keep their Swedish inline
 comments for now — they are verified by their own runs and get translated
 as they are next touched, rather than wholesale with the risk of silent
@@ -540,10 +538,10 @@ drift in verified measurement code.
 Three kinds of Swedish survive on purpose: **archive format strings**
 (block classes like `binar`/`opak`/`jpeg-kropp`, codec names — millions of
 archived bytes contain them), **top-level directory and corpus names**
-(`korpus/kod`, `rapport/`, `prov/brister.sh` … are referenced by published
+(`corpus/kod`, `report/`, `tests/flaws.sh` … are referenced by published
 reports, PDFs and links; renaming them would break every published
 reproduction command), and the **retired `src/hz.py`**. The reports exist
-in both languages in `rapport/`.
+in both languages in `report/`.
 
 **Three faults the port exposed** (general enough to repeat): a malloc
 between fork and exec in a threaded process can deadlock forever; pipes
@@ -558,7 +556,7 @@ corruption path for streams of the right length but wrong bytes; write
 failures could cost data because no write was checked while the gzip
 surface deletes originals; an unreadable file crashed the process with a
 core dump. All three fixed, all three regression-tested in
-`prov/brister.sh`, all three documented in report §6. They shared a cause
+`tests/flaws.sh`, all three documented in report §6. They shared a cause
 worth stating: hZ's own self-check packs and unpacks on the same machine,
 in a successful flow, with readable files and free disk — all three lived
 outside that boundary.
@@ -587,23 +585,30 @@ outside that boundary.
 ## The test suite
 
 ```bash
-make test                            # roundtrip on korpus/kod + every JPEG
-bash prov/prova-allt.sh              # 44 edge cases: symlinks, åäö, newlines
+make test                            # roundtrip on corpus/kod + every JPEG
+bash tests/test-all.sh              # 44 edge cases: symlinks, åäö, newlines
                                      # in names, 1985/2031 timestamps, modes
-python3 prov/slumpprov.py 400        # randomized trees, full roundtrip,
+python3 tests/random-trees.py 400        # randomized trees, full roundtrip,
                                      # failures print their seed
-bash prov/brister.sh                 # the three review flaws as regressions
-bash experiment/karntest.sh          # the Linux kernel from kernel.org,
+bash tests/flaws.sh                 # the three review flaws as regressions
+bash experiment/kernel-test.sh          # the Linux kernel from kernel.org,
                                      # md5 manifests before and after
 bash experiment/corpora.sh           # zlib-ng/corpora: eight third-party
                                      # corpora (part of every full test run)
 bash experiment/ablation.sh kod xz9e # one trick at a time
-python3 experiment/dominans.py       # both axes against the best opponent
+python3 experiment/dominance.py       # both axes against the best opponent
 ```
 
 The suite found real faults at every stage — a directory symlink that
 vanished silently, directory mtimes never restored, the struct-layout
 build fault, the three review flaws. That is what it is for.
+
+## Author
+
+The idea and direction: **Hugo Wikström** — <hugo.wikstrom@gmail.com>,
+also on Facebook. Every design decision in hZ is measured rather than
+guessed; the per-technique prior art is named in
+[report/broad-evaluation.md](report/broad-evaluation.md).
 
 ## License
 

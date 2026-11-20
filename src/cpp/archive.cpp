@@ -47,7 +47,7 @@ const char REG2[8] = {'N','V','Z','R','E','G','2','\0'};
 
 // Codec per class and mode. "probe": the block decides by compressing a
 // sample with each candidate; "probe-cm" adds nvcm as a candidate. The
-// table is the Python implementation's LÄGEN, verbatim.
+// table is the Python implementation's MODES table, verbatim.
 std::map<std::string, std::string> mode_codecs(const std::string &mode) {
     if (mode == "fast")
         return {{"text","zstd3"},{"binar","zstd3"},{"png-ra","zstd3"},{"png-rest","zstd3"},

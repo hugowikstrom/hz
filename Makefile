@@ -28,7 +28,7 @@ all: src/hz src/hzjpg src/hzcm $(if $(HAS_GPU),gpu,no-gpu)
 # header. A field added to `struct PackOpts` in archive.hpp then rebuilt
 # main.o and archive.o but not cli.o, and the binary was linked from object
 # files that disagreed about the struct's layout: `hz -t` crashed with
-# SIGSEGV while `hz pack` worked. The fault was found by prov/slumpprov.py
+# SIGSEGV while `hz pack` worked. The fault was found by tests/random-trees.py
 # on 2026-11-18 and was invisible to every compiler warning — which is why
 # the explanation lives here and not in a commit line.
 src/cpp/%.o: src/cpp/%.cpp
@@ -68,11 +68,11 @@ src/blake2b.comp: src/gen-blake2b.py
 	python3 $<
 
 test: src/hzjpg src/hzcm
-	@if [ -d korpus/kod ]; then ./src/hz test korpus/kod; \
-	 else echo "korpus/kod absent (release tarball) — self-testing on src/"; \
+	@if [ -d corpus/kod ]; then ./src/hz test corpus/kod; \
+	 else echo "corpus/kod absent (release tarball) — self-testing on src/"; \
 	      ./src/hz test src; fi
-	@if [ -d korpus/foto ]; then ./prov/kontroll-jpg.sh korpus/foto; \
-	 else echo "korpus/foto absent — jpeg check skipped"; fi
+	@if [ -d corpus/foto ]; then ./tests/check-jpeg.sh corpus/foto; \
+	 else echo "corpus/foto absent — jpeg check skipped"; fi
 	@if [ -x src/hzgpu ]; then ./src/hzgpu prov --tyst && echo "hzgpu: tests passed"; \
 	 else echo "hzgpu not built (make gpu) — gpu tests skipped"; fi
 
@@ -97,11 +97,6 @@ man: man/hzcm.1 man/hz.1 man/hzjpg.1
 	@for m in $^; do man --warnings -E UTF-8 -l $$m >/dev/null || exit 1; done
 	@echo "man pages are clean against groff's warnings"
 
-pdf: rapport/hz-rapport.pdf
-
-rapport/hz-rapport.pdf: rapport/bygg-tryck.py $(wildcard resultat/*.json)
-	bash rapport/bygg-pdf.sh
-
 # Release tarball from git, the artifact a distribution package builds from.
 # git archive guarantees the tarball holds exactly what is committed.
 VERSION ?= 2.0
@@ -115,13 +110,8 @@ clean:
 	rm -f src/hzjpg src/hzcm src/hzgpu src/hz src/cpp/*.o src/cpp/*.d $(SPV)
 	rm -rf dist .bygg-enfil
 
-# Swedish target names remain as aliases.
-prov: test
-installera: install
-avinstallera: uninstall
-rent: clean
 
-.PHONY: dist all test prov pdf clean rent gpu no-gpu install installera uninstall avinstallera man
+.PHONY: dist all test clean gpu no-gpu install uninstall man
 
 src/hzcm: src/hzcm.c
 	$(CC) $(CFLAGS) -o $@ $<

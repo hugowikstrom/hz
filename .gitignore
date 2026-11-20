@@ -1,4 +1,4 @@
-.skrap/
+.scratch/
 __pycache__/
 src/nvjpg
 src/nvcm
@@ -8,23 +8,22 @@ src/*.spv
 src/cpp/*.o
 
 # Korpusarna är hårdlänkar in i hemkatalogen — tusentals privata foton,
-# loggar och filmer. De byggs om med korpus/bygg-korpus.py och ska aldrig
+# loggar och filmer. De byggs om med corpus/build-corpus.py och ska aldrig
 # följa med i ett arkiv eller ett repo.
-korpus/kod/
-korpus/png/
-korpus/foto/
-korpus/gif/
-korpus/film/
-korpus/arkiv/
-korpus/logg/
+corpus/kod/
+corpus/png/
+corpus/foto/
+corpus/gif/
+corpus/film/
+corpus/arkiv/
+corpus/logg/
 
 # Standardkorpusarna hämtas, de hör inte i repot (211 + 100 MB).
-# Hämta om: se matning/standardkorpus.py
-korpus/silesia/
-korpus/enwik8/
+# Hämta om: se benchmark/standard-corpus.py
+corpus/silesia/
+corpus/enwik8/
 dist/
 .bygg-enfil/
-rapport/bred-provning.html
-rapport/broad-evaluation.html
+report/broad-evaluation.html
 # kompilatorns beroendefiler (-MMD)
 src/cpp/*.d
