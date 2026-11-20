@@ -9,13 +9,13 @@ here.  Two kinds of blocks are filled: the measurement tables per corpus and
 the restoration table.
 
 The report is a published document and its generated text is frozen byte for
-byte.  That freezes three kinds of strings in this file: the row keys and
+byte.  That freezes two kinds of strings in this file: the row keys and
 field names in results/*.json (Swedish measurement ids — 'nvz liten',
-'matningar', 'rabyte', ...), the HTML markers in the document (ÖVERSIKT,
-MATRIS, ...), and a handful of labels the retired Swedish-to-English string
-translation left behind as-is ('kvot', 'Uppack time', 'Loggfiles',
-'vs. best klassiska').  Change those labels in the document and here in the
-same edit, or not at all.
+'matningar', 'rabyte', ...) and the HTML markers in the document (ÖVERSIKT,
+MATRIS, ...).  The labels the retired Swedish-to-English string translation
+had left behind ('kvot', 'Uppack time', 'Loggfiles', 'vs. best klassiska')
+were anglicized on 2026-11-20 — in the document and here in the same edit,
+as any future label change must be.
 """
 import json, sys
 from pathlib import Path
@@ -28,11 +28,10 @@ MIB = 1048576
 # Section headings for the four corpora this evaluation added.
 NEW = {'gif': 'Images (GIF)', 'film': 'Video (h264 and VP9)',
        'arkiv': 'Archives (zip and tar.gz)', 'logg': 'Log files'}
-# Row labels in the overview and throughput tables.  'Loggfiles' (not
-# 'Log files') is what the published tables say — frozen.
+# Row labels in the overview and throughput tables.
 ALL = {'kod': 'Source code', 'png': 'Images (PNG)', 'foto': 'Photos (JPEG)',
        'gif': 'Images (GIF)', 'film': 'Video (h264 and VP9)',
-       'arkiv': 'Archives (zip and tar.gz)', 'logg': 'Loggfiles',
+       'arkiv': 'Archives (zip and tar.gz)', 'logg': 'Log files',
        'silesia': 'Silesia (archive level)', 'enwik8': 'enwik8 (archive level)'}
 
 
@@ -43,16 +42,15 @@ def num(x, d=2):
 
 def table(d) -> str:
     """One corpus, every compressor.  Same layout as benchmark/report.py's
-    table(), but with the header exactly as published ('kvot' and
-    'uppack time' included)."""
+    table()."""
     raw = d['rådata'] if 'rådata' in d else d['rabyte']
     meas = d['matningar']
     base = meas.get('tar.zst -3 (dagens)', {}).get('byte')
     present = [m for name in r.ORDER if (m := meas.get(name))]
     smallest = min((m['byte'] for m in present), default=None)
     fastest = min((m['packsek'] for m in present), default=None)
-    out = ['| compressor | size MiB | kvot | vs. current | pack time |'
-           ' uppack time | exact |',
+    out = ['| compressor | size MiB | ratio | vs. current | pack time |'
+           ' unpack time | exact |',
            '|' + '|'.join([':--'] + ['--:'] * 5 + [':-:']) + '|']
     for name in r.ORDER:
         m = meas.get(name)
@@ -107,10 +105,9 @@ def full_matrix() -> str:
                        for k, d in corpora) + ' MiB.*')
         return '\n'.join(out)
 
-    # 'Uppack time' is what the published caption says — frozen.
     return (panel(lambda m: m['byte'] / MIB, 'MiB', 'Archive size') + '\n\n' +
             panel(lambda m: m['packsek'], 's', 'Pack time') + '\n\n' +
-            panel(lambda m: m['uppacksek'], 's', 'Uppack time'))
+            panel(lambda m: m['uppacksek'], 's', 'Unpack time'))
 
 
 def per_corpus() -> str:
@@ -118,7 +115,7 @@ def per_corpus() -> str:
     for name, title in NEW.items():
         d = r.load(name)
         if not d: continue
-        head = f'### {title} — {d["rabyte"] / MIB:,.1f} MiB i {d["filer"]:,} filer'
+        head = f'### {title} — {d["rabyte"] / MIB:,.1f} MiB in {d["filer"]:,} files'
         parts.append(head + '\n\n' + table(d))
     return '\n\n'.join(parts)
 
@@ -151,9 +148,8 @@ def overview() -> str:
             percent(100 * (hz['byte'] - best_classical['byte']) / best_classical['byte']),
             f'{hz["packsek"]:.0f} / {best_classical["packsek"]:.0f} s',
         ))
-    # 'vs. best klassiska' is what the published header says — frozen.
     head = ('corpus', 'raw MiB', 'current MiB', 'best classical MiB',
-            'best hz MiB', 'vs. current', 'vs. best klassiska',
+            'best hz MiB', 'vs. current', 'vs. best classical',
             'pack time hz/classical')
     out = ['| ' + ' | '.join(head) + ' |',
            '|' + '|'.join([':--'] + ['--:'] * 7) + '|']
@@ -173,10 +169,8 @@ def restoration() -> str:
         entries = ('yes' if v['listade_poster'] == v['poster'] else
                    f'NO ({v["listade_poster"]} vs {v["poster"]})')
         dev = 'none' if v['identisk'] else '; '.join(v['avvikelser'][:3])
-        # The SHA-256 column reads 'ja' in the published document, a leftover
-        # of the retired string translation — frozen.
         out.append(f'| {name} | {v["filer"]:,} | {entries} | '
-                   f'{"ja" if v["identisk"] else "NO"} | '
+                   f'{"yes" if v["identisk"] else "NO"} | '
                    f'{"yes" if v["identisk"] else "NO"} | no | {dev} |')
     parts = ['\n'.join(out)]
     if d.get('skada'):
@@ -213,7 +207,7 @@ def standard() -> str:
         if not f.exists(): continue
         d = json.loads(f.read_text())
         raw = d['rabyte']
-        rows = ['| codec | size bytes | kvot | bits/byte | pack MiB/s |'
+        rows = ['| codec | size bytes | ratio | bits/byte | pack MiB/s |'
                 ' unpack MiB/s | exact |',
                 '|:--|--:|--:|--:|--:|--:|:-:|']
         for codec, v in sorted(d.get('summor', {}).items(),
@@ -225,7 +219,7 @@ def standard() -> str:
                 f'{num(raw / MIB / max(v["packsek"], 1e-9), 1)} | '
                 f'{num(raw / MIB / max(v["uppacksek"], 1e-9), 1)} | '
                 f'{"yes" if v["exakt"] else "NO"} |')
-        parts.append(f'**{title}** — {raw:,} byte' + '\n\n' + '\n'.join(rows))
+        parts.append(f'**{title}** — {raw:,} bytes' + '\n\n' + '\n'.join(rows))
     return '\n\n'.join(parts) if parts else '*(standard benchmark not run)*'
 
 
@@ -281,18 +275,11 @@ def enwik8_position() -> str:
                      f'`{bestname}` on the same machine ({best["byte"]:,}'
                      f' bytes, {num(best["bpb"], 3)} bpb).')
     rate = num(nv['byte'] * 8 / 100_000_000)
-    # The closing paragraph is Swedish in the published document — the
-    # retired translation table never covered it, and the document is
-    # frozen byte for byte.  In English it reads: "At <rate> bits/byte hzcm
-    # lands between the dictionary packers and the heavy context mixers in
-    # the table above: it collects what a dictionary packer cannot see, but
-    # it has eight models where cmix has hundreds, and it runs at a couple
-    # of MiB/s where cmix runs at kilobytes per second."
-    lines.append(f'\nMed {rate} bits/byte hamnar hzcm mellan ordbokspackarna '
-                 'och de tunga kontextblandarna i tabellen ovan: den tar hem det '
-                 'en ordbokspackare inte kan se, men den har åtta modeller där '
-                 'cmix har hundratals, och den kör i ett par MiB/s där cmix kör '
-                 'i kilobyte per sekund.')
+    lines.append(f'\nAt {rate} bits/byte hzcm lands between the dictionary '
+                 'packers and the heavy context mixers in the table above: it '
+                 'collects what a dictionary packer cannot see, but it has '
+                 'eight models where cmix has hundreds, and it runs at a '
+                 'couple of MiB/s where cmix runs at kilobytes per second.')
     return ' '.join(lines[:2]) + '\n' + lines[-1]
 
 
@@ -300,10 +287,8 @@ def lzma2() -> str:
     f = ROOT / 'results' / 'lzma2.json'
     if not f.exists(): return '*(LZMA2 comparison not run)*'
     d = json.loads(f.read_text())
-    # 'Loggfiles' and 'Arkiv (zip/tar.gz)' are what the published table
-    # says — frozen.
-    NAMES = {'kod': 'Source code', 'logg': 'Loggfiles',
-             'arkiv': 'Arkiv (zip/tar.gz)', 'png': 'Images (PNG)',
+    NAMES = {'kod': 'Source code', 'logg': 'Log files',
+             'arkiv': 'Archives (zip/tar.gz)', 'png': 'Images (PNG)',
              'silesia': 'Silesia', 'enwik8': 'enwik8'}
     out = ['| corpus | raw MiB | LZMA2-extreme MiB | hz MiB |'
            ' hz vs. LZMA2-extreme | pack time LZMA2/hz | exact |',

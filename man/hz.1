@@ -20,7 +20,7 @@ hz \- hyperZip, the content-aware archiver that knows what it is packing
 .RI [ FILE ]...
 .SH DESCRIPTION
 .B hZ
-classifies its content and applies content-specific, lossless transforms —
+classifies its input and applies content-specific, lossless transforms —
 deduplication, similarity sorting, PNG unfolding with recipe search,
 lossless JPEG recoding and context-mixing compression — before choosing a
 codec per block by probing a sample. Everything is bit-exact: every
@@ -37,7 +37,7 @@ block.
 .TP
 .B 2. Similar files are placed next to each other.
 Entries are sorted by content class and extension before compression, so
-the compressor's window sees likenesses that sat far apart in directory
+the compressor's window sees similarities that sat far apart in directory
 order. Within a group, files larger than an eighth of the block cap go
 first — the large file builds the dictionary the small ones match into.
 .TP
@@ -60,7 +60,7 @@ hzcm.
 .TP
 .BI \-\-mode " fast|normal|small|gpu"
 .B small
-(the default) is the smallest archive hZ can make;
+(the default) produces the smallest archive hZ can make;
 .B normal
 skips the most expensive re-checks and is the mode that beats the best
 established tool on both size and time on most corpora;
@@ -93,7 +93,7 @@ Switch off the PNG and JPEG transforms.
 .TP
 .B \-\-no\-sort
 Leave objects in directory order. An ablation flag: it isolates what the
-similarity sort \(em and only it \(em is worth; see
+similarity sort alone is worth; see
 .B experiment/ablation.sh.
 .TP
 .B \-\-no\-classing
@@ -131,7 +131,8 @@ tree, with the source tree always left in place.
 .SH HISTORY AND ALIASES
 The tool was born Swedish, named nvz until 2026-11-19, and published
 reports and scripts use the old names. Archives are unchanged: every hz
-reads every nvz archive and vice versa. They are permanent aliases: the subcommands
+reads every nvz archive and vice versa. The Swedish names remain as
+permanent aliases: the subcommands
 .BR packa ", " packa\-upp ", " lista ", " prova ;
 the flags
 .BR \-\-läge ", " \-\-kodek ", " \-\-blocktak ", " \-\-jobb ", "
@@ -175,7 +176,7 @@ or
 .B \-\-no\-transform
 for archives that must open anywhere.
 .SH AUTHOR
-The idea and direction: Hugo Wikström <hugo.wikstrom@gmail.com> (also on
+Idea and direction: Hugo Wikström <hugo.wikstrom@gmail.com> (also on
 Facebook).
 .SH SEE ALSO
 .BR hzcm (1),

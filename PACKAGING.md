@@ -27,7 +27,7 @@ make test               # self-test against the bundled code corpus
 
 * No network access at build or test time.
 * No bundled copies of libraries: zstd and lzma are linked from the
-  system (`-lzstd -llzma`), the deflate side is hZ's own code.
+  system (`-lzstd -llzma`); the deflate side is hZ's own code.
 * Reproducible: the archive format stores mtimes from the input only;
   the binaries embed no timestamps.
 * `make dist` produces `dist/hz-<version>.tar.gz` from `git archive` —
@@ -54,7 +54,7 @@ equivalent is a stock `debhelper` rules file over the same
 
 `bash packaging/build-portable.sh` builds the portable-edition packages
 into `dist/` — a macOS tarball with installer, a Windows zip with
-`install.ps1`, and a run-anywhere `nvz.pyz` zipapp — deterministically:
+`install.ps1`, and a run-anywhere `hz-2.0.pyz` zipapp — deterministically:
 the same commit yields the same bytes, so the published `SHA256SUMS`
 stays true. `packaging/hz.rb` is a Homebrew formula over the macOS
 tarball. Published at <https://nattviken.com/filer/hz/>.

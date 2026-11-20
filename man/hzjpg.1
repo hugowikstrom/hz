@@ -12,8 +12,8 @@ A JPEG is DCT coefficients entropy-coded with Huffman, and Huffman cannot
 code a symbol in less than one bit.
 .B hzjpg
 decodes the Huffman stream and recodes the SAME coefficients with an
-adaptive arithmetic coder whose contexts are the neighbouring blocks and
-the neighbouring slots. The pixels are never touched: this recodes the
+adaptive arithmetic coder whose contexts are the neighboring blocks and
+the neighboring slots. The pixels are never touched: this recodes the
 entropy layer, not the image.
 .PP
 The proof is in the packing: before anything is written, the coefficients

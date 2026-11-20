@@ -24,9 +24,10 @@ WHAT IT GUARANTEES, exactly:
     restriction and unpack here bit for bit.
   * Any other hz archive is read as far as its codecs allow: ra and xz
     blocks always; zstd blocks if the optional `zstandard` pip package is
-    installed; hzcm/hzlz blocks (register strings "nvcm"/"nvlz") and PNG/JPEG-transformed objects are
-    refused with a message that says exactly what to do (repack with
-    --portable), never with wrong data.
+    installed. hzcm/hzlz blocks (register strings "nvcm"/"nvlz") and
+    PNG/JPEG-transformed objects are refused with a message that says
+    exactly what to do (repack with --portable) — never answered with
+    wrong data.
 
 WHAT IT DOES NOT DO: the content-aware transforms (PNG recipes depend on
 the deflate engine, nvjpg is C), the zstd codecs, the context mixer, and
@@ -82,7 +83,8 @@ def blake16(data):
 def xz_filters(n, pb):
     """LZMA2 preset 9e with a dictionary that covers the block (the same
     insight as in the C++ codec: a repeat further back than the dictionary
-    cannot be found, and the sort puts exactly such repeats in the block)."""
+    reaches cannot be found, and the sort puts exactly such repeats in the
+    block)."""
     d = 1 << 20
     while d < n and d < DICT_CAP:
         d <<= 1
@@ -321,7 +323,7 @@ def set_metadata(path, mode, mtime_ns, is_link):
     try:
         os.chmod(path, mode)
     except OSError:
-        pass                      # permissions are a wish, notably on Windows
+        pass                      # permissions are best-effort, notably on Windows
     os.utime(path, ns=(mtime_ns, mtime_ns))
 
 
@@ -493,7 +495,7 @@ def unpack(archive, target, quiet=False):
                 set_metadata(path, 0, e["mtime_ns"], True)
             except OSError as ex:
                 # Windows without developer mode lands here. A skipped link
-                # with a warning beats a crashed unpack; status 2 says it.
+                # with a warning beats a crashed unpack; status 2 reports it.
                 print("hzpy: %s: could not create symlink (%s) -- skipped"
                       % (path, ex), file=sys.stderr)
                 status = max(status, 2)

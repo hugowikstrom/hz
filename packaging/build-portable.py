@@ -29,7 +29,7 @@ Usage:
   hz test   <archive.hz>
 
 Archives are ordinary hZ v3 archives (codecs ra/xz9e), bit-exact and
-interchangeable with the optimized Linux hz (`--portable` mode there).
+interchangeable with the optimized Linux hz (its `--portable` mode).
 License: GPL-2.0-only, see LICENSE. https://nattviken.com/projekt/hz/
 """
 
@@ -52,7 +52,7 @@ Symbolic links need Windows developer mode; otherwise they are skipped
 with a warning (exit status 2), never silently wrong.
 
 Archives are ordinary hZ v3 archives (codecs ra/xz9e), bit-exact and
-interchangeable with the optimized Linux hz (`--portable` mode there).
+interchangeable with the optimized Linux hz (its `--portable` mode).
 License: GPL-2.0-only, see LICENSE.txt. https://nattviken.com/projekt/hz/
 """
 

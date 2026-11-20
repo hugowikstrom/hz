@@ -5,7 +5,7 @@ class Hz < Formula
   desc "hyperZip (hz) - content-aware archiver, portable pure-Python edition"
   homepage "https://nattviken.com/en/projects/hz/"
   url "https://nattviken.com/filer/hz/hz-2.0-macos.tar.gz"
-  sha256 "c8e45868fb4681224321e8c845c024de7d695982205a6d71df8887cc3cf0de79"
+  sha256 "3169838b8ab983987f2a62079f3dda57da68a829d4463c4a6923abd478ed6f94"
   license "GPL-2.0-only"
 
   depends_on "python@3.12"

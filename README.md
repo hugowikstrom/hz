@@ -1,9 +1,10 @@
 # hyperZip — an archiver that knows what it is packing
 
 > **hyperZip** — command `hz`, hZ for short — was published as **nvz**
-> until 2026-11-19. Only the name changed:
-> every hZ reads every nvz archive bit for bit, and the Swedish command
-> aliases remain. The codec tools were born nvcm/nvjpg/nvgpu and were renamed hzcm/hzjpg/hzgpu on 2026-11-20; stream formats and register strings are unchanged.
+> until 2026-11-19. Only the name changed: every hZ reads every nvz
+> archive bit for bit, and the Swedish command aliases remain. The codec
+> tools were born nvcm/nvjpg/nvgpu and were renamed hzcm/hzjpg/hzgpu on
+> 2026-11-20; stream formats and register strings are unchanged.
 
 
 `tar | zstd` is two programs that know nothing about each other. tar emits
@@ -19,17 +20,20 @@ arithmetic coding without touching a pixel — and lets every block choose
 its codec by probing instead of assuming. Everything is lossless and proven
 at pack time: whatever cannot be reproduced exactly is stored raw.
 
+![hyperZip vs the best established tool per corpus — smaller and faster on 7 of 9](report/img/dominance-table.png)
+
+*Per corpus the opponent is whichever of gzip, bzip2, zstd and xz made the smallest archive, timed on the same machine; winning means beating it on both axes at once.*
+
 Measured against the **best established tool per corpus** (whichever of
 gzip, bzip2, zstd and xz produced the smallest archive, with its own pack
-time on the same machine), hZ is **both smaller and faster on six of nine
+time on the same machine), hZ is **both smaller and faster on seven of nine
 corpora** — source code −0.57 % and 15 % faster than `xz -9e`, PNG −10.4 %
 and 18 % faster than `zstd -22`, logs −15.4 % and 79 % faster than
 `xz -9e` — and never meaningfully larger on the other three. The full
 evaluation, with every number regenerable from `results/*.json`:
 
-* **[report/broad-evaluation.md](report/broad-evaluation.md)** — the
-  report in English
-  report in Swedish
+* **[report/broad-evaluation.md](report/broad-evaluation.md)** — the full
+  report
 * **<https://nattviken.com/projekt/hz/>** — project page with FAQ
   (Swedish; English at [/en/projects/hz/](https://nattviken.com/en/projects/hz/))
 
@@ -37,9 +41,9 @@ evaluation, with every number regenerable from `results/*.json`:
 ```bash
 make                       # builds hz, hzcm, hzjpg (needs libzstd-dev,
                            # liblzma-dev, zlib1g-dev; g++ with C++17)
-./src/hz mytree           # -> mytree.nv, ONE archive of the whole tree
-./src/hz -d mytree.nv     # the tree back, bit for bit
-./src/hz -t mytree.nv     # verify: every file against its hash
+./src/hz mytree           # -> mytree.hz, ONE archive of the whole tree
+./src/hz -d mytree.hz     # the tree back, bit for bit
+./src/hz -t mytree.hz     # verify: every file against its hash
 ```
 
 ---
@@ -64,8 +68,8 @@ cat file | hz | ...    # no file name: standard in -> standard out
 ```
 
 `-c -d -f -k -l -q -r -S -t -v -V` and `-1`…`-9` mean what they mean in
-gzip. `-1`–`-3` is mode **fast**, `-4`–`-6` **normal**, `-7`–`-9`
-**small**. Exit status is gzip's: 0 all well, 1 error, 2 warning.
+gzip. `-1`–`-3` select mode **fast**, `-4`–`-6` **normal**, `-7`–`-9`
+**small**. Exit status is gzip's: 0 success, 1 error, 2 warning.
 
 hZ's own flags: `-j/--jobs=N`, `--mode=`, `--codec=`, `--no-dedup`,
 `--no-transform`, `--block-cap=MiB`, `--portable`, and the ablation flags
@@ -105,7 +109,7 @@ block. tar stores every copy and hopes the compressor finds them, which it
 only does if they happen to sit within the window. In the PNG corpus
 28.7 % of the bytes are duplicates — in the code corpus 0.7 %, where
 deduplication accordingly does nothing. Both numbers are in the tables:
-the row **hZ, tricks off** is the same packer with deduplication and
+the row **hz, tricks off** is the same packer with deduplication and
 transforms disabled.
 
 ### 2. Similar files are placed next to each other
@@ -118,9 +122,10 @@ in isolation (report §7.1, flag `--no-sort`), the sort was worth **zero**
 on both the code and the PNG corpus — with a small window even slightly
 negative. The reasons: the PNG corpus has a single file type, so the sort
 reproduces directory order; the code corpus fits entirely inside
-`xz -9e`'s dictionary; and a real project tree already keeps its likeness
-gathered per directory. The sort pays only when likeness is **scattered**
-and the window **small**: the same 5 974 code files thrown into 200 random
+`xz -9e`'s dictionary; and a real project tree already keeps similar
+files together, directory by directory. The sort pays only when
+similarity is **scattered** and the window **small**: the same
+5 974 code files thrown into 200 random
 directories give −8.0 % through a 2 MiB window and −2.2 % through a 64 MiB
 dictionary (`experiment/sorting.sh`). This is also exactly what the
 prior art says (gwern.net/sort): the method is old, and its value is a
@@ -135,7 +140,7 @@ corpora with multi-volume scans (zlib-ng's `neuro`), neutral elsewhere.
 ### 3. PNGs are unfolded and recompressed
 
 A PNG is already deflate-compressed, and 1996-vintage deflate is a poor
-shell around image data: a 32 kB window, one file at a time. hZ unfolds
+wrapper for image data: a 32 kB window, one file at a time. hZ unfolds
 the IDAT stream to raw filter rows and compresses them together with every
 other image's raw data.
 
@@ -150,8 +155,8 @@ both engines named — never wrong data. (This portability hole, and two
 more, came out of an external code review; see *The three flaws* below.)
 
 Unfolding pays even for images deflate already squeezed 50:1 — the win
-sits in the likeness BETWEEN images, not within them: −42.9 % on a corpus
-of 4 618 real PNGs.
+lies in the similarity **between** images, not within them: −42.9 % on a
+corpus of 4 618 real PNGs.
 
 ### 4. JPEGs are recoded without touching a pixel
 
@@ -203,7 +208,7 @@ report §7.
 Dictionary compressors pay bits for a reference even when the next
 character was completely predictable. hzcm predicts the next **bit** with
 eight models voting at once — byte contexts of order 0–8, a word model, a
-match model — weighed by a mixer that learns which model to trust in this
+match model — weighted by a mixer that learns which model to trust in this
 kind of data. It beats `xz -9e` on both standard corpora: 1.677 bits/byte
 on Silesia and 1.713 on enwik8, between the dictionary compressors and the
 heavyweight context mixers on the LTCB scale, in a 30 kB binary with no
@@ -222,17 +227,22 @@ built-in dictionaries at all. Its price is ~1 MB/s, which is why only mode
 | `gpu` | plus hzlz (GPU LZ77) in the probe | never — see the GPU section |
 
 The difference between `normal` and `small` is time, not just codec
-choice: `small` pays entire extra compressions to settle questions the
-sample cannot. That is why `normal` is the mode that wins on TIME against
-the established tools, and `small` the one that wins on SIZE.
+choice: `small` pays for entire extra compressions to settle questions
+the sample cannot answer. That is why `normal` is the mode that wins on
+**time** against the established tools, and `small` the one that wins on
+**size**.
 
 ---
 
 ## Results
 
-The row `tar.zst -3 (the baseline)` is the pipeline hZ replaces. Tables
-regenerate with `python3 benchmark/report.py --in-i-readme`; never edit them
-by hand.
+The row `tar.zst -3 (the baseline)` is the pipeline hZ replaces. The
+tables are regenerated with `python3 benchmark/report.py --into-readme`;
+never edit them by hand.
+
+![The full matrix: every corpus, every packer and its algorithm](report/img/full-matrix.png)
+
+*All nine corpora against every packer; every number regenerates from `results/*.json`.*
 
 <!-- TABELLER -->
 
@@ -407,28 +417,32 @@ by hand.
 
 <!-- SLUT TABELLER -->
 
-### Smaller AND faster: six corpora of nine
+### Smaller AND faster: seven of nine corpora
 
-The harder question than either column alone: does hZ beat the **same**
-opponent on both axes at once? (`python3 experiment/dominance.py`)
+Harder than either column alone: does hZ beat the **same** opponent on
+both axes at once? (`python3 experiment/dominance.py`)
 
 ```
-corpus     best established              bytes   sec | hz            bytes   sec | outcome
-kod        tar.xz -9e               8 629 516    47 | normal     8 580 323    40 | DOMINATES (-0.57 % size, -15 % time)
-png        tar.zst -22 --ultra    257 132 369   156 | normal   230 452 176   127 | DOMINATES (-10.38 %, -18 %)
-foto       tar.bz2 -9             424 611 032    57 | normal   361 834 581    48 | DOMINATES (-14.78 %, -16 %)
-gif        tar.zst -22 --ultra     14 867 185     5 | small     14 864 575     6 | smaller, but slower
-film       tar.zst -19 --long     557 861 782    57 | normal   557 880 433    56 | faster, but 18 kB larger
-arkiv      tar.zst -22 --ultra    254 567 277   154 | normal   254 287 214   153 | DOMINATES (-0.11 %, -1 %)
-logg       tar.xz -9e              12 419 456   897 | small     10 512 452   191 | DOMINATES (-15.35 %, -79 %)
-silesia    tar.xz -9e              48 408 228   158 | small     45 657 473   100 | DOMINATES (-5.68 %, -37 %)
-enwik8     tar.xz -9e              24 831 492   121 | small     21 417 335   129 | smaller, but slower
+corpus     best established                 bytes    sec | hz               bytes    sec | outcome
+kod        tar.xz -9e                   8 629 516     47 | normal       8 580 323     40 | DOMINATES (-0.57 % size, -15 % time)
+png        tar.zst -22 --ultra        257 132 369    156 | normal     230 452 176    127 | DOMINATES (-10.38 % size, -18 % time)
+foto       tar.bz2 -9                 424 611 032     57 | normal     361 834 581     48 | DOMINATES (-14.78 % size, -16 % time)
+gif        tar.zst -22 --ultra         14 867 185      5 | liten       14 864 575      6 | smaller, but slower (-0.02 % size, +20 % time)
+film       tar.zst -19 --long         557 861 782     57 | normal     557 880 433     56 | faster, but larger (+0.00 % size, -0 % time)
+arkiv      tar.zst -22 --ultra        254 567 277    154 | normal     254 287 214    153 | DOMINATES (-0.11 % size, -1 % time)
+logg       tar.xz -9e                  12 419 456    897 | liten       10 724 600     73 | DOMINATES (-13.65 % size, -92 % time)
+silesia    tar.xz -9e                  48 408 228    158 | liten       45 741 795     94 | DOMINATES (-5.51 % size, -40 % time)
+enwik8     tar.xz -9e                  24 831 492    121 | liten       21 821 216     50 | DOMINATES (-12.12 % size, -59 % time)
+
+dominates on 7 of 9 corpora
 ```
 
-The three that do not dominate are the three with nothing to win: gif and
-film are already entropy-coded (0.02 % and 0.00 % available), and enwik8
-is a single file — which hZ cannot even split, since a block is filled by
-whole objects. The boundary runs not between data types but between
+The two that do not dominate are the two with nothing to win: gif and
+film are already entropy-coded (0.02 % and 0.00 % available). enwik8 used
+to sit with them — a single 95 MB file fills one block, so nothing could
+be parallelized — until hzcm-p split the block into independent shards:
+pack 129 to 50 s, unpack 132 to 43 s, and the corpus flipped to
+dominated. The boundary runs not between data types but between
 exploitable structure and none.
 
 ### And then reality
@@ -487,10 +501,10 @@ there is **`portable/hzpy.py`** — pure standard-library Python (3.8+), no
 build, no dependencies:
 
 ```bash
-python3 portable/hzpy.py pack   mytree mytree.nv
-python3 portable/hzpy.py unpack mytree.nv out/
-python3 portable/hzpy.py list   mytree.nv
-python3 portable/hzpy.py test   mytree.nv
+python3 portable/hzpy.py pack   mytree mytree.hz
+python3 portable/hzpy.py unpack mytree.hz out/
+python3 portable/hzpy.py list   mytree.hz
+python3 portable/hzpy.py test   mytree.hz
 ```
 
 It writes ordinary hZ v3 archives restricted to the codecs
@@ -510,7 +524,8 @@ symlinks; those are skipped with a warning and exit status 2.
 
 **One C++17 binary** (`src/cpp/`, ~430 kB): hzcm and hzjpg are linked in
 and executed as worker processes via `/proc/self/exe`; zstd, xz and zlib
-are called as libraries in process. `liten`/`small` is the default mode.
+are called as in-process libraries. `small` (Swedish alias `liten`) is
+the default mode.
 
 ```
 src/cpp/main.cpp       command line and worker dispatch
@@ -523,7 +538,7 @@ src/cpp/worker.cpp     fork/exec workers (the three traps are commented)
 src/hzcm.c             the context mixer (also a standalone binary)
 src/hzjpg.c            the JPEG recoder (also a standalone binary)
 src/hzgpu.c            the Vulkan measurement instrument
-portable/hzpy.py      the stdlib-Python portable implementation
+portable/hzpy.py       the stdlib-Python portable implementation
 src/hz.py             RETIRED Python implementation, kept verbatim as the
                        v1 format reference (deliberately untranslated)
 ```
@@ -533,18 +548,19 @@ and experiment entry points are English (translated 2026-11-19); Swedish
 CLI names remain as permanent aliases. The older measurement scripts
 (prova-allt.sh, benchmark/, aterskapning, protokoll, bygg-korpus and a few
 one-off experiments) carry an English header and keep their Swedish inline
-comments for now — they are verified by their own runs and get translated
-as they are next touched, rather than wholesale with the risk of silent
+comments for now — they are verified by their own runs and are translated
+as each is next touched, rather than wholesale, which would risk silent
 drift in verified measurement code.
 Three kinds of Swedish survive on purpose: **archive format strings**
 (block classes like `binar`/`opak`/`jpeg-kropp`, codec names — millions of
 archived bytes contain them), **top-level directory and corpus names**
 (`corpus/kod`, `report/`, `tests/flaws.sh` … are referenced by published
 reports, PDFs and links; renaming them would break every published
-reproduction command), and the **retired `src/hz.py`**. The reports exist
-in both languages in `report/`.
+reproduction command), and the **retired `src/hz.py`**. The report lives
+in `report/`.
 
-**Three faults the port exposed** (general enough to repeat): a malloc
+**Three faults the port exposed** (general enough to be worth repeating):
+a malloc
 between fork and exec in a threaded process can deadlock forever; pipes
 inherited across parallel workers suppress EOF; and a build rule that
 tracks one header links object files that disagree about a struct's
@@ -552,8 +568,9 @@ layout. All three are documented at the place in the code where they
 happened.
 
 **The three flaws from the external review** (Ted Lyngmo, 2026-11-18):
-PNG recipes were not portable across deflate engines — and hid a silent-
-corruption path for streams of the right length but wrong bytes; write
+PNG recipes were not portable across deflate engines — and hid a
+silent-corruption path for streams of the right length but wrong bytes;
+write
 failures could cost data because no write was checked while the gzip
 surface deletes originals; an unreadable file crashed the process with a
 core dump. All three fixed, all three regression-tested in
@@ -592,17 +609,17 @@ outside that boundary.
 ## The test suite
 
 ```bash
-make test                            # roundtrip on corpus/kod + every JPEG
-bash tests/test-all.sh              # 44 edge cases: symlinks, åäö, newlines
-                                     # in names, 1985/2031 timestamps, modes
-python3 tests/random-trees.py 400        # randomized trees, full roundtrip,
-                                     # failures print their seed
-bash tests/flaws.sh                 # the three review flaws as regressions
-bash experiment/kernel-test.sh          # the Linux kernel from kernel.org,
-                                     # md5 manifests before and after
-bash experiment/corpora.sh           # zlib-ng/corpora: eight third-party
-                                     # corpora (part of every full test run)
-bash experiment/ablation.sh kod xz9e # one trick at a time
+make test                             # roundtrip on corpus/kod + every JPEG
+bash tests/test-all.sh                # 44 edge cases: symlinks, åäö, newlines
+                                      #   in names, 1985/2031 timestamps, modes
+python3 tests/random-trees.py 400     # randomized trees, full roundtrip,
+                                      #   failures print their seed
+bash tests/flaws.sh                   # the three review flaws as regressions
+bash experiment/kernel-test.sh        # the Linux kernel from kernel.org,
+                                      #   md5 manifests before and after
+bash experiment/corpora.sh            # zlib-ng/corpora: eight third-party
+                                      #   corpora (part of every full test run)
+bash experiment/ablation.sh kod xz9e  # one trick at a time
 python3 experiment/dominance.py       # both axes against the best opponent
 ```
 

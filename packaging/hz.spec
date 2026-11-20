@@ -11,7 +11,7 @@ BuildRequires:  gcc, gcc-c++, make, libzstd-devel, xz-devel
 Requires:       libzstd, xz-libs
 
 %description
-hyperZip (command: hz) classifies its content and applies content-specific lossless
+hyperZip (command: hz) classifies its input and applies content-specific lossless
 transforms - deduplication, similarity sorting, PNG unfolding with zlib
 recipe search, lossless JPEG recoding and context-mixing compression -
 before choosing a codec per block by probing a sample. Everything is

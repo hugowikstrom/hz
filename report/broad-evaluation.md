@@ -53,7 +53,7 @@ selection, remedied during the evaluation, and re-measured to −0.1 %
 against zstd −22. A complementary measurement against LZMA2 at full
 strength (7-Zip, 512 MiB dictionary; section 3.6) moves the reference,
 however: there hz trails by +2.3 % on that corpus, while its lead on
-text rather grows. H1 thus stands with one known, quantified
+text actually grows. H1 thus stands with one known, quantified
 counterexample — archives-of-archives against LZMA2-extreme — and none
 elsewhere.
 
@@ -152,7 +152,7 @@ corpus. Negative values denote smaller archives.
 
 <!-- ÖVERSIKT -->
 
-| corpus | raw MiB | current MiB | best classical MiB | best hz MiB | vs. current | vs. best klassiska | pack time hz/classical |
+| corpus | raw MiB | current MiB | best classical MiB | best hz MiB | vs. current | vs. best classical | pack time hz/classical |
 |:--|--:|--:|--:|--:|--:|--:|--:|
 | Source code | 55 | 11.5 | 8.2 (xz -9e) | 7.2 (liten) | −37.1 % | −12.5 % | 64 / 47 s |
 | Images (PNG) | 431 | 362.9 | 245.2 (zst -22) | 207.2 (liten) | −42.9 % | −15.5 % | 280 / 156 s |
@@ -160,7 +160,7 @@ corpus. Negative values denote smaller archives.
 | Images (GIF) | 27 | 27.0 | 14.2 (zst -22) | 14.2 (normal) | −47.6 % | −0.0 % | 6 / 5 s |
 | Video (h264 and VP9) | 537 | 533.9 | 532.0 (zst -19) | 532.0 (normal) | −0.3 % | +0.0 % | 56 / 57 s |
 | Archives (zip and tar.gz) | 392 | 381.8 | 242.8 (zst -22) | 237.0 (liten) | −37.9 % | −2.4 % | 323 / 154 s |
-| Loggfiles | 238 | 22.4 | 11.8 (xz -9e) | 10.2 (liten) | −54.3 % | −13.6 % | 73 / 897 s |
+| Log files | 238 | 22.4 | 11.8 (xz -9e) | 10.2 (liten) | −54.3 % | −13.6 % | 73 / 897 s |
 | Silesia (archive level) | 202 | 63.1 | 46.2 (xz -9e) | 43.6 (liten) | −30.9 % | −5.5 % | 94 / 158 s |
 | enwik8 (archive level) | 95 | 33.8 | 23.7 (xz -9e) | 20.8 (liten) | −38.4 % | −12.1 % | 50 / 121 s |
 
@@ -171,6 +171,10 @@ corpus. Negative values denote smaller archives.
 All compressors across all corpora, in three panels: size, pack time,
 unpack time. The silesia and enwik8 columns refer to the archive level
 (whole corpus through a tar-equivalent path), not the codec level of 3.4.
+
+![Every corpus, every packer and its algorithm](img/full-matrix.png)
+
+*The full matrix at a glance: every corpus against every packer and its algorithm.*
 
 <!-- MATRIS -->
 
@@ -212,7 +216,7 @@ unpack time. The silesia and enwik8 columns refer to the archive level
 
 *s per corpus; column minimum in bold. Raw sizes: kod 55, png 431, foto 409, gif 27, film 537, arkiv 392, logg 238, silesia 202, enwik8 95 MiB.*
 
-**Uppack time**
+**Unpack time**
 
 | compressor | kod | png | foto | gif | film | arkiv | logg | silesia | enwik8 |
 |:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|
@@ -235,14 +239,14 @@ unpack time. The silesia and enwik8 columns refer to the archive level
 
 ### 3.3 Per corpus
 
-Complete series per corpus. *Mot dagens* ("vs. current") is the size change
-relative to `tar.zst −3`; *exakt* is the bit-exactness outcome.
+Complete series per corpus. *vs. current* is the size change relative to
+`tar.zst −3`; *exact* is the bit-exactness outcome.
 
 <!-- TABELLER -->
 
-### Images (GIF) — 27.4 MiB i 105 filer
+### Images (GIF) — 27.4 MiB in 105 files
 
-| compressor | size MiB | kvot | vs. current | pack time | uppack time | exact |
+| compressor | size MiB | ratio | vs. current | pack time | unpack time | exact |
 |:--|--:|--:|--:|--:|--:|:-:|
 | tar (okomprimerad) | 27.62 | 0.99× | +2.1 % | 0 s | 0 s | yes |
 | tar.gz -6 | 27.18 | 1.01× | +0.5 % | 1 s | 0 s | yes |
@@ -257,9 +261,9 @@ relative to `tar.zst −3`; *exakt* is the bit-exactness outcome.
 | **hz normal** | **14.18** | 1.93× | −47.6 % | 6 s | 0 s | yes |
 | **hz liten** | **14.18** | 1.93× | −47.6 % | 6 s | 0 s | yes |
 
-### Video (h264 and VP9) — 536.7 MiB i 67 filer
+### Video (h264 and VP9) — 536.7 MiB in 67 files
 
-| compressor | size MiB | kvot | vs. current | pack time | uppack time | exact |
+| compressor | size MiB | ratio | vs. current | pack time | unpack time | exact |
 |:--|--:|--:|--:|--:|--:|:-:|
 | tar (okomprimerad) | 536.82 | 1.00× | +0.6 % | 1 s | 0 s | yes |
 | tar.gz -6 | 532.39 | 1.01× | −0.3 % | 24 s | 2 s | yes |
@@ -274,9 +278,9 @@ relative to `tar.zst −3`; *exakt* is the bit-exactness outcome.
 | **hz normal** | 532.04 | 1.01× | −0.3 % | 56 s | 1 s | yes |
 | **hz liten** | 532.04 | 1.01× | −0.3 % | 57 s | 1 s | yes |
 
-### Archives (zip and tar.gz) — 391.8 MiB i 133 filer
+### Archives (zip and tar.gz) — 391.8 MiB in 133 files
 
-| compressor | size MiB | kvot | vs. current | pack time | uppack time | exact |
+| compressor | size MiB | ratio | vs. current | pack time | unpack time | exact |
 |:--|--:|--:|--:|--:|--:|:-:|
 | tar (okomprimerad) | 391.93 | 1.00× | +2.7 % | 1 s | 0 s | yes |
 | tar.gz -6 | 380.05 | 1.03× | −0.5 % | 18 s | 2 s | yes |
@@ -291,9 +295,9 @@ relative to `tar.zst −3`; *exakt* is the bit-exactness outcome.
 | **hz normal** | 242.51 | 1.62× | −36.5 % | 153 s | 1 s | yes |
 | **hz liten** | **237.00** | 1.65× | −37.9 % | 323 s | 8 s | yes |
 
-### Log files — 238.3 MiB i 76 filer
+### Log files — 238.3 MiB in 76 files
 
-| compressor | size MiB | kvot | vs. current | pack time | uppack time | exact |
+| compressor | size MiB | ratio | vs. current | pack time | unpack time | exact |
 |:--|--:|--:|--:|--:|--:|:-:|
 | tar (okomprimerad) | 238.39 | 1.00× | +965.0 % | 0 s | 0 s | yes |
 | tar.gz -6 | 30.46 | 7.82× | +36.1 % | 4 s | 1 s | yes |
@@ -318,9 +322,9 @@ hz as an archiver appears in 3.1–3.3.
 
 <!-- STANDARD -->
 
-**Silesia** — 211,938,580 byte
+**Silesia** — 211,938,580 bytes
 
-| codec | size bytes | kvot | bits/byte | pack MiB/s | unpack MiB/s | exact |
+| codec | size bytes | ratio | bits/byte | pack MiB/s | unpack MiB/s | exact |
 |:--|--:|--:|--:|--:|--:|:-:|
 | gzip -9 | 67,631,990 | 3.134× | 2.553 | 6.8 | 157.9 | yes |
 | bzip2 -9 | 54,506,769 | 3.888× | 2.058 | 8.1 | 19.2 | yes |
@@ -330,9 +334,9 @@ hz as an archiver appears in 3.1–3.3.
 | xz -9e | 48,456,004 | 4.374× | 1.829 | 1.3 | 66.5 | yes |
 | **nvcm** | 44,439,240 | 4.769× | 1.677 | 0.9 | 0.8 | yes |
 
-**enwik8** — 100,000,000 byte
+**enwik8** — 100,000,000 bytes
 
-| codec | size bytes | kvot | bits/byte | pack MiB/s | unpack MiB/s | exact |
+| codec | size bytes | ratio | bits/byte | pack MiB/s | unpack MiB/s | exact |
 |:--|--:|--:|--:|--:|--:|:-:|
 | gzip -9 | 36,445,248 | 2.744× | 2.916 | 10.2 | 138.2 | yes |
 | bzip2 -9 | 29,008,758 | 3.447× | 2.321 | 8.7 | 16.5 | yes |
@@ -383,7 +387,7 @@ versions; not our measurements):
 
 Our own measurement: **hzcm compresses enwik8 to 21,417,184 bytes, 1.713 bits/byte** — 13.8 % smaller than `xz -9e` on the same machine (24,831,648 bytes, 1.986 bpb).
 
-Med 1.71 bits/byte hamnar hzcm mellan ordbokspackarna och de tunga kontextblandarna i tabellen ovan: den tar hem det en ordbokspackare inte kan se, men den har åtta modeller där cmix har hundratals, och den kör i ett par MiB/s där cmix kör i kilobyte per sekund.
+At 1.71 bits/byte hzcm lands between the dictionary packers and the heavy context mixers in the table above: it collects what a dictionary packer cannot see, but it has eight models where cmix has hundreds, and it runs at a couple of MiB/s where cmix runs at kilobytes per second.
 
 <!-- SLUT ENWIK8-PLATS -->
 
@@ -402,7 +406,7 @@ therefore reports MiB/s of raw data through the wall clock.
 | Images (GIF) | 5 | 304 | 304 | 6 | 3 |
 | Video (h264 and VP9) | 10 | 378 | 1,220 | 9 | 3 |
 | Archives (zip and tar.gz) | 3 | 353 | 1,059 | 8 | 3 |
-| Loggfiles | 0 | 125 | 1,254 | 2 | 0 |
+| Log files | 0 | 125 | 1,254 | 2 | 0 |
 | Silesia (archive level) | 2 | 82 | 612 | 3 | 1 |
 | enwik8 (archive level) | 1 | 49 | 502 | 2 | 1 |
 
@@ -425,8 +429,8 @@ its default mode:
 | corpus | raw MiB | LZMA2-extreme MiB | hz MiB | hz vs. LZMA2-extreme | pack time LZMA2/hz | exact |
 |:--|--:|--:|--:|--:|--:|:-:|
 | Source code | 55 | 8.22 | **7.28** | −11.4 % | 19 / 70 s | yes |
-| Loggfiles | 238 | 14.16 | **10.03** | −29.2 % | 70 / 196 s | yes |
-| Arkiv (zip/tar.gz) | 392 | 237.12 | 242.53 | +2.3 % | 43 / 195 s | yes |
+| Log files | 238 | 14.16 | **10.03** | −29.2 % | 70 / 196 s | yes |
+| Archives (zip/tar.gz) | 392 | 237.12 | 242.53 | +2.3 % | 43 / 195 s | yes |
 | Images (PNG) | 431 | 242.99 | **208.81** | −14.1 % | 40 / 268 s | yes |
 | Silesia | 202 | 46.43 | **43.54** | −6.2 % | 78 / 102 s | yes |
 | enwik8 | 95 | 23.65 | **20.43** | −13.6 % | 79 / 132 s | yes |
@@ -456,7 +460,7 @@ tuned to its test data cannot be answered with more of the same data.
 `experiment/kernel-test.sh` therefore runs the whole round trip on a third-party
 tree: Linux kernel 6.12, downloaded from `cdn.kernel.org`, with a checksum we
 did not set ourselves. No threshold and no parameter in hz was chosen with
-it in view.
+it in mind.
 
 <!-- KARNTEST -->
 
@@ -518,7 +522,7 @@ hz's transforms and deduplication live on, leaving only the codec — and
 there LZMA with a 64 MiB dictionary is stronger than hzcm on that particular
 data. It is the same pattern as the archive corpus in 4.2 and should be read
 as the boundary of H1: hz improves data with exploitable structure, and on
-data without it the result is a bare percent worse, not better.
+data without it the result is barely a percent worse, not better.
 
 ### 3.9 Dominance: smaller AND faster, corpus by corpus
 
@@ -548,6 +552,10 @@ dominerar på 6 av 9 korpusar
 ```
 
 <!-- SLUT DOMINANS -->
+
+![Dominance per corpus: smaller and faster on 7 of 9](img/dominance-table.png)
+
+*Dominance per corpus: hz against the smallest established packer, on size and time at once.*
 
 The pattern is not random. hz dominates where there is structure to exploit
 — source code, logs, photographs, images, mixed trees — and falls short on
@@ -614,7 +622,7 @@ matching over the whole stream.
 **Remedy and re-measurement.** The diagnosis was implemented as two
 rules: (i) opaque blocks are not split at 192 MiB — on opaque data, block
 partitioning is a compression bound rather than a memory optimization,
-and zstd parallelizes within the block; (ii) for opaque blocks the
+and zstd parallelizes within the block; (ii) for opaque blocks that the
 sample classifies as compressible, the sampled choice is replaced by a
 two-stage rule, since a sample cannot distinguish video from
 archives-of-archives — both are locally dense, and the difference only
@@ -710,7 +718,7 @@ the gate admitted **one at a time**: pack time went from 268 to 841 seconds
 for an archive 0.06 % smaller. A dictionary gain that removes the
 parallelism is not a gain.
 
-Three corrections, ordered by what they gave:
+Three corrections, in order of impact:
 
 | change | PNG corpus pack time |
 |:--|--:|
@@ -764,13 +772,13 @@ archive register's entry count matches the tree's.
 
 | corpus | files | register entries | SHA-256 equal | mode and times equal | hard links left | deviations |
 |:--|--:|--:|:-:|:-:|:-:|:--|
-| gif | 105 | yes | ja | yes | no | none |
-| arkiv | 133 | yes | ja | yes | no | none |
-| logg | 76 | yes | ja | yes | no | none |
-| film | 67 | yes | ja | yes | no | none |
-| png | 4,618 | yes | ja | yes | no | none |
-| foto | 1,143 | yes | ja | yes | no | none |
-| kod | 5,974 | yes | ja | yes | no | none |
+| gif | 105 | yes | yes | yes | no | none |
+| arkiv | 133 | yes | yes | yes | no | none |
+| logg | 76 | yes | yes | yes | no | none |
+| film | 67 | yes | yes | yes | no | none |
+| png | 4,618 | yes | yes | yes | no | none |
+| foto | 1,143 | yes | yes | yes | no | none |
+| kod | 5,974 | yes | yes | yes | no | none |
 
 Damage tests on the archive from corpus **gif**:
 
@@ -906,7 +914,7 @@ The remaining regression on photo unpacking stems from worker-process
 startup cost per image and is the single point where the Python
 implementation's process pool was faster.
 
-The port exposed three defects of the kind that only manifest under
+The port exposed four defects of the kind that only manifest under
 concurrency or format migration, documented here for their generality:
 
 1. **Allocation between `fork` and `exec` in a threaded process.** The
@@ -1039,7 +1047,7 @@ done: it packages known technique and reports what the packaging is worth.
 
 The question cannot be answered one archive at a time, because the tricks are
 measured together. `experiment/ablation.sh` therefore holds the **compressor
-constant** -- the same `xz -9e`, the same 64 MiB dictionary -- and enables one
+constant** — the same `xz -9e`, the same 64 MiB dictionary — and enables one
 trick at a time via the flags `--utan-sortering`, `--utan-klassning`,
 `--utan-dedup` and `--utan-omvandling`. The `kod` corpus is 55 MiB and fits
 entirely inside the dictionary on every row, so window size is not a free

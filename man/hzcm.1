@@ -16,13 +16,13 @@ Dictionary compressors (xz, zstd) pay bits for a reference even when the
 next character was completely predictable.
 .B hzcm
 instead predicts the next BIT with several models at once \(em byte
-contexts of order 0\-8, a word model, and a match model \(em weighed
+contexts of order 0\-8, a word model, and a match model \(em weighted
 together by a mixer that learns which model tends to be right in this kind
-of data, polished by two adaptive probability maps, and fed to a binary
+of data, refined by two adaptive probability maps, and fed to a binary
 arithmetic coder.
 .PP
 The price is speed: a few MB/s against zstd's hundreds.
-.B nvz
+.B hz
 therefore picks it only for blocks where it wins the probe, and only in
 mode
 .BR small .
@@ -42,7 +42,7 @@ The worker subcommands
 (aliases
 .BR packa / packaupp )
 are what
-.B nvz
+.B hz
 calls; they are listed here for completeness.
 .SH MAGIC
 Streams begin with NVCM1. The older magic NVZ01 is still read.
