@@ -393,7 +393,6 @@ Byte compress(const std::string &codec, const u8 *d, size_t n, int threads,
     if (codec == "ra")   return Byte(d, d + n);
     if (codec == "xz9e")    return xz_compress(d, n, threads, 2, concurrent);
     if (codec == "xz9e-j0") return xz_compress(d, n, threads, 0, concurrent);
-    if (codec == "rans") return rans_compress(d, n);
     if (codec == "nvcm") return nvcm_run("pack", d, n);
     if (codec == "nvcm-p") return nvcmp_compress(d, n);
     if (codec == "nvlz") {
@@ -415,7 +414,6 @@ Byte decompress(const std::string &codec, const u8 *d, size_t n, u64 raw_len) {
     if (codec == "nvcm" || codec == "nvz")   // old archives say "nvz" (pre-rename)
         return nvcm_run("unpack", d, n);
     if (codec == "nvcm-p") return nvcmp_decompress(d, n);
-    if (codec == "rans") return rans_decompress(d, n);
     if (codec == "nvlz") {
         int exit_code = 0;
         Byte out = run_program(sibling_binary("hzgpu"), {"unpack", "--quiet"}, d, n, &exit_code);

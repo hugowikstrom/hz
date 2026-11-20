@@ -20,11 +20,6 @@ Byte compress(const std::string &codec, const u8 *d, size_t n, int threads,
               int concurrent = 1);
 Byte decompress(const std::string &codec, const u8 *d, size_t n, u64 raw_len);
 
-// rans.cpp — order-0 interleaved rANS (Duda's ANS, Giesen's rans_byte
-// construction). Pure entropy stage: fast, never a whole-block winner.
-Byte rans_compress(const u8 *d, size_t n);
-Byte rans_decompress(const u8 *d, size_t n);
-
 // Which xz variant suits the data? See the comment at `pb` in codec.cpp.
 std::string xz_variant(const u8 *d, size_t n);
 
