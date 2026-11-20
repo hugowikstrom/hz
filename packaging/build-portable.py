@@ -13,7 +13,7 @@ DIST = ROOT / "dist"
 SRC = (ROOT / "portable" / "hzpy.py").read_bytes()
 LIC = (ROOT / "LICENSE").read_bytes()
 
-README_MAC = f"""hZ {V} — portable archiver for macOS
+README_MAC = f"""hyperZip {V} (hz) — portable archiver for macOS
 =====================================
 
 Needs: python3 (macOS: xcode-select --install, or python.org).
@@ -33,7 +33,7 @@ interchangeable with the optimized Linux hz (`--portable` mode there).
 License: GPL-2.0-only, see LICENSE. https://nattviken.com/projekt/hz/
 """
 
-README_WIN = f"""hZ {V} — portable archiver for Windows
+README_WIN = f"""hyperZip {V} (hz) — portable archiver for Windows
 =======================================
 
 Needs: Python 3.8+ from python.org or the Microsoft Store.

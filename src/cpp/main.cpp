@@ -106,13 +106,13 @@ int main(int argc, char **argv) {
     std::string cmd = argv[1];
 
     // The workers first: they touch stdin/stdout and nothing else.
-    if (cmd == "hzcm" || cmd == "nvcm" && argc >= 3)
+    if ((cmd == "hzcm" || cmd == "nvcm") && argc >= 3)
         return is_sub(argv[2], "pack", "packa") ? hzcm_pack() : hzcm_unpack();
-    if (cmd == "hzjpg" || cmd == "nvjpg" && argc >= 3)
+    if ((cmd == "hzjpg" || cmd == "nvjpg") && argc >= 3)
         return is_sub(argv[2], "pack", "packa") ? hzjpg_pack() : hzjpg_unpack();
 
     if (cmd == "-h" || cmd == "--help") { help(); return 0; }
-    if (cmd == "-V" || cmd == "--version") { printf("hZ 2.0 (c++)\n"); return 0; }
+    if (cmd == "-V" || cmd == "--version") { printf("hyperZip (hz) 2.0 (c++)\n"); return 0; }
 
     // No subcommand: the gzip surface. `nvz file` packs, `nvz -d file.nv`
     // unpacks, and the flags mean what they mean in gzip.

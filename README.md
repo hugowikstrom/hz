@@ -1,6 +1,7 @@
-# hZ — an archiver that knows what it is packing
+# hyperZip — an archiver that knows what it is packing
 
-> hZ was published as **nvz** until 2026-11-19. Only the name changed:
+> **hyperZip** — command `hz`, hZ for short — was published as **nvz**
+> until 2026-11-19. Only the name changed:
 > every hZ reads every nvz archive bit for bit, and the Swedish command
 > aliases remain. The codec tools were born nvcm/nvjpg/nvgpu and were renamed hzcm/hzjpg/hzgpu on 2026-11-20; stream formats and register strings are unchanged.
 

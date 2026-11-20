@@ -3,7 +3,7 @@
 Name:           hz
 Version:        2.0
 Release:        1%{?dist}
-Summary:        Content-aware archiver that knows what it is packing
+Summary:        hyperZip - content-aware archiver that knows what it is packing
 License:        GPL-2.0-only
 URL:            https://nattviken.com/projekt/hz/
 Source0:        %{name}-%{version}.tar.gz
@@ -11,7 +11,7 @@ BuildRequires:  gcc, gcc-c++, make, libzstd-devel, xz-devel
 Requires:       libzstd, xz-libs
 
 %description
-hz classifies its content and applies content-specific lossless
+hyperZip (command: hz) classifies its content and applies content-specific lossless
 transforms - deduplication, similarity sorting, PNG unfolding with zlib
 recipe search, lossless JPEG recoding and context-mixing compression -
 before choosing a codec per block by probing a sample. Everything is

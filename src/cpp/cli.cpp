@@ -108,7 +108,7 @@ int apply(Flags &o, char shortc, const char *value) {
     case 'r': o.r = true; break;         case 'v': o.v++; break;
     case 'n': o.N = false; break;        case 'N': o.N = true; break;
     case 'h': help_surface(); exit(0);
-    case 'V': printf("hZ 2.0 (c++)\n"); exit(0);
+    case 'V': printf("hyperZip (hz) 2.0 (c++)\n"); exit(0);
     case 'L': printf("hz: original code; no terms beyond the source tree's.\n"); exit(0);
     case 'S': o.suffix = value && value[0] == '.' ? value : std::string(".") + (value ? value : ""); break;
     case 'M': o.opts.mode = value ? value : ""; break;
