@@ -52,7 +52,8 @@ equivalent is a stock `debhelper` rules file over the same
 
 ## macOS and Windows
 
-`bash packaging/build-portable.sh` builds the portable-edition packages
+`bash packaging/build-deb.sh` builds a ready-to-run amd64 .deb (compiled
+binaries, man pages, proper Depends) into `dist/`. `bash packaging/build-portable.sh` builds the portable-edition packages
 into `dist/` — a macOS tarball with installer, a Windows zip with
 `install.ps1`, and a run-anywhere `hz-2.0.pyz` zipapp — deterministically:
 the same commit yields the same bytes, so the published `SHA256SUMS`
