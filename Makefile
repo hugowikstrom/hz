@@ -9,7 +9,7 @@
 # measured 14 % faster with byte-identical output (same for hzjpg).
 CFLAGS ?= -O3 -Wall -Wextra -Wno-implicit-fallthrough
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra
-CPP_SOURCES = src/cpp/main.cpp src/cpp/cli.cpp src/cpp/archive.cpp src/cpp/codec.cpp \
+CPP_SOURCES = src/cpp/main.cpp src/cpp/cli.cpp src/cpp/archive.cpp src/cpp/codec.cpp src/cpp/rans.cpp \
               src/cpp/transform.cpp src/cpp/tree.cpp src/cpp/json.cpp \
               src/cpp/worker.cpp src/cpp/util.cpp
 CPPOBJ = $(CPP_SOURCES:src/cpp/%.cpp=src/cpp/%.o)

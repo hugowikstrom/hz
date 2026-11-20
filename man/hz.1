@@ -68,8 +68,14 @@ established tool on both size and time on most corpora;
 is deduplication and sorting with zstd \-3, matching a plain
 \fBtar | zstd \-3\fR pipeline in speed.
 .TP
-.BI \-\-codec " zstd3|zstd19|zstd22|xz9e|hzcm|hzcm\-p|hzlz"
+.BI \-\-codec " zstd3|zstd19|zstd22|xz9e|rans|hzcm|hzcm\-p|hzlz"
 Force one codec instead of probing. Exists for measurements.
+.B rans
+is the order-0 interleaved rANS entropy coder (Duda's ANS in Giesen's
+rans_byte construction) \(em a pure entropy stage, deliberately outside
+the probe: without match finding it cannot beat zstd, whose FSE is
+already ANS behind an LZ front end. Measured on 50 MB of enwik8: 30.3
+MiB against zstd3's 16.9.
 .B hzcm
 forces the single-stream minimum; without the flag, blocks of 64 MiB and
 up that choose hzcm are coded as

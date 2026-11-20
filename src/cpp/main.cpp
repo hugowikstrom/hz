@@ -47,7 +47,7 @@ void help() {
 "\n"
 "flags for pack:\n"
 "  --mode M     fast | normal | small   (default small — the smallest archive)\n"
-"  --codec C    force zstd3|zstd19|zstd22|xz9e|hzcm|hzlz\n"
+"  --codec C    force zstd3|zstd19|zstd22|xz9e|rans|hzcm|hzlz\n"
 "  --portable   restrict to ra/xz and no transforms: the archive can then be\n"
 "               unpacked by the stdlib Python tool (portable/hzpy.py) on\n"
 "               macOS and Windows\n"

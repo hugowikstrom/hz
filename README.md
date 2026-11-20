@@ -570,6 +570,13 @@ outside that boundary.
 * **PNG from unknown deflate engines** (zlib-ng, libdeflate, Chrome) is
   stored raw at pack time; at unpack time a foreign-engine archive is
   rescued by parameter search or refused — never corrupted.
+* **rans is not in the probe.** The order-0 interleaved rANS coder
+  (Jarek Duda's ANS, in the rans_byte construction popularized by
+  Fabian Giesen) is available as `--codec rans`, round-trips bit-exact,
+  and is deliberately kept out of the probe: a pure entropy stage
+  cannot beat candidates with match finding — zstd's FSE is already ANS
+  behind an LZ front end. Measured: 30.3 vs zstd3's 16.9 MiB on 50 MB
+  of enwik8. It exists as the measured answer to "why not rANS?".
 * **hzcm is slow** (~1 MB/s per stream) and only mode `small` uses it.
   Blocks of 64 MiB and up are coded as `hzcm-p` — independent 32 MiB
   shards in parallel — which cut enwik8 from 129/132 s (pack/unpack) to

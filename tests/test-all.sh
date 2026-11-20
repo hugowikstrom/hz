@@ -232,6 +232,14 @@ PYEOF
     else fail "nvz list: the codec is missing from the register"; fi
 fi
 
+# rans: the interleaved entropy codec round-trips, and the register says so.
+if "$root/src/hz" pack "$t" "$work/rans.hz" -q --codec rans \
+   && "$root/src/hz" unpack "$work/rans.hz" "$work/out-rans" -q \
+   && diff -rq --no-dereference "$t" "$work/out-rans/$(basename "$t")" >/dev/null 2>&1 \
+   && "$root/src/hz" list "$work/rans.hz" | grep -q rans
+then pass "rans: bit-exact round trip, codec in the register"
+else fail "rans: round trip"; fi
+
 # --- 3. a damaged archive must refuse, not guess -----------------------------
 printf '\nDamaged archives\n'
 ark="$work/test-normal.nv"
