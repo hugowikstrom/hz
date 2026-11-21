@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>hyperZip — logotypfamiljen</title>
+<style>
+  /* --- varumärkets tokens: ändra här, slår igenom överallt ------------- */
+  :root {
+    --hz-blue:  #0785a9;
+    --hz-black: #111111;
+    --hz-paper: #f4f3ef;
+    --hz-ink:   #1d2321;
+    --hz-muted: #5a645f;
+    --hz-line:  #e0ded6;
+    --hz-card:  #ffffff;
+  }
+  /* Mörkt läge: plattan byts, blått ljusas upp så kontrasten håller. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --hz-blue:  #3ab5d8;
+      --hz-black: #f2f4f3;
+      --hz-paper: #10161a;
+      --hz-ink:   #e9edeb;
+      --hz-muted: #97a3a0;
+      --hz-line:  #253036;
+      --hz-card:  #161e23;
+    }
+  }
+  :root[data-theme="dark"] {
+    --hz-blue:  #3ab5d8;
+    --hz-black: #f2f4f3;
+    --hz-paper: #10161a;
+    --hz-ink:   #e9edeb;
+    --hz-muted: #97a3a0;
+    --hz-line:  #253036;
+    --hz-card:  #161e23;
+  }
+
+  /* --- själva logotypen ------------------------------------------------ */
+  /* Arial har ingen vikt 900 — webbläsaren syntetiserar då fetstilen och
+     resultatet skiljer sig mellan plattformar. Stacken väljer därför en
+     äkta tung skärning först och faller tillbaka på Arial sist. */
+  .hz-logo {
+    font-family: "Archivo Black", "Arial Black", "Helvetica Neue", Arial, sans-serif;
+    font-weight: 900;
+    font-size: clamp(34px, 7vw, 64px);
+    letter-spacing: -0.055em;
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--hz-black);
+  }
+  .hz-blue  { color: var(--hz-blue); }
+  .hz-black { color: var(--hz-black); }
+
+  /* --- sidan runtomkring (inte en del av logotypen) -------------------- */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: clamp(20px, 5vw, 56px);
+    background: var(--hz-paper); color: var(--hz-ink);
+    font-family: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.5;
+  }
+  header { max-width: 60ch; margin-bottom: 36px; }
+  h1 { font-size: clamp(22px, 3.4vw, 30px); margin: 0 0 8px; letter-spacing: -0.02em; }
+  header p { margin: 0; color: var(--hz-muted); }
+  .rutnat { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .kort {
+    background: var(--hz-card); border: 1px solid var(--hz-line);
+    border-radius: 14px; padding: 30px 28px 22px; overflow-x: auto;
+  }
+  .namn { font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+          color: var(--hz-muted); margin-bottom: 16px; }
+  .roll { font-size: 14px; color: var(--hz-muted); margin-top: 18px; }
+  .vektor img { display:block; } .skala img { display:block; }
+  .skala { display: flex; align-items: baseline; gap: 26px; margin-top: 22px;
+           padding-top: 16px; border-top: 1px solid var(--hz-line); flex-wrap: wrap; }
+  .skala .hz-logo { font-size: 28px; }
+  .skala .hz-logo.liten { font-size: 17px; }
+  .skala .hz-logo.mini  { font-size: 12px; }
+  .farger { display: flex; gap: 14px; margin-top: 30px; flex-wrap: wrap; }
+  .prov { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--hz-muted); }
+  .klick { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--hz-line); }
+  pre {
+    background: var(--hz-card); border: 1px solid var(--hz-line); border-radius: 12px;
+    padding: 18px 20px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+    font-family: "Liberation Mono", ui-monospace, Menlo, Consolas, monospace;
+    color: var(--hz-ink); margin-top: 14px;
+  }
+  h2 { font-size: 17px; margin: 42px 0 0; letter-spacing: -0.01em; }
+  footer { margin-top: 44px; font-size: 13px; color: var(--hz-muted);
+           border-top: 1px solid var(--hz-line); padding-top: 16px; }
+  a { color: var(--hz-blue); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>hyperZip — logotypfamiljen</h1>
+  <p>Ordmärken i fyra varianter. Blått <strong>hZ</strong> bär familjen,
+     efterledet står i svart; huvudmärket hyperZip är helblått. Alla delar
+     samma typsnittsstack, teckenavstånd och färgvariabler — ändra
+     <code>--hz-blue</code> en gång och allt följer med.</p>
+</header>
+
+<div class="rutnat">
+
+  <div class="kort">
+    <div class="namn">Huvudmärke</div>
+    <div class="vektor"><picture><source srcset="wordmark-hyperzip-dark.svg" media="(prefers-color-scheme: dark)"><img src="wordmark-hyperzip.svg" alt="" style="height:clamp(30px,6vw,58px)" loading="lazy"></picture></div>
+    <div class="roll">Produkten själv. Helblått, eftersom namnet är varumärket.</div>
+    <div class="skala">
+      <picture><source srcset="wordmark-hyperzip-dark.svg" media="(prefers-color-scheme: dark)"><img src="wordmark-hyperzip.svg" alt="" style="height:30px" loading="lazy"></picture>
+      <picture><source srcset="wordmark-hyperzip-dark.svg" media="(prefers-color-scheme: dark)"><img src="wordmark-hyperzip.svg" alt="" style="height:19px" loading="lazy"></picture>
+      <picture><source srcset="wordmark-hyperzip-dark.svg" media="(prefers-color-scheme: dark)"><img src="wordmark-hyperzip.svg" alt="" style="height:13px" loading="lazy"></picture>
+    </div>
+  </div>
+
+  <div class="kort">
+    <div class="namn">Familjemedlem</div>
+    <div class="vektor"><picture><source srcset="wordmark-hzflow-dark.svg" media="(prefers-color-scheme: dark)"><img src="wordmark-hzflow.svg" alt="" style="height:clamp(30px,6vw,58px)" loading="lazy"></picture></div>
+    <div class="roll">Blått hZ + svart efterled: samma hus, egen funktion.</div>
+    <div class="skala">
+      <picture><source srcset="wordmark-hzflow-dark.svg" media="(prefers-color-scheme: dark)"><img src="wordmark-hzflow.svg" alt="" style="height:30px" loading="lazy"></picture>
+      <picture><source srcset="wordmark-hzflow-dark.svg" media="(prefers-color-scheme: dark)"><img src="wordmark-hzflow.svg" alt="" style="height:19px" loading="lazy"></picture>
+      <picture><source srcset="wordmark-hzflow-dark.svg" media="(prefers-color-scheme: dark)"><img src="wordmark-hzflow.svg" alt="" style="height:13px" loading="lazy"></picture>
+    </div>
+  </div>
+
+  <div class="kort">
+    <div class="namn">Familjemedlem</div>
+    <div class="vektor"><picture><source srcset="wordmark-hzstream-dark.svg" media="(prefers-color-scheme: dark)"><img src="wordmark-hzstream.svg" alt="" style="height:clamp(30px,6vw,58px)" loading="lazy"></picture></div>
+    <div class="roll">Blått hZ + svart efterled.</div>
+    <div class="skala">
+      <picture><source srcset="wordmark-hzstream-dark.svg" media="(prefers-color-scheme: dark)"><img src="wordmark-hzstream.svg" alt="" style="height:30px" loading="lazy"></picture>
+      <picture><source srcset="wordmark-hzstream-dark.svg" media="(prefers-color-scheme: dark)"><img src="wordmark-hzstream.svg" alt="" style="height:19px" loading="lazy"></picture>
+      <picture><source srcset="wordmark-hzstream-dark.svg" media="(prefers-color-scheme: dark)"><img src="wordmark-hzstream.svg" alt="" style="height:13px" loading="lazy"></picture>
+    </div>
+  </div>
+
+  <div class="kort">
+    <div class="namn">Familjemedlem</div>
+    <div class="vektor"><picture><source srcset="wordmark-hzbackup-dark.svg" media="(prefers-color-scheme: dark)"><img src="wordmark-hzbackup.svg" alt="" style="height:clamp(30px,6vw,58px)" loading="lazy"></picture></div>
+    <div class="roll">Blått hZ + svart efterled.</div>
+    <div class="skala">
+      <picture><source srcset="wordmark-hzbackup-dark.svg" media="(prefers-color-scheme: dark)"><img src="wordmark-hzbackup.svg" alt="" style="height:30px" loading="lazy"></picture>
+      <picture><source srcset="wordmark-hzbackup-dark.svg" media="(prefers-color-scheme: dark)"><img src="wordmark-hzbackup.svg" alt="" style="height:19px" loading="lazy"></picture>
+      <picture><source srcset="wordmark-hzbackup-dark.svg" media="(prefers-color-scheme: dark)"><img src="wordmark-hzbackup.svg" alt="" style="height:13px" loading="lazy"></picture>
+    </div>
+  </div>
+
+</div>
+
+<div class="farger">
+  <span class="prov"><span class="klick" style="background:#0785a9"></span> hZ-blå <code>#0785a9</code></span>
+  <span class="prov"><span class="klick" style="background:#111111"></span> svart <code>#111111</code></span>
+  <span class="prov"><span class="klick" style="background:#3ab5d8"></span> blå, mörkt läge <code>#3ab5d8</code></span>
+</div>
+
+<h2>Koden att klistra in</h2>
+<pre>&lt;style&gt;
+  :root {
+    --hz-blue:  #0785a9;
+    --hz-black: #111111;
+  }
+  .hz-logo {
+    /* Arial saknar vikt 900 — en äkta tung skärning först, Arial sist. */
+    font-family: "Archivo Black", "Arial Black", "Helvetica Neue", Arial, sans-serif;
+    font-weight: 900;
+    font-size: clamp(34px, 7vw, 64px);
+    letter-spacing: -0.055em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .hz-blue  { color: var(--hz-blue); }
+  .hz-black { color: var(--hz-black); }
+&lt;/style&gt;
+
+&lt;div class="hz-logo hz-blue"&gt;hyperZip&lt;/div&gt;
+
+&lt;div class="hz-logo"&gt;&lt;span class="hz-blue"&gt;hZ&lt;/span&gt;&lt;span class="hz-black"&gt;flow&lt;/span&gt;&lt;/div&gt;
+&lt;div class="hz-logo"&gt;&lt;span class="hz-blue"&gt;hZ&lt;/span&gt;&lt;span class="hz-black"&gt;stream&lt;/span&gt;&lt;/div&gt;
+&lt;div class="hz-logo"&gt;&lt;span class="hz-blue"&gt;hZ&lt;/span&gt;&lt;span class="hz-black"&gt;backup&lt;/span&gt;&lt;/div&gt;</pre>
+
+<footer>
+  Ordmärkena här är <strong>vektoriserade</strong> (äkta banor ur Archivo
+  ExtraBold) och behöver inget typsnitt hos mottagaren; CSS-varianten längre
+  ner sätter samma namn som text när det passar bättre. För ikoner, använd SVG-märket
+  (<code>logo/hz-logo.svg</code>). Sidan följer läsarens ljusa eller mörka
+  läge; i mörkt byts blått mot <code>#3ab5d8</code> för att hålla kontrasten.
+</footer>
+
+</body>
+</html>
