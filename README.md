@@ -1,3 +1,5 @@
+<img src="logo/hz-logo.svg" alt="hyperZip" width="96" align="left" hspace="14">
+
 # hyperZip — an archiver that knows what it is packing
 
 > **hyperZip** — command `hz`, hZ for short — was published as **nvz**
