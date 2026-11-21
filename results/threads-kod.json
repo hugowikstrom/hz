@@ -1,0 +1,146 @@
+{
+ "schema": "hz-threads-1",
+ "korpus": "kod",
+ "rabyte": 58065505,
+ "filer": 5974,
+ "maskin": {
+  "model": "AMD Ryzen AI 9 HX 470 w/ Radeon 890M",
+  "logical": 24,
+  "physical": 12,
+  "governor": "powersave",
+  "max_mhz": "2000.0000",
+  "free_gib_at_start": 7.1,
+  "kernel": "7.0.0-43-generic",
+  "scratch": "/home/hugo/nvpack/.scratch/threads",
+  "scratch_fs": "ext4",
+  "versions": {
+   "gzip": "gzip 1.14",
+   "pigz": "pigz 2.8",
+   "bzip2": "bzip2, a block-sorting file compressor.  Version 1.0.8, 13-Jul-2019.",
+   "zstd": "*** Zstandard CLI (64-bit) v1.5.7, by Yann Collet ***",
+   "xz": "xz (XZ Utils) 5.8.3",
+   "brotli": "brotli 1.2.0"
+  },
+  "hz_version": "hyperZip (hz) 2.0 (c++)",
+  "hz_commit": "70b9042",
+  "measured": "2026-11-21T17:22:39"
+ },
+ "matningar": {
+  "tar (okomprimerad)": {
+   "packare": "tar (okomprimerad)",
+   "algoritm": "none (container only)",
+   "konfig": {
+    "1": {
+     "bytes": 63703040,
+     "packsek": 2.29,
+     "uppacksek": 0.14,
+     "packcpu": 0.19,
+     "uppackcpu": 0.14,
+     "packmaxrss_mib": 33.4,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 0.08,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 7.1,
+     "loadavg": 1.56,
+     "foreign_cpu": 3.5,
+     "disturbed": true,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf /home/hugo/nvpack/.scratch/threads/tar-okomprimerad-1.ark kod",
+     "uppackkommando": "tar -C /home/hugo/nvpack/.scratch/threads/out -xf /home/hugo/nvpack/.scratch/threads/tar-okomprimerad-1.ark"
+    },
+    "max": {
+     "not_expressible": {
+      "class": "enkeltradad",
+      "why": "tar has no threads; this row measures the pipeline overhead the other rows are charged for"
+     }
+    }
+   },
+   "harledt": {}
+  },
+  "tar.gz -6": {
+   "packare": "tar.gz -6",
+   "algoritm": "deflate (LZ77+Huffman)",
+   "konfig": {
+    "1": {
+     "bytes": 12892112,
+     "packsek": 2.22,
+     "uppacksek": 0.28,
+     "packcpu": 2.31,
+     "uppackcpu": 0.42,
+     "packmaxrss_mib": 33.4,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.04,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 7.1,
+     "loadavg": 1.6,
+     "foreign_cpu": 2.2,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - kod | gzip -6 > /home/hugo/nvpack/.scratch/threads/tar-gz-6-1.ark",
+     "uppackkommando": "gzip -dc /home/hugo/nvpack/.scratch/threads/tar-gz-6-1.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    },
+    "max": {
+     "not_expressible": {
+      "class": "enkeltradad",
+      "why": "gzip has no parallel mode; the parallel gzip is the pigz row"
+     }
+    }
+   },
+   "harledt": {}
+  },
+  "tar.gz -9 (pigz)": {
+   "packare": "tar.gz -9 (pigz)",
+   "algoritm": "deflate, parallel",
+   "konfig": {
+    "1": {
+     "bytes": 12745513,
+     "packsek": 5.97,
+     "uppacksek": 0.3,
+     "packcpu": 6.01,
+     "uppackcpu": 0.43,
+     "packmaxrss_mib": 33.4,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.01,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 7.0,
+     "loadavg": 1.6,
+     "foreign_cpu": 6.7,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - kod | pigz -9 -p 1 > /home/hugo/nvpack/.scratch/threads/tar-gz-9-pigz-1.ark",
+     "uppackkommando": "pigz -dc -p 1 /home/hugo/nvpack/.scratch/threads/tar-gz-9-pigz-1.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    },
+    "max": {
+     "bytes": 12745513,
+     "packsek": 0.4,
+     "uppacksek": 0.28,
+     "packcpu": 8.15,
+     "uppackcpu": 0.46,
+     "packmaxrss_mib": 33.4,
+     "threads_requested": 24,
+     "threads_granted": 24,
+     "threads_effective": 20.26,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 7.0,
+     "loadavg": 1.66,
+     "foreign_cpu": 0.5,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - kod | pigz -9 -p 24 > /home/hugo/nvpack/.scratch/threads/tar-gz-9-pigz-max.ark",
+     "uppackkommando": "pigz -dc -p 24 /home/hugo/nvpack/.scratch/threads/tar-gz-9-pigz-max.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    }
+   },
+   "harledt": {
+    "speedup_pack": 14.92,
+    "speedup_unpack": 1.07,
+    "efficiency_pack": 0.85,
+    "cpu_ratio_pack": 1.36,
+    "size_delta_pct": 0.0,
+    "verdict": "scales"
+   }
+  }
+ }
+}
