@@ -319,9 +319,21 @@ Byte nvcm_run(const char *cmd, const u8 *d, size_t n) {
 constexpr size_t NVCM_SHARD = 32u << 20;
 constexpr char NVCMP_MAGIC[6] = {'N','V','C','M','P','1'};
 
-void shard_parallel(size_t count, const std::function<void(size_t)> &fn) {
+// The shard pool honors the caller's job budget. It used to ask the
+// hardware directly and ignore -j entirely, so `hz pack -j 1` on text
+// still started up to one hzcm process per shard PER BLOCK, held back
+// only by the memory gate: -j was not a bound, and a single-threaded
+// measurement of hz was not single-threaded. threads <= 0 keeps the
+// old behaviour for callers that have no budget to give.
+//
+// The thread count enters nothing that is written: shards are defined
+// by raw offsets (i * NVCM_SHARD) and the container stores the shard
+// count, the raw total and each shard's compressed length. Output
+// bytes are therefore identical at any -j, which the test suite checks.
+void shard_parallel(size_t count, int threads, const std::function<void(size_t)> &fn) {
     int t = std::max(1, std::min<int>((int)count,
-            (int)std::max(1u, std::thread::hardware_concurrency())));
+            threads > 0 ? threads
+                        : (int)std::max(1u, std::thread::hardware_concurrency())));
     std::atomic<size_t> next{0};
     std::vector<std::thread> pool;
     std::mutex err_m; std::string first_err;
@@ -342,10 +354,10 @@ void shard_parallel(size_t count, const std::function<void(size_t)> &fn) {
     if (!first_err.empty()) throw Error(first_err);
 }
 
-Byte nvcmp_compress(const u8 *d, size_t n) {
+Byte nvcmp_compress(const u8 *d, size_t n, int threads) {
     const size_t K = (n + NVCM_SHARD - 1) / NVCM_SHARD;
     std::vector<Byte> shards(K);
-    shard_parallel(K, [&](size_t i) {
+    shard_parallel(K, threads, [&](size_t i) {
         size_t off = i * NVCM_SHARD;
         size_t len = std::min(NVCM_SHARD, n - off);
         shards[i] = nvcm_run("pack", d + off, len);
@@ -361,7 +373,7 @@ Byte nvcmp_compress(const u8 *d, size_t n) {
     return out;
 }
 
-Byte nvcmp_decompress(const u8 *d, size_t n) {
+Byte nvcmp_decompress(const u8 *d, size_t n, int threads) {
     if (n < 18 || memcmp(d, NVCMP_MAGIC, 6)) throw Error("nvcm-p: broken container");
     size_t i = 6;
     auto u32v = [&]() { u32 v = 0; for (int k = 0; k < 4; k++) v |= (u32)d[i+k] << (8*k); i += 4; return v; };
@@ -376,7 +388,7 @@ Byte nvcmp_decompress(const u8 *d, size_t n) {
     for (u32 k = 0; k < K; k++) { coff[k] = pos; pos += clen[k]; }
     if (pos != n) throw Error("nvcm-p: lengths do not match the container");
     Byte out(raw_total);
-    shard_parallel(K, [&](size_t k) {
+    shard_parallel(K, threads, [&](size_t k) {
         size_t roff = k * NVCM_SHARD;
         size_t rlen = std::min<size_t>(NVCM_SHARD, raw_total - roff);
         Byte piece = nvcm_run("unpack", d + coff[k], clen[k]);
@@ -394,7 +406,7 @@ Byte compress(const std::string &codec, const u8 *d, size_t n, int threads,
     if (codec == "xz9e")    return xz_compress(d, n, threads, 2, concurrent);
     if (codec == "xz9e-j0") return xz_compress(d, n, threads, 0, concurrent);
     if (codec == "nvcm") return nvcm_run("pack", d, n);
-    if (codec == "nvcm-p") return nvcmp_compress(d, n);
+    if (codec == "nvcm-p") return nvcmp_compress(d, n, threads);
     if (codec == "nvlz") {
         // The GPU codec lives in hzgpu — a separate program, because the
         // Vulkan dependency must not get into nvz. A measurement
@@ -408,12 +420,13 @@ Byte compress(const std::string &codec, const u8 *d, size_t n, int threads,
     throw Error("unknown codec: " + codec);
 }
 
-Byte decompress(const std::string &codec, const u8 *d, size_t n, u64 raw_len) {
+Byte decompress(const std::string &codec, const u8 *d, size_t n, u64 raw_len,
+                int threads) {
     if (codec == "ra")   return Byte(d, d + n);
     if (codec.rfind("xz9e", 0) == 0) return xz_decompress(d, n, raw_len);
     if (codec == "nvcm" || codec == "nvz")   // old archives say "nvz" (pre-rename)
         return nvcm_run("unpack", d, n);
-    if (codec == "nvcm-p") return nvcmp_decompress(d, n);
+    if (codec == "nvcm-p") return nvcmp_decompress(d, n, threads);
     if (codec == "nvlz") {
         int exit_code = 0;
         Byte out = run_program(sibling_binary("hzgpu"), {"unpack", "--quiet"}, d, n, &exit_code);

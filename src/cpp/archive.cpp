@@ -876,9 +876,15 @@ void unpack(const std::string &archive, const std::string &target, const PackOpt
             { fclose(f); throw Error("the archive is truncated"); }
     }
     fclose(f);
+    // Blocks already run one per thread here, so each block's own shard
+    // pool gets what is left of the budget — with one block and -j 24
+    // that is 24 shards, with 24 blocks it is one shard each. Without
+    // the division a -j 1 unpack still spawned a pool per block.
+    const int per_block_un = std::max(1, jobs / std::max<int>(1, (int)reg.blocks.size()));
     parallel_for(reg.blocks.size(), jobs, [&](size_t i) {
         block_data[i] = decompress(reg.blocks[i].codec, packed[i].data(),
-                                   packed[i].size(), reg.blocks[i].raw_len);
+                                   packed[i].size(), reg.blocks[i].raw_len,
+                                   per_block_un);
         if (block_data[i].size() != reg.blocks[i].raw_len)
             throw Error("block " + std::to_string(i) + ": wrong length after decompression");
         Byte().swap(packed[i]);

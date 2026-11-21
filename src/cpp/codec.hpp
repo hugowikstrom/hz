@@ -18,7 +18,11 @@ namespace hz {
 // of shrinking the archive.
 Byte compress(const std::string &codec, const u8 *d, size_t n, int threads,
               int concurrent = 1);
-Byte decompress(const std::string &codec, const u8 *d, size_t n, u64 raw_len);
+// `threads` bounds the nvcm-p shard pool; 0 means "ask the hardware".
+// Callers that already run inside a parallel_for pass 1, so the block
+// loop provides the parallelism instead of multiplying it.
+Byte decompress(const std::string &codec, const u8 *d, size_t n, u64 raw_len,
+                int threads = 0);
 
 // Which xz variant suits the data? See the comment at `pb` in codec.cpp.
 std::string xz_variant(const u8 *d, size_t n);
