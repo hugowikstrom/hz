@@ -325,6 +325,64 @@ def throughput() -> str:
     return '\n'.join(out) + '\n\n*MiB per second, raw data through the wall clock.*'
 
 
+def thread_scaling() -> str:
+    """One core against as many as each algorithm can actually use.
+
+    The surprise the table has to carry: at these settings most
+    established packers cannot use a second core. xz -9e codes 192 MiB
+    blocks, so a smaller corpus is one block and one thread however many
+    are asked for; zstd -22's 2 GiB window is one job for the same
+    reason. A speedup of 1.00 is therefore the result, not a gap in the
+    data, which is why the effective thread count (cpu time over wall
+    time) stands beside every one of them.
+    """
+    import json
+    corpora = ['kod', 'enwik8', 'silesia', 'logg']
+    rows = ['tar.gz -6', 'tar.gz -9 (pigz)', 'tar.bz2 -9', 'tar.zst -3 (dagens)',
+            'tar.zst -19 --long', 'tar.zst -22 --ultra', 'tar.xz -9e', 'tar.br -q 11',
+            'nvz snabb', 'nvz normal', 'nvz liten']
+    label = {'tar.gz -6': 'gzip −6', 'tar.gz -9 (pigz)': 'pigz −9',
+             'tar.bz2 -9': 'bzip2 −9', 'tar.zst -3 (dagens)': 'zstd −3',
+             'tar.zst -19 --long': 'zstd −19 --long', 'tar.zst -22 --ultra': 'zstd −22 --ultra',
+             'tar.xz -9e': 'xz −9e', 'tar.br -q 11': 'brotli −q 11',
+             'nvz snabb': 'hz fast', 'nvz normal': 'hz normal', 'nvz liten': 'hz small'}
+    data = {}
+    for c in corpora:
+        f = ROOT / 'results' / f'threads-{c}.json'
+        if f.exists():
+            data[c] = json.loads(f.read_text())
+    if not data:
+        return '*(the thread sweep has not been run)*'
+    have = [c for c in corpora if c in data]
+    head = '| packer | ' + ' | '.join(f'{c} 1T / max / ×' for c in have) + ' |'
+    out = [head, '|:--|' + '--:|' * len(have)]
+    for name in rows:
+        cells = []
+        for c in have:
+            e = data[c]['matningar'].get(name, {})
+            k = e.get('konfig', {})
+            one, mx = k.get('1', {}), k.get('max', {})
+            # Sub-second rows would round to "0 / 0 s" and lose the point.
+            sec = lambda v: f'{v:.1f}' if v < 10 else f'{v:.0f}'
+            if 'bytes' not in one:
+                cells.append('—')
+            elif 'bytes' not in mx:
+                cells.append(f'{sec(one["packsek"])} s / — / —')
+            else:
+                d = e.get('harledt', {})
+                cells.append(f'{sec(one["packsek"])} / {sec(mx["packsek"])} s / '
+                             f'{d.get("speedup_pack", 0):.2f}× ({mx["threads_effective"]})')
+        out.append(f'| {label.get(name, name)} | ' + ' | '.join(cells) + ' |')
+    m = data[have[0]]['maskin']
+    return '\n'.join(out) + (
+        f'\n\n*Pack seconds at one thread and at 24, with the speedup and, in '
+        f'parentheses, the parallelism actually achieved (cpu time ÷ wall time). '
+        f'A dash means the program has no parallel mode: gzip, bzip2 and brotli are '
+        f'single-threaded by construction, and pigz is the parallel deflate. '
+        f'{m["logical"]} logical / {m["physical"]} physical cores at {m["max_mhz"]} MHz, '
+        f'{m["governor"]} governor.*')
+
+
 def main():
     # The markers are anchors in the published document and stay Swedish,
     # like the row keys in results/*.json.
@@ -339,6 +397,7 @@ def main():
     r.inject(md, silesia_per_file(), 'SILESIA-PER-FIL')
     r.inject(md, enwik8_position(), 'ENWIK8-PLATS')
     r.inject(md, lzma2(), 'LZMA2')
+    r.inject(md, thread_scaling(), 'TRADSKALNING')
     print(f'{md} updated')
 
 

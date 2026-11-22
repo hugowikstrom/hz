@@ -468,6 +468,34 @@ is memory-bound. A genuinely faster mode means fewer sweeps — hash during
 the pack read, stream blocks through the codec — not a weaker codec.
 Details and measurements: report §8 and `results/speed-floor.json`.
 
+### One core, and all of them
+
+![One core against as many as the algorithm allows](report/img/thread-scaling.png)
+
+*Pack time at one thread and at twenty-four, measured per corpus
+(`python3 benchmark/threads.py <corpus>`).*
+
+Measuring both ends turned up something that reframes every time column
+above: **at these settings the heavy established packers cannot use a
+second core.** `xz -9e` codes 192 MiB blocks, so a smaller corpus is one
+block and one thread however many are requested — 1.00× on source code,
+1.06× on Silesia. `zstd -22 --ultra` is the same story through its 2 GiB
+window; `zstd -19` splits only once the corpus passes 128 MiB. gzip, bzip2
+and brotli have no parallel mode at all, and `pigz` — the parallel deflate
+— is the only tool here that uses the machine, at 14–15×.
+
+hZ gains 1.5–3.6× in `fast` and up to 4.3× in `small`, the latter from the
+hzcm-p shards. Archive size moves by at most 0.24 % between one thread and
+twenty-four, so none of it is bought with ratio.
+
+Two notes for anyone reproducing this. `-j` changes **the archive, not only
+the time**: the job count sizes the xz dictionary budget and the hzcm-p
+shard count, and the default is `min(24, cores)` for both packing and
+unpacking. And the machine matters — these numbers are from an AMD Ryzen
+AI 9 HX 470, 24 logical / 12 physical cores pinned at 2.0 GHz by the
+powersave governor, 28 GiB RAM, NVMe. A boosting CPU would flatter the
+single-thread column.
+
 ---
 
 ## The GPU mode: built, measured, and not worth it

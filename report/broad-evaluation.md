@@ -81,7 +81,11 @@ enwik8), and a systematic correctness assessment.
 
 Seven configurations of four established tools: gzip (−6, −9 via pigz),
 bzip2 (−9), zstd (−3, −19 `--long=27`, −22 `--ultra --long=31`), and
-xz (−9e). `tar | zstd −3` is labelled *current* and serves as the baseline,
+xz (−9e). Their threading differs by construction and is stated here
+because the tables cannot show it: gzip and bzip2 have no parallel mode,
+`pigz` is the parallel deflate and is given all 24 threads, zstd and xz are
+run with `-T0`. What `-T0` yields in practice is measured in 3.10.
+`tar | zstd −3` is labelled *current* and serves as the baseline,
 as it matches the machine's existing archival script. hz is measured in
 modes `snabb` ("fast": zstd −3, no transforms), `normal` (transforms, codec
 probe per block), and `liten` ("small": additionally hzcm as a candidate;
@@ -94,12 +98,25 @@ contribution.
 Each data point is a complete cycle: pack, unpack into an empty directory,
 recursive comparison against the source tree
 (`diff -rq --no-dereference`). The *exact* column in the tables is the
-outcome of that comparison, not an assumption. Times are wall-clock;
-packing may use all 24 threads. Measurements ran under `nice 19` and
-`ionice -c 3` on an otherwise loaded machine with idle cores; control runs
-showed no measurable effect of the priority. The codec-level measurement
-(section 3.4) instead follows the field's convention: one file at a time,
-one thread, no tar, no deduplication.
+outcome of that comparison, not an assumption. Times are wall-clock, and
+each tool runs at its own default threading, which differs between them:
+`pigz` is parallel where `gzip` cannot be, zstd takes `-T0`, and `xz -9e
+-T0` asks for 24 threads but is cut to about five by its memory limiter —
+and to one by its block size on any corpus below 192 MiB. Section 3.10
+measures those ends deliberately instead of assuming them, and is the
+reference for what each row's thread count actually was. Measurements ran
+under `nice 19` and `ionice -c 3`; control runs showed no measurable effect
+of the priority. The codec-level measurement (section 3.4) instead follows
+the field's convention: one file at a time, one thread, no tar, no
+deduplication.
+
+Competing load invalidates a timing measurement, and on this machine it is
+not hypothetical: agent timers fire every minute. The thread sweep therefore
+records the foreign CPU time it observed per data point and flags itself
+disturbed rather than reporting the noise as a result; the logs corpus was
+re-measured for that reason. Section 4.5's requirement — measure on an
+otherwise unloaded machine, or you measure the memory gate rather than the
+compression — applies to every table here.
 
 Archive size is not deterministic across runs: two identical
 `--läge normal` runs produced 8 597 884 and 8 597 603 bytes
@@ -537,19 +554,23 @@ of hz's modes the smallest of those that dominate is counted.
 <!-- DOMINANS -->
 
 ```
-korpus     bästa etablerade                  byte    sek | hz               byte    sek | utfall
-kod        tar.xz -9e                   8 629 516     47 | normal       8 580 323     40 | DOMINERAR (-0.57 % storlek, -15 % tid)
-png        tar.zst -22 --ultra        257 132 369    156 | normal     230 452 176    127 | DOMINERAR (-10.38 % storlek, -18 % tid)
-foto       tar.bz2 -9                 424 611 032     57 | normal     361 834 581     48 | DOMINERAR (-14.78 % storlek, -16 % tid)
-gif        tar.zst -22 --ultra         14 867 185      5 | liten       14 864 575      6 | mindre, men långsammare (-0.02 % storlek, +20 % tid)
-film       tar.zst -19 --long         557 861 782     57 | normal     557 880 433     56 | snabbare, men större (+0.00 % storlek, -0 % tid)
-arkiv      tar.zst -22 --ultra        254 567 277    154 | normal     254 287 214    153 | DOMINERAR (-0.11 % storlek, -1 % tid)
-logg       tar.xz -9e                  12 419 456    897 | liten       10 512 452    191 | DOMINERAR (-15.35 % storlek, -79 % tid)
-silesia    tar.xz -9e                  48 408 228    158 | liten       45 657 473    100 | DOMINERAR (-5.68 % storlek, -37 % tid)
-enwik8     tar.xz -9e                  24 831 492    121 | liten       21 417 335    129 | mindre, men långsammare (-13.75 % storlek, +7 % tid)
+corpus     best established                 bytes    sec | hz               bytes    sec | outcome
+kod        tar.xz -9e                   8 629 516     47 | normal       8 580 323     40 | DOMINATES (-0.57 % size, -15 % time)
+png        tar.zst -22 --ultra        257 132 369    156 | normal     230 452 176    127 | DOMINATES (-10.38 % size, -18 % time)
+foto       tar.bz2 -9                 424 611 032     57 | normal     361 834 581     48 | DOMINATES (-14.78 % size, -16 % time)
+gif        tar.zst -22 --ultra         14 867 185      5 | liten       14 864 575      6 | smaller, but slower (-0.02 % size, +20 % time)
+film       tar.zst -19 --long         557 861 782     57 | normal     557 880 433     56 | faster, but larger (+0.00 % size, -0 % time)
+arkiv      tar.zst -22 --ultra        254 567 277    154 | normal     254 287 214    153 | DOMINATES (-0.11 % size, -1 % time)
+logg       tar.xz -9e                  12 419 456    897 | liten       10 724 600     73 | DOMINATES (-13.65 % size, -92 % time)
+silesia    tar.xz -9e                  48 408 228    158 | liten       45 741 795     94 | DOMINATES (-5.51 % size, -40 % time)
+enwik8     tar.xz -9e                  24 831 492    121 | liten       21 821 216     50 | DOMINATES (-12.12 % size, -59 % time)
 
-dominerar på 6 av 9 korpusar
+dominates on 7 of 9 corpora
 ```
+
+*Max-thread verdict: each tool at its own best configuration. Section
+3.10 shows what that configuration is worth in cores — a tool that
+cannot use more of them does not get credit for leaving them idle.*
 
 <!-- SLUT DOMINANS -->
 
@@ -570,6 +591,68 @@ The boundary therefore does not run between data types but between
 *exploitable structure and none*: the same conclusion as H1, but measured on
 two axes instead of one.
 
+### 3.10 Thread scaling: one core against as many as the algorithm allows
+
+Every table above reports wall-clock time with each tool at its own default
+threading, which is not the same thing for any two of them. This section
+measures the two ends deliberately: every packer at one thread, and every
+packer at twenty-four, on the same corpora and the same machine
+(`python3 benchmark/threads.py <corpus>`, results in
+`results/threads-<corpus>.json`).
+
+Three columns are needed rather than one, because "as many cores as the
+algorithm allows" turns out to be four different ceilings: the flag, the
+memory limiter, the structural block size, and the data itself. The
+parenthesised figure is cpu time divided by wall time — the parallelism
+actually achieved, and the only one of the three that cannot be misreported.
+
+<!-- TRADSKALNING -->
+
+| packer | kod 1T / max / × | enwik8 1T / max / × | silesia 1T / max / × | logg 1T / max / × |
+|:--|--:|--:|--:|--:|
+| gzip −6 | 2.2 s / — / — | 7.3 s / — / — | 12 s / — / — | 4.4 s / — / — |
+| pigz −9 | 6.0 / 0.4 s / 14.92× (20.26) | 8.8 / 0.6 s / 15.47× (22.98) | 27 / 1.9 s / 14.66× (19.32) | 9.8 / 0.7 s / 14.17× (21.09) |
+| bzip2 −9 | 6.7 s / — / — | 11 s / — / — | 24 s / — / — | 31 s / — / — |
+| zstd −3 | 0.4 / 0.1 s / 2.40× (4.06) | 1.0 / 0.2 s / 4.80× (7.52) | 1.4 / 0.3 s / 5.00× (11.91) | 0.6 / 0.2 s / 3.56× (8.15) |
+| zstd −19 --long | 32 / 32 s / 1.00× (1.0) | 93 / 60 s / 1.57× (1.66) | 155 / 62 s / 2.48× (2.61) | 272 / 112 s / 2.42× (2.8) |
+| zstd −22 --ultra | 51 / 51 s / 1.00× (1.0) | 113 / 114 s / 1.00× (1.0) | 175 / 175 s / 1.00× (1.0) | 955 / 955 s / 1.00× (1.0) |
+| xz −9e | 40 / 40 s / 1.00× (1.0) | 116 / 117 s / 0.99× (1.0) | 163 / 154 s / 1.06× (1.06) | 901 / 856 s / 1.05× (1.04) |
+| brotli −q 11 | 130 s / — / — | 302 s / — / — | 579 s / — / — | 634 s / — / — |
+| hz fast | 1.7 / 0.9 s / 1.82× (2.27) | 1.6 / 0.9 s / 1.75× (2.4) | 2.8 / 0.8 s / 3.57× (6.43) | 2.4 / 1.6 s / 1.53× (1.91) |
+| hz normal | 40 / 40 s / 1.01× (1.02) | 122 / 122 s / 1.00× (1.0) | 177 / 94 s / 1.88× (1.92) | 921 / 858 s / 1.07× (1.07) |
+| hz small | 61 / 61 s / 1.01× (1.01) | 114 / 47 s / 2.42× (2.54) | 177 / 93 s / 1.91× (1.99) | 202 / 47 s / 4.28× (4.51) |
+
+*Pack seconds at one thread and at 24, with the speedup and, in parentheses, the parallelism actually achieved (cpu time ÷ wall time). A dash means the program has no parallel mode: gzip, bzip2 and brotli are single-threaded by construction, and pigz is the parallel deflate. 24 logical / 12 physical cores at 2000.0000 MHz, powersave governor.*
+
+<!-- SLUT TRADSKALNING -->
+
+![One core against as many as the algorithm allows](img/thread-scaling.png)
+
+*Pack time at one thread and at twenty-four, per corpus and per packer.*
+
+The result reframes every time column in this report. **At the settings
+measured here, the heavy established packers cannot use a second core.**
+`xz -9e` codes 192 MiB blocks, so any corpus below that size is a single
+block and a single thread however many are requested — 1.00× on source code
+and enwik8, and only 1.06× on the 202 MiB Silesia corpus. `zstd -22 --ultra`
+behaves the same way for the same reason: its 2 GiB window makes one job.
+`zstd -19 --long` begins to split only once the corpus exceeds its 128 MiB
+window (1.00× on code, 1.57× on enwik8, 2.48× on Silesia). gzip, bzip2 and
+brotli have no parallel mode at all; `pigz` is the parallel deflate, and at
+14–15× it is the only tool in the lineup that uses the machine.
+
+hz sits between the two: `fast` gains 1.5–3.6×, and `small` gains 4.3× on
+logs and 2.4× on enwik8 — the hzcm-p shards, which only became visible once
+`-j` was made to bound the shard pool (section 6). On corpora that fill a
+single block, hz gains nothing either, for exactly the reason xz does not.
+
+Two things this does **not** license. First, the dominance verdict in 3.9
+compares each tool at its own best configuration, and it stands: a tool that
+cannot use more cores does not get credit for cores it leaves idle. Second,
+the speedups are not bought with ratio — archive size moves by at most
+0.24 % between one thread and twenty-four across every row measured, so the
+comparison is like for like.
+
 ## 4. Analysis
 
 ### 4.1 Log data: compressor choice dominates
@@ -586,8 +669,11 @@ differ only in whether hzcm participates in the codec probe.
 hzcm won the probe for every text block, which the archive register
 confirms (2 blocks, both hzcm; 192.03 → 9.00 MiB and 46.29 → 1.03 MiB).
 That the smaller archive also packs faster is a parallelism effect: hz's
-blocks compress independently, whereas `xz -9e -T0` on this input
-effectively runs single-threaded due to its per-thread memory budget. The
+blocks compress independently, whereas `xz -9e -T0` on this input runs
+essentially single-threaded. That was an inference when it was written and
+is now a measurement — 3.10 puts xz at 1.0–1.3× between one thread and
+twenty-four on every corpus tested, because its 192 MiB block size leaves
+nothing to split. The
 blocks' differing ratios (21.4× vs. 45.1×) illustrate adaptation: a model
 that has seen 192 MiB of syslog predicts the next block substantially
 better.

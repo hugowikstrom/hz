@@ -1,0 +1,582 @@
+{
+ "schema": "hz-threads-1",
+ "korpus": "silesia",
+ "rabyte": 211938580,
+ "filer": 12,
+ "maskin": {
+  "model": "AMD Ryzen AI 9 HX 470 w/ Radeon 890M",
+  "logical": 24,
+  "physical": 12,
+  "governor": "powersave",
+  "max_mhz": "2000.0000",
+  "free_gib_at_start": 12.0,
+  "kernel": "7.0.0-43-generic",
+  "scratch": "/home/hugo/nvpack/.scratch/threads",
+  "scratch_fs": "ext4",
+  "versions": {
+   "gzip": "gzip 1.14",
+   "pigz": "pigz 2.8",
+   "bzip2": "bzip2, a block-sorting file compressor.  Version 1.0.8, 13-Jul-2019.",
+   "zstd": "*** Zstandard CLI (64-bit) v1.5.7, by Yann Collet ***",
+   "xz": "xz (XZ Utils) 5.8.3",
+   "brotli": "brotli 1.2.0"
+  },
+  "hz_version": "hyperZip (hz) 2.0 (c++)",
+  "hz_commit": "e61e989",
+  "measured": "2026-11-21T18:01:09"
+ },
+ "matningar": {
+  "tar (okomprimerad)": {
+   "packare": "tar (okomprimerad)",
+   "algoritm": "none (container only)",
+   "konfig": {
+    "1": {
+     "bytes": 211957760,
+     "packsek": 0.23,
+     "uppacksek": 0.14,
+     "packcpu": 0.15,
+     "uppackcpu": 0.14,
+     "packmaxrss_mib": 21.1,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 0.66,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.0,
+     "loadavg": 3.19,
+     "foreign_cpu": 0.1,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf /home/hugo/nvpack/.scratch/threads/tar-okomprimerad-1.ark silesia",
+     "uppackkommando": "tar -C /home/hugo/nvpack/.scratch/threads/out -xf /home/hugo/nvpack/.scratch/threads/tar-okomprimerad-1.ark"
+    },
+    "max": {
+     "not_expressible": {
+      "class": "enkeltradad",
+      "why": "tar has no threads; this row measures the pipeline overhead the other rows are charged for"
+     }
+    }
+   },
+   "harledt": {}
+  },
+  "tar.gz -6": {
+   "packare": "tar.gz -6",
+   "algoritm": "deflate (LZ77+Huffman)",
+   "konfig": {
+    "1": {
+     "bytes": 68217945,
+     "packsek": 11.89,
+     "uppacksek": 1.15,
+     "packcpu": 12.0,
+     "uppackcpu": 1.3,
+     "packmaxrss_mib": 21.3,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.01,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.1,
+     "loadavg": 3.19,
+     "foreign_cpu": 8.0,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - silesia | gzip -6 > /home/hugo/nvpack/.scratch/threads/tar-gz-6-1.ark",
+     "uppackkommando": "gzip -dc /home/hugo/nvpack/.scratch/threads/tar-gz-6-1.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    },
+    "max": {
+     "not_expressible": {
+      "class": "enkeltradad",
+      "why": "gzip has no parallel mode; the parallel gzip is the pigz row"
+     }
+    }
+   },
+   "harledt": {}
+  },
+  "tar.gz -9 (pigz)": {
+   "packare": "tar.gz -9 (pigz)",
+   "algoritm": "deflate, parallel",
+   "konfig": {
+    "1": {
+     "bytes": 67659202,
+     "packsek": 27.42,
+     "uppacksek": 1.14,
+     "packcpu": 27.46,
+     "uppackcpu": 1.29,
+     "packmaxrss_mib": 21.3,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.0,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.0,
+     "loadavg": 2.84,
+     "foreign_cpu": 19.4,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - silesia | pigz -9 -p 1 > /home/hugo/nvpack/.scratch/threads/tar-gz-9-pigz-1.ark",
+     "uppackkommando": "pigz -dc -p 1 /home/hugo/nvpack/.scratch/threads/tar-gz-9-pigz-1.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    },
+    "max": {
+     "bytes": 67659202,
+     "packsek": 1.87,
+     "uppacksek": 1.06,
+     "packcpu": 36.15,
+     "uppackcpu": 1.44,
+     "packmaxrss_mib": 21.3,
+     "threads_requested": 24,
+     "threads_granted": 24,
+     "threads_effective": 19.32,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.0,
+     "loadavg": 2.48,
+     "foreign_cpu": 2.0,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - silesia | pigz -9 -p 24 > /home/hugo/nvpack/.scratch/threads/tar-gz-9-pigz-max.ark",
+     "uppackkommando": "pigz -dc -p 24 /home/hugo/nvpack/.scratch/threads/tar-gz-9-pigz-max.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    }
+   },
+   "harledt": {
+    "speedup_pack": 14.66,
+    "speedup_unpack": 1.08,
+    "efficiency_pack": 0.81,
+    "cpu_ratio_pack": 1.32,
+    "size_delta_pct": 0.0,
+    "verdict": "scales"
+   }
+  },
+  "tar.bz2 -9": {
+   "packare": "tar.bz2 -9",
+   "algoritm": "BWT+Huffman",
+   "konfig": {
+    "1": {
+     "bytes": 54563025,
+     "packsek": 23.73,
+     "uppacksek": 9.85,
+     "packcpu": 23.84,
+     "uppackcpu": 10.1,
+     "packmaxrss_mib": 21.3,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.0,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 11.9,
+     "loadavg": 2.45,
+     "foreign_cpu": 15.1,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - silesia | bzip2 -9 > /home/hugo/nvpack/.scratch/threads/tar-bz2-9-1.ark",
+     "uppackkommando": "bzip2 -dc /home/hugo/nvpack/.scratch/threads/tar-bz2-9-1.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    },
+    "max": {
+     "not_expressible": {
+      "class": "saknas",
+      "why": "bzip2 1.0.8 is single-threaded and lbzip2/pbzip2 are not installed; a different program would be a different row"
+     }
+    }
+   },
+   "harledt": {}
+  },
+  "tar.zst -3 (dagens)": {
+   "packare": "tar.zst -3 (dagens)",
+   "algoritm": "LZ77+tANS",
+   "konfig": {
+    "1": {
+     "bytes": 66216171,
+     "packsek": 1.45,
+     "uppacksek": 0.37,
+     "packcpu": 1.67,
+     "uppackcpu": 0.64,
+     "packmaxrss_mib": 47.5,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.15,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.1,
+     "loadavg": 2.08,
+     "foreign_cpu": 0.9,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - silesia | zstd -3 -T1 -v -o /home/hugo/nvpack/.scratch/threads/tar-zst-3-dagens-1.ark",
+     "uppackkommando": "zstd -dq -c /home/hugo/nvpack/.scratch/threads/tar-zst-3-dagens-1.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    },
+    "max": {
+     "bytes": 66216171,
+     "packsek": 0.29,
+     "uppacksek": 0.35,
+     "packcpu": 3.48,
+     "uppackcpu": 0.58,
+     "packmaxrss_mib": 288.8,
+     "threads_requested": 24,
+     "threads_granted": 24,
+     "threads_effective": 11.91,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.0,
+     "loadavg": 2.08,
+     "foreign_cpu": 0.1,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - silesia | zstd -3 -T24 -v -o /home/hugo/nvpack/.scratch/threads/tar-zst-3-dagens-max.ark",
+     "uppackkommando": "zstd -dq -c /home/hugo/nvpack/.scratch/threads/tar-zst-3-dagens-max.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    }
+   },
+   "harledt": {
+    "speedup_pack": 5.0,
+    "speedup_unpack": 1.06,
+    "efficiency_pack": 0.5,
+    "cpu_ratio_pack": 2.08,
+    "size_delta_pct": 0.0,
+    "verdict": "scales"
+   }
+  },
+  "tar.zst -19 --long": {
+   "packare": "tar.zst -19 --long",
+   "algoritm": "LZ77+tANS, 128M window",
+   "konfig": {
+    "1": {
+     "bytes": 52604283,
+     "packsek": 154.7,
+     "uppacksek": 0.51,
+     "packcpu": 153.57,
+     "uppackcpu": 0.69,
+     "packmaxrss_mib": 374.7,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 0.99,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 11.9,
+     "loadavg": 2.08,
+     "foreign_cpu": 136.2,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - silesia | zstd -19 --long=27 -T1 -v -o /home/hugo/nvpack/.scratch/threads/tar-zst-19-long-1.ark",
+     "uppackkommando": "zstd -dq --long=27 -c /home/hugo/nvpack/.scratch/threads/tar-zst-19-long-1.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    },
+    "max": {
+     "bytes": 52604283,
+     "packsek": 62.3,
+     "uppacksek": 0.42,
+     "packcpu": 162.61,
+     "uppackcpu": 0.62,
+     "packmaxrss_mib": 653.1,
+     "threads_requested": 24,
+     "threads_granted": 24,
+     "threads_effective": 2.61,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 6.1,
+     "loadavg": 2.44,
+     "foreign_cpu": 50.1,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - silesia | zstd -19 --long=27 -T24 -v -o /home/hugo/nvpack/.scratch/threads/tar-zst-19-long-max.ark",
+     "uppackkommando": "zstd -dq --long=27 -c /home/hugo/nvpack/.scratch/threads/tar-zst-19-long-max.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    }
+   },
+   "harledt": {
+    "speedup_pack": 2.48,
+    "speedup_unpack": 1.21,
+    "efficiency_pack": 0.11,
+    "cpu_ratio_pack": 1.06,
+    "size_delta_pct": 0.0,
+    "verdict": "scales"
+   }
+  },
+  "tar.zst -22 --ultra": {
+   "packare": "tar.zst -22 --ultra",
+   "algoritm": "LZ77+tANS, 2G window",
+   "konfig": {
+    "1": {
+     "bytes": 52243182,
+     "packsek": 175.07,
+     "uppacksek": 0.47,
+     "packcpu": 175.15,
+     "uppackcpu": 0.67,
+     "packmaxrss_mib": 1930.0,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.0,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 5.9,
+     "loadavg": 2.94,
+     "foreign_cpu": 123.4,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - silesia | zstd -22 --ultra --long=31 -T1 -v -o /home/hugo/nvpack/.scratch/threads/tar-zst-22-ultra-1.ark",
+     "uppackkommando": "zstd -dq --long=31 -c /home/hugo/nvpack/.scratch/threads/tar-zst-22-ultra-1.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    },
+    "max": {
+     "bytes": 52243182,
+     "packsek": 175.24,
+     "uppacksek": 0.51,
+     "packcpu": 175.35,
+     "uppackcpu": 0.78,
+     "packmaxrss_mib": 1929.9,
+     "threads_requested": 24,
+     "threads_granted": 24,
+     "threads_effective": 1.0,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 6.1,
+     "loadavg": 1.94,
+     "foreign_cpu": 102.8,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - silesia | zstd -22 --ultra --long=31 -T24 -v -o /home/hugo/nvpack/.scratch/threads/tar-zst-22-ultra-max.ark",
+     "uppackkommando": "zstd -dq --long=31 -c /home/hugo/nvpack/.scratch/threads/tar-zst-22-ultra-max.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    }
+   },
+   "harledt": {
+    "speedup_pack": 1.0,
+    "speedup_unpack": 0.92,
+    "efficiency_pack": 0.04,
+    "cpu_ratio_pack": 1.0,
+    "size_delta_pct": 0.0,
+    "verdict": "does not scale"
+   }
+  },
+  "tar.xz -9e": {
+   "packare": "tar.xz -9e",
+   "algoritm": "LZMA2",
+   "konfig": {
+    "1": {
+     "bytes": 48392776,
+     "packsek": 162.79,
+     "uppacksek": 2.74,
+     "packcpu": 163.03,
+     "uppackcpu": 2.92,
+     "packmaxrss_mib": 673.8,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.0,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 6.3,
+     "loadavg": 2.33,
+     "foreign_cpu": 93.9,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - silesia | xz -9e -T1 -vv -c > /home/hugo/nvpack/.scratch/threads/tar-xz-9e-1.ark",
+     "uppackkommando": "xz -dc -T1 /home/hugo/nvpack/.scratch/threads/tar-xz-9e-1.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    },
+    "max": {
+     "bytes": 48408228,
+     "packsek": 154.23,
+     "uppacksek": 2.68,
+     "packcpu": 163.5,
+     "uppackcpu": 3.13,
+     "packmaxrss_mib": 1071.4,
+     "threads_requested": 24,
+     "threads_granted": 24,
+     "threads_effective": 1.06,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 6.8,
+     "loadavg": 1.84,
+     "foreign_cpu": 90.4,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - silesia | xz -9e -T24 -vv -c > /home/hugo/nvpack/.scratch/threads/tar-xz-9e-max.ark",
+     "uppackkommando": "xz -dc -T24 /home/hugo/nvpack/.scratch/threads/tar-xz-9e-max.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    }
+   },
+   "harledt": {
+    "speedup_pack": 1.06,
+    "speedup_unpack": 1.02,
+    "efficiency_pack": 0.04,
+    "cpu_ratio_pack": 1.0,
+    "size_delta_pct": 0.03,
+    "verdict": "does not scale"
+   }
+  },
+  "tar.br -q 11": {
+   "packare": "tar.br -q 11",
+   "algoritm": "brotli (LZ77+Huffman+dictionary)",
+   "konfig": {
+    "1": {
+     "bytes": 49850520,
+     "packsek": 578.71,
+     "uppacksek": 1.16,
+     "packcpu": 578.6,
+     "uppackcpu": 1.22,
+     "packmaxrss_mib": 256.4,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.0,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 6.7,
+     "loadavg": 1.55,
+     "foreign_cpu": 493.0,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - silesia | brotli -q 11 -c > /home/hugo/nvpack/.scratch/threads/tar-br-q-11-1.ark",
+     "uppackkommando": "brotli -dc /home/hugo/nvpack/.scratch/threads/tar-br-q-11-1.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    },
+    "max": {
+     "not_expressible": {
+      "class": "enkeltradad",
+      "why": "brotli 1.2.0 has no threading at any quality"
+     }
+    }
+   },
+   "harledt": {}
+  },
+  "nvz snabb": {
+   "packare": "nvz snabb",
+   "algoritm": "hz: dedup+sort+zstd",
+   "konfig": {
+    "1": {
+     "bytes": 66131620,
+     "packsek": 2.75,
+     "uppacksek": 1.71,
+     "packcpu": 2.73,
+     "uppackcpu": 1.66,
+     "packmaxrss_mib": 353.5,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 0.99,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.3,
+     "loadavg": 1.8,
+     "foreign_cpu": 4.0,
+     "disturbed": true,
+     "packkommando": "/home/hugo/nvpack/src/hz pack /home/hugo/nvpack/corpus/silesia /home/hugo/nvpack/.scratch/threads/nvz-snabb-1.ark -q --mode fast -j 1",
+     "uppackkommando": "/home/hugo/nvpack/src/hz unpack /home/hugo/nvpack/.scratch/threads/nvz-snabb-1.ark /home/hugo/nvpack/.scratch/threads/out -q -j 1"
+    },
+    "max": {
+     "bytes": 66233374,
+     "packsek": 0.77,
+     "uppacksek": 0.6,
+     "packcpu": 4.95,
+     "uppackcpu": 1.88,
+     "packmaxrss_mib": 779.4,
+     "threads_requested": 24,
+     "threads_granted": 24,
+     "threads_effective": 6.43,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 13.0,
+     "loadavg": 1.9,
+     "foreign_cpu": 0.4,
+     "disturbed": false,
+     "packkommando": "/home/hugo/nvpack/src/hz pack /home/hugo/nvpack/corpus/silesia /home/hugo/nvpack/.scratch/threads/nvz-snabb-max.ark -q --mode fast -j 24",
+     "uppackkommando": "/home/hugo/nvpack/src/hz unpack /home/hugo/nvpack/.scratch/threads/nvz-snabb-max.ark /home/hugo/nvpack/.scratch/threads/out -q -j 24"
+    }
+   },
+   "harledt": {
+    "speedup_pack": 3.57,
+    "speedup_unpack": 2.85,
+    "efficiency_pack": 0.27,
+    "cpu_ratio_pack": 1.81,
+    "size_delta_pct": 0.15,
+    "verdict": "scales"
+   }
+  },
+  "nvz normal": {
+   "packare": "nvz normal",
+   "algoritm": "hz: transforms+probe",
+   "konfig": {
+    "1": {
+     "bytes": 48380400,
+     "packsek": 176.53,
+     "uppacksek": 4.08,
+     "packcpu": 176.44,
+     "uppackcpu": 4.04,
+     "packmaxrss_mib": 1453.3,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.0,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.6,
+     "loadavg": 1.9,
+     "foreign_cpu": 192.4,
+     "disturbed": false,
+     "packkommando": "/home/hugo/nvpack/src/hz pack /home/hugo/nvpack/corpus/silesia /home/hugo/nvpack/.scratch/threads/nvz-normal-1.ark -q --mode normal -j 1",
+     "uppackkommando": "/home/hugo/nvpack/src/hz unpack /home/hugo/nvpack/.scratch/threads/nvz-normal-1.ark /home/hugo/nvpack/.scratch/threads/out -q -j 1"
+    },
+    "max": {
+     "bytes": 48380400,
+     "packsek": 93.7,
+     "uppacksek": 2.46,
+     "packcpu": 180.24,
+     "uppackcpu": 4.49,
+     "packmaxrss_mib": 2454.7,
+     "threads_requested": 24,
+     "threads_granted": 24,
+     "threads_effective": 1.92,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.7,
+     "loadavg": 3.31,
+     "foreign_cpu": 83.1,
+     "disturbed": false,
+     "packkommando": "/home/hugo/nvpack/src/hz pack /home/hugo/nvpack/corpus/silesia /home/hugo/nvpack/.scratch/threads/nvz-normal-max.ark -q --mode normal -j 24",
+     "uppackkommando": "/home/hugo/nvpack/src/hz unpack /home/hugo/nvpack/.scratch/threads/nvz-normal-max.ark /home/hugo/nvpack/.scratch/threads/out -q -j 24"
+    }
+   },
+   "harledt": {
+    "speedup_pack": 1.88,
+    "speedup_unpack": 1.66,
+    "efficiency_pack": 0.08,
+    "cpu_ratio_pack": 1.02,
+    "size_delta_pct": 0.0,
+    "verdict": "scales"
+   }
+  },
+  "nvz liten": {
+   "packare": "nvz liten",
+   "algoritm": "hz: + context mixing",
+   "konfig": {
+    "1": {
+     "bytes": 45741795,
+     "packsek": 177.33,
+     "uppacksek": 91.85,
+     "packcpu": 177.31,
+     "uppackcpu": 91.77,
+     "packmaxrss_mib": 1453.5,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.0,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.7,
+     "loadavg": 5.25,
+     "foreign_cpu": 152.7,
+     "disturbed": false,
+     "packkommando": "/home/hugo/nvpack/src/hz pack /home/hugo/nvpack/corpus/silesia /home/hugo/nvpack/.scratch/threads/nvz-liten-1.ark -q --mode small -j 1",
+     "uppackkommando": "/home/hugo/nvpack/src/hz unpack /home/hugo/nvpack/.scratch/threads/nvz-liten-1.ark /home/hugo/nvpack/.scratch/threads/out -q -j 1"
+    },
+    "max": {
+     "bytes": 45741795,
+     "packsek": 92.81,
+     "uppacksek": 37.67,
+     "packcpu": 184.3,
+     "uppackcpu": 95.31,
+     "packmaxrss_mib": 1486.5,
+     "threads_requested": 24,
+     "threads_granted": 24,
+     "threads_effective": 1.99,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 13.1,
+     "loadavg": 1.96,
+     "foreign_cpu": 169.2,
+     "disturbed": true,
+     "packkommando": "/home/hugo/nvpack/src/hz pack /home/hugo/nvpack/corpus/silesia /home/hugo/nvpack/.scratch/threads/nvz-liten-max.ark -q --mode small -j 24",
+     "uppackkommando": "/home/hugo/nvpack/src/hz unpack /home/hugo/nvpack/.scratch/threads/nvz-liten-max.ark /home/hugo/nvpack/.scratch/threads/out -q -j 24"
+    }
+   },
+   "harledt": {
+    "speedup_pack": 1.91,
+    "speedup_unpack": 2.44,
+    "efficiency_pack": 0.08,
+    "cpu_ratio_pack": 1.04,
+    "size_delta_pct": 0.0,
+    "verdict": "scales"
+   }
+  }
+ },
+ "granskning": {
+  "invarianter_ok": false,
+  "anmarkningar": [
+   "tar.gz -9 (pigz): speedup 14.66x above the plausible ceiling for 12 physical cores",
+   "nvz snabb/1: foreign load 4.0 cpu-s",
+   "nvz liten/max: foreign load 169.2 cpu-s"
+  ]
+ }
+}
