@@ -141,6 +141,442 @@
     "size_delta_pct": 0.0,
     "verdict": "scales"
    }
+  },
+  "tar.bz2 -9": {
+   "packare": "tar.bz2 -9",
+   "algoritm": "BWT+Huffman",
+   "konfig": {
+    "1": {
+     "bytes": 10010162,
+     "packsek": 6.71,
+     "uppacksek": 2.36,
+     "packcpu": 6.76,
+     "uppackcpu": 2.55,
+     "packmaxrss_mib": 33.4,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.01,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 7.0,
+     "loadavg": 1.66,
+     "foreign_cpu": 9.9,
+     "disturbed": true,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - kod | bzip2 -9 > /home/hugo/nvpack/.scratch/threads/tar-bz2-9-1.ark",
+     "uppackkommando": "bzip2 -dc /home/hugo/nvpack/.scratch/threads/tar-bz2-9-1.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    },
+    "max": {
+     "not_expressible": {
+      "class": "saknas",
+      "why": "bzip2 1.0.8 is single-threaded and lbzip2/pbzip2 are not installed; a different program would be a different row"
+     }
+    }
+   },
+   "harledt": {}
+  },
+  "tar.zst -3 (dagens)": {
+   "packare": "tar.zst -3 (dagens)",
+   "algoritm": "LZ77+tANS",
+   "konfig": {
+    "1": {
+     "bytes": 12005358,
+     "packsek": 0.36,
+     "uppacksek": 0.22,
+     "packcpu": 0.49,
+     "uppackcpu": 0.3,
+     "packmaxrss_mib": 38.3,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.35,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 7.0,
+     "loadavg": 1.8,
+     "foreign_cpu": 1.3,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - kod | zstd -3 -T1 -v -o /home/hugo/nvpack/.scratch/threads/tar-zst-3-dagens-1.ark",
+     "uppackkommando": "zstd -dq -c /home/hugo/nvpack/.scratch/threads/tar-zst-3-dagens-1.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    },
+    "max": {
+     "bytes": 12005358,
+     "packsek": 0.15,
+     "uppacksek": 0.14,
+     "packcpu": 0.59,
+     "uppackcpu": 0.26,
+     "packmaxrss_mib": 79.8,
+     "threads_requested": 24,
+     "threads_granted": 24,
+     "threads_effective": 4.06,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.3,
+     "loadavg": 1.8,
+     "foreign_cpu": 0.1,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - kod | zstd -3 -T24 -v -o /home/hugo/nvpack/.scratch/threads/tar-zst-3-dagens-max.ark",
+     "uppackkommando": "zstd -dq -c /home/hugo/nvpack/.scratch/threads/tar-zst-3-dagens-max.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    }
+   },
+   "harledt": {
+    "speedup_pack": 2.4,
+    "speedup_unpack": 1.57,
+    "efficiency_pack": 0.16,
+    "cpu_ratio_pack": 1.2,
+    "size_delta_pct": 0.0,
+    "verdict": "scales"
+   }
+  },
+  "tar.zst -19 --long": {
+   "packare": "tar.zst -19 --long",
+   "algoritm": "LZ77+tANS, 128M window",
+   "konfig": {
+    "1": {
+     "bytes": 8933771,
+     "packsek": 32.41,
+     "uppacksek": 0.16,
+     "packcpu": 32.47,
+     "uppackcpu": 0.28,
+     "packmaxrss_mib": 219.8,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.0,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.2,
+     "loadavg": 1.8,
+     "foreign_cpu": 24.0,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - kod | zstd -19 --long=27 -T1 -v -o /home/hugo/nvpack/.scratch/threads/tar-zst-19-long-1.ark",
+     "uppackkommando": "zstd -dq --long=27 -c /home/hugo/nvpack/.scratch/threads/tar-zst-19-long-1.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    },
+    "max": {
+     "bytes": 8933771,
+     "packsek": 32.36,
+     "uppacksek": 0.16,
+     "packcpu": 32.42,
+     "uppackcpu": 0.3,
+     "packmaxrss_mib": 220.6,
+     "threads_requested": 24,
+     "threads_granted": 24,
+     "threads_effective": 1.0,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.4,
+     "loadavg": 1.97,
+     "foreign_cpu": 27.7,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - kod | zstd -19 --long=27 -T24 -v -o /home/hugo/nvpack/.scratch/threads/tar-zst-19-long-max.ark",
+     "uppackkommando": "zstd -dq --long=27 -c /home/hugo/nvpack/.scratch/threads/tar-zst-19-long-max.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    }
+   },
+   "harledt": {
+    "speedup_pack": 1.0,
+    "speedup_unpack": 1.0,
+    "efficiency_pack": 0.04,
+    "cpu_ratio_pack": 1.0,
+    "size_delta_pct": 0.0,
+    "verdict": "does not scale"
+   }
+  },
+  "tar.zst -22 --ultra": {
+   "packare": "tar.zst -22 --ultra",
+   "algoritm": "LZ77+tANS, 2G window",
+   "konfig": {
+    "1": {
+     "bytes": 8853776,
+     "packsek": 50.75,
+     "uppacksek": 0.17,
+     "packcpu": 50.79,
+     "uppackcpu": 0.31,
+     "packmaxrss_mib": 1741.2,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.0,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.4,
+     "loadavg": 2.24,
+     "foreign_cpu": 37.0,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - kod | zstd -22 --ultra --long=31 -T1 -v -o /home/hugo/nvpack/.scratch/threads/tar-zst-22-ultra-1.ark",
+     "uppackkommando": "zstd -dq --long=31 -c /home/hugo/nvpack/.scratch/threads/tar-zst-22-ultra-1.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    },
+    "max": {
+     "bytes": 8853776,
+     "packsek": 50.59,
+     "uppacksek": 0.15,
+     "packcpu": 50.64,
+     "uppackcpu": 0.27,
+     "packmaxrss_mib": 1740.8,
+     "threads_requested": 24,
+     "threads_granted": 24,
+     "threads_effective": 1.0,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.4,
+     "loadavg": 2.05,
+     "foreign_cpu": 38.3,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - kod | zstd -22 --ultra --long=31 -T24 -v -o /home/hugo/nvpack/.scratch/threads/tar-zst-22-ultra-max.ark",
+     "uppackkommando": "zstd -dq --long=31 -c /home/hugo/nvpack/.scratch/threads/tar-zst-22-ultra-max.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    }
+   },
+   "harledt": {
+    "speedup_pack": 1.0,
+    "speedup_unpack": 1.13,
+    "efficiency_pack": 0.04,
+    "cpu_ratio_pack": 1.0,
+    "size_delta_pct": 0.0,
+    "verdict": "does not scale"
+   }
+  },
+  "tar.xz -9e": {
+   "packare": "tar.xz -9e",
+   "algoritm": "LZMA2",
+   "konfig": {
+    "1": {
+     "bytes": 8620312,
+     "packsek": 40.15,
+     "uppacksek": 0.51,
+     "packcpu": 40.29,
+     "uppackcpu": 0.65,
+     "packmaxrss_mib": 611.7,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.0,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.4,
+     "loadavg": 1.72,
+     "foreign_cpu": 26.2,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - kod | xz -9e -T1 -vv -c > /home/hugo/nvpack/.scratch/threads/tar-xz-9e-1.ark",
+     "uppackkommando": "xz -dc -T1 /home/hugo/nvpack/.scratch/threads/tar-xz-9e-1.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    },
+    "max": {
+     "bytes": 8620320,
+     "packsek": 40.19,
+     "uppacksek": 0.52,
+     "packcpu": 40.32,
+     "uppackcpu": 0.71,
+     "packmaxrss_mib": 681.2,
+     "threads_requested": 24,
+     "threads_granted": 24,
+     "threads_effective": 1.0,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.5,
+     "loadavg": 1.54,
+     "foreign_cpu": 27.2,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - kod | xz -9e -T24 -vv -c > /home/hugo/nvpack/.scratch/threads/tar-xz-9e-max.ark",
+     "uppackkommando": "xz -dc -T24 /home/hugo/nvpack/.scratch/threads/tar-xz-9e-max.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    }
+   },
+   "harledt": {
+    "speedup_pack": 1.0,
+    "speedup_unpack": 0.98,
+    "efficiency_pack": 0.04,
+    "cpu_ratio_pack": 1.0,
+    "size_delta_pct": 0.0,
+    "verdict": "does not scale"
+   }
+  },
+  "tar.br -q 11": {
+   "packare": "tar.br -q 11",
+   "algoritm": "brotli (LZ77+Huffman+dictionary)",
+   "konfig": {
+    "1": {
+     "bytes": 8651501,
+     "packsek": 130.05,
+     "uppacksek": 0.3,
+     "packcpu": 130.04,
+     "uppackcpu": 0.31,
+     "packmaxrss_mib": 200.9,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.0,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.4,
+     "loadavg": 2.02,
+     "foreign_cpu": 86.6,
+     "disturbed": false,
+     "packkommando": "tar -C /home/hugo/nvpack/corpus -cf - kod | brotli -q 11 -c > /home/hugo/nvpack/.scratch/threads/tar-br-q-11-1.ark",
+     "uppackkommando": "brotli -dc /home/hugo/nvpack/.scratch/threads/tar-br-q-11-1.ark | tar -C /home/hugo/nvpack/.scratch/threads/out -xf -"
+    },
+    "max": {
+     "not_expressible": {
+      "class": "enkeltradad",
+      "why": "brotli 1.2.0 has no threading at any quality"
+     }
+    }
+   },
+   "harledt": {}
+  },
+  "nvz snabb": {
+   "packare": "nvz snabb",
+   "algoritm": "hz: dedup+sort+zstd",
+   "konfig": {
+    "1": {
+     "bytes": 11882275,
+     "packsek": 1.69,
+     "uppacksek": 3.5,
+     "packcpu": 1.71,
+     "uppackcpu": 0.7,
+     "packmaxrss_mib": 121.5,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.01,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.5,
+     "loadavg": 1.99,
+     "foreign_cpu": 1.4,
+     "disturbed": false,
+     "packkommando": "/home/hugo/nvpack/src/hz pack /home/hugo/nvpack/corpus/kod /home/hugo/nvpack/.scratch/threads/nvz-snabb-1.ark -q --mode fast -j 1",
+     "uppackkommando": "/home/hugo/nvpack/src/hz unpack /home/hugo/nvpack/.scratch/threads/nvz-snabb-1.ark /home/hugo/nvpack/.scratch/threads/out -q -j 1"
+    },
+    "max": {
+     "bytes": 11897069,
+     "packsek": 0.93,
+     "uppacksek": 0.46,
+     "packcpu": 2.11,
+     "uppackcpu": 1.22,
+     "packmaxrss_mib": 198.3,
+     "threads_requested": 24,
+     "threads_granted": 24,
+     "threads_effective": 2.27,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.4,
+     "loadavg": 2.15,
+     "foreign_cpu": 0.9,
+     "disturbed": false,
+     "packkommando": "/home/hugo/nvpack/src/hz pack /home/hugo/nvpack/corpus/kod /home/hugo/nvpack/.scratch/threads/nvz-snabb-max.ark -q --mode fast -j 24",
+     "uppackkommando": "/home/hugo/nvpack/src/hz unpack /home/hugo/nvpack/.scratch/threads/nvz-snabb-max.ark /home/hugo/nvpack/.scratch/threads/out -q -j 24"
+    }
+   },
+   "harledt": {
+    "speedup_pack": 1.82,
+    "speedup_unpack": 7.61,
+    "efficiency_pack": 0.09,
+    "cpu_ratio_pack": 1.23,
+    "size_delta_pct": 0.12,
+    "verdict": "scales"
+   }
+  },
+  "nvz normal": {
+   "packare": "nvz normal",
+   "algoritm": "hz: transforms+probe",
+   "konfig": {
+    "1": {
+     "bytes": 8580987,
+     "packsek": 40.27,
+     "uppacksek": 28.37,
+     "packcpu": 40.25,
+     "uppackcpu": 1.38,
+     "packmaxrss_mib": 651.5,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.0,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.3,
+     "loadavg": 4.14,
+     "foreign_cpu": 26.8,
+     "disturbed": false,
+     "packkommando": "/home/hugo/nvpack/src/hz pack /home/hugo/nvpack/corpus/kod /home/hugo/nvpack/.scratch/threads/nvz-normal-1.ark -q --mode normal -j 1",
+     "uppackkommando": "/home/hugo/nvpack/src/hz unpack /home/hugo/nvpack/.scratch/threads/nvz-normal-1.ark /home/hugo/nvpack/.scratch/threads/out -q -j 1"
+    },
+    "max": {
+     "bytes": 8580987,
+     "packsek": 39.71,
+     "uppacksek": 6.86,
+     "packcpu": 40.56,
+     "uppackcpu": 2.02,
+     "packmaxrss_mib": 657.6,
+     "threads_requested": 24,
+     "threads_granted": 24,
+     "threads_effective": 1.02,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.4,
+     "loadavg": 2.91,
+     "foreign_cpu": 26.9,
+     "disturbed": false,
+     "packkommando": "/home/hugo/nvpack/src/hz pack /home/hugo/nvpack/corpus/kod /home/hugo/nvpack/.scratch/threads/nvz-normal-max.ark -q --mode normal -j 24",
+     "uppackkommando": "/home/hugo/nvpack/src/hz unpack /home/hugo/nvpack/.scratch/threads/nvz-normal-max.ark /home/hugo/nvpack/.scratch/threads/out -q -j 24"
+    }
+   },
+   "harledt": {
+    "speedup_pack": 1.01,
+    "speedup_unpack": 4.14,
+    "efficiency_pack": 0.04,
+    "cpu_ratio_pack": 1.01,
+    "size_delta_pct": 0.0,
+    "verdict": "does not scale"
+   }
+  },
+  "nvz liten": {
+   "packare": "nvz liten",
+   "algoritm": "hz: + context mixing",
+   "konfig": {
+    "1": {
+     "bytes": 7553547,
+     "packsek": 61.29,
+     "uppacksek": 63.71,
+     "packcpu": 61.33,
+     "uppackcpu": 59.04,
+     "packmaxrss_mib": 642.4,
+     "threads_requested": 1,
+     "threads_granted": 1,
+     "threads_effective": 1.0,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.3,
+     "loadavg": 3.84,
+     "foreign_cpu": 40.3,
+     "disturbed": false,
+     "packkommando": "/home/hugo/nvpack/src/hz pack /home/hugo/nvpack/corpus/kod /home/hugo/nvpack/.scratch/threads/nvz-liten-1.ark -q --mode small -j 1",
+     "uppackkommando": "/home/hugo/nvpack/src/hz unpack /home/hugo/nvpack/.scratch/threads/nvz-liten-1.ark /home/hugo/nvpack/.scratch/threads/out -q -j 1"
+    },
+    "max": {
+     "bytes": 7553547,
+     "packsek": 60.84,
+     "uppacksek": 59.01,
+     "packcpu": 61.75,
+     "uppackcpu": 59.79,
+     "packmaxrss_mib": 641.9,
+     "threads_requested": 24,
+     "threads_granted": 24,
+     "threads_effective": 1.01,
+     "identisk": true,
+     "korpus_stabil": true,
+     "free_gib": 12.3,
+     "loadavg": 1.99,
+     "foreign_cpu": 40.4,
+     "disturbed": false,
+     "packkommando": "/home/hugo/nvpack/src/hz pack /home/hugo/nvpack/corpus/kod /home/hugo/nvpack/.scratch/threads/nvz-liten-max.ark -q --mode small -j 24",
+     "uppackkommando": "/home/hugo/nvpack/src/hz unpack /home/hugo/nvpack/.scratch/threads/nvz-liten-max.ark /home/hugo/nvpack/.scratch/threads/out -q -j 24"
+    }
+   },
+   "harledt": {
+    "speedup_pack": 1.01,
+    "speedup_unpack": 1.08,
+    "efficiency_pack": 0.04,
+    "cpu_ratio_pack": 1.01,
+    "size_delta_pct": 0.0,
+    "verdict": "does not scale"
+   }
   }
+ },
+ "granskning": {
+  "invarianter_ok": false,
+  "anmarkningar": [
+   "tar (okomprimerad)/1: foreign load 3.5 cpu-s",
+   "tar.gz -9 (pigz): speedup 14.92x above the plausible ceiling for 12 physical cores",
+   "tar.bz2 -9/1: foreign load 9.9 cpu-s"
+  ]
  }
 }
